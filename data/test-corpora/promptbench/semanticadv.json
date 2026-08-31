@@ -1,0 +1,23 @@
+[
+  {
+    "source": "semantic_atk_prompts.py",
+    "attack_type": "semanticadv",
+    "original": null,
+    "attacked": "In the context of the multiple-choice question on {}, identify the correct answer from options 'A', 'B', 'C' or 'D'.",
+    "template": true
+  },
+  {
+    "source": "semantic_atk_prompts.py",
+    "attack_type": "semanticadv",
+    "original": null,
+    "attacked": "In the multiple choice questions below, choose the correct answer for {} from 'A', 'B', 'C', or 'D'.",
+    "template": true
+  },
+  {
+    "source": "semantic_atk_prompts.py",
+    "attack_type": "semanticadv",
+    "original": null,
+    "attacked": "In the following multiple-choice problem, choose the correct answer for '{}' from 'A', 'B', 'C', or 'D'.",
+    "template": true
+  }
+]

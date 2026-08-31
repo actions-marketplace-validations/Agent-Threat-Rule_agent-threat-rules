@@ -1,0 +1,150 @@
+{
+  "date": "2026-05-23",
+  "generator": "scripts/garak-miss-to-proposals.ts",
+  "source_report": "data/garak-benchmark/garak-full-report.json",
+  "grand_total": 3475,
+  "grand_missed": 2136,
+  "total_inscope_agent_misses": 176,
+  "proposals_written": 8,
+  "true_positives_written": 146,
+  "max_tp_per_family": 40,
+  "proposals": [
+    {
+      "sha8": "aed27bc2",
+      "family": "agent_breaker",
+      "anchor": "family-cluster",
+      "cluster_size": 3,
+      "file": "proposals/garak-clusters/ATR-GARAK-aed27bc2.proposal.yaml",
+      "category": "context-exfiltration"
+    },
+    {
+      "sha8": "7b5054c5",
+      "family": "dan",
+      "anchor": "family-cluster",
+      "cluster_size": 68,
+      "file": "proposals/garak-clusters/ATR-GARAK-7b5054c5.proposal.yaml",
+      "category": "prompt-injection"
+    },
+    {
+      "sha8": "0c4383a1",
+      "family": "encoding",
+      "anchor": "family-cluster",
+      "cluster_size": 19,
+      "file": "proposals/garak-clusters/ATR-GARAK-0c4383a1.proposal.yaml",
+      "category": "prompt-injection"
+    },
+    {
+      "sha8": "ff79656a",
+      "family": "exploitation",
+      "anchor": "family-cluster",
+      "cluster_size": 12,
+      "file": "proposals/garak-clusters/ATR-GARAK-ff79656a.proposal.yaml",
+      "category": "prompt-injection"
+    },
+    {
+      "sha8": "8cfc0a05",
+      "family": "goodside",
+      "anchor": "family-cluster",
+      "cluster_size": 7,
+      "file": "proposals/garak-clusters/ATR-GARAK-8cfc0a05.proposal.yaml",
+      "category": "prompt-injection"
+    },
+    {
+      "sha8": "2eeccb35",
+      "family": "latentinjection",
+      "anchor": "family-cluster",
+      "cluster_size": 42,
+      "file": "proposals/garak-clusters/ATR-GARAK-2eeccb35.proposal.yaml",
+      "category": "prompt-injection"
+    },
+    {
+      "sha8": "db1591ec",
+      "family": "sysprompt_extraction",
+      "anchor": "family-cluster",
+      "cluster_size": 9,
+      "file": "proposals/garak-clusters/ATR-GARAK-db1591ec.proposal.yaml",
+      "category": "context-exfiltration"
+    },
+    {
+      "sha8": "1ff55c68",
+      "family": "web_injection",
+      "anchor": "family-cluster",
+      "cluster_size": 16,
+      "file": "proposals/garak-clusters/ATR-GARAK-1ff55c68.proposal.yaml",
+      "category": "prompt-injection"
+    }
+  ],
+  "families_below_min_tp": [],
+  "skipped": [
+    {
+      "family": "snowball",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 1500
+    },
+    {
+      "family": "harmbench",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 193
+    },
+    {
+      "family": "dra",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 74
+    },
+    {
+      "family": "inthewild",
+      "reason": "excluded — not in the consumer's GARAK_FAMILY_ALLOW; these are real-world jailbreaks / prompt-injection (heavy overlap with the dan family), not content-safety. Add inthewild to GARAK_FAMILY_ALLOW to include.",
+      "count": 69
+    },
+    {
+      "family": "packagehallucination",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 45
+    },
+    {
+      "family": "badchars",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 14
+    },
+    {
+      "family": "malwaregen",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 14
+    },
+    {
+      "family": "sata",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 14
+    },
+    {
+      "family": "smuggling",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 14
+    },
+    {
+      "family": "lmrc",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 13
+    },
+    {
+      "family": "gcg",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 5
+    },
+    {
+      "family": "dan",
+      "reason": "content-safety sample inside allowed family",
+      "count": 2
+    },
+    {
+      "family": "goat",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 2
+    },
+    {
+      "family": "doctor",
+      "reason": "out-of-scope family (content-safety / not an agent attack)",
+      "count": 1
+    }
+  ]
+}

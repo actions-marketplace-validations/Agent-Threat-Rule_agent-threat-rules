@@ -99,3 +99,11 @@ pytest tests/ -v
 
 - [Agent Threat Rules (ATR) repository](https://github.com/Agent-Threat-Rule/agent-threat-rules)
 - [TypeScript engine](https://github.com/Agent-Threat-Rule/agent-threat-rules/tree/main/src)
+
+## Sponsorship
+
+pyATR's maintenance — CVE-class response, weekly cross-ecosystem sync, the auto-review pipeline — runs on community sponsorship through [Open Source Collective, Inc.](https://opencollective.com/opensource) (501(c)(6), EIN 81-1567737).
+
+**Sponsor page: [opencollective.com/agent-threat-rules](https://opencollective.com/agent-threat-rules)**
+
+Five public tiers (Backer $5 / Friend $25 / Bronze $200 / Silver $1,000 / Gold $5,000 per month). Strategic Partner (US $20,000 – $200,000+/yr, contract-backed with SLA) via <adam@agentthreatrule.org>.

@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write  # required by `npm publish --provenance`
 
 jobs:
   publish:
@@ -26,12 +27,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
@@ -129,7 +130,17 @@ jobs:
       - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public
+        run: |
+          # Auto-detect dist-tag from prerelease identifier so 3.0.0-alpha.X
+          # doesn't accidentally take over the `latest` tag (which represents
+          # the stable release line).
+          TAG=$(node -e "
+            const v = require('./package.json').version;
+            const m = v.match(/-([a-zA-Z]+)/);
+            console.log(m ? m[1] : 'latest');
+          ")
+          echo "Publishing with dist-tag: $TAG"
+          npm publish --access public --provenance --tag "$TAG"
 
       - name: Count rules for release notes
         id: rules
@@ -211,9 +222,3 @@ jobs:
             }).then(r => r.json()).then(d => console.log('TC sync:', JSON.stringify(d)))
               .catch(e => console.error('TC sync failed:', e.message));
           "
-
-      - name: Trigger Vercel redeploy (panguard.ai)
-        if: ${{ vars.VERCEL_DEPLOY_HOOK_URL != '' }}
-        run: |
-          curl -sf -X POST "${{ vars.VERCEL_DEPLOY_HOOK_URL }}" || echo "Vercel hook failed (non-critical)"
-          echo "Vercel redeploy triggered"

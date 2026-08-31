@@ -16,16 +16,46 @@ severity: high
 
 references:
   owasp_llm:
-    - "LLM08:2025 - Excessive Agency"
+    - "LLM08:2025"
   owasp_agentic:
-    - "ASI02:2026 - Tool Misuse and Exploitation"
-    - "ASI05:2026 - Unexpected Code Execution"
+    - "ASI02:2026"
+    - "ASI05:2026"
   mitre_attack:
     - "T1059 - Command and Scripting Interpreter"
     - "T1053 - Scheduled Task/Job"
     - "T1543 - Create or Modify System Process"
     - "T1036 - Masquerading"
 
+  mitre_atlas:
+    - AML.T0050 - Command and Scripting Interpreter
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MG.2.3"
+      context: >-
+        Detection of stealth execution, persistence installation, and covert file transfer triggers the supersede/disengage mechanisms required by MG.2.3 to halt the agent before long-term attacker presence is established on the compromised host.
+      strength: primary
+    - subcategory: "MS.2.7"
+      context: >-
+        Background process suppression, systemctl enable, and scp exfiltration patterns are security/resilience signals that MS.2.7 requires to be continuously evaluated and documented as evidence of post-exploitation activity through the AI agent.
+      strength: secondary
+    - subcategory: "MP.5.1"
+      context: >-
+        Stealth persistence techniques represent high-magnitude adversarial misuse of agent tool access; MP.5.1 requires characterizing the likelihood and impact of such post-exploitation risks within the agent's operational context.
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the privilege-escalation attempt (Stealth Execution and Persistence Mechanisms)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the privilege-escalation attempt (Stealth Execution and Persistence Mechanisms) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the privilege-escalation attempt (Stealth Execution and Persistence Mechanisms)."
+      strength: primary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the privilege-escalation attempt (Stealth Execution and Persistence Mechanisms) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: privilege-escalation
   subcategory: stealth-persistence
@@ -44,17 +74,17 @@ detection:
   conditions:
     - field: content
       operator: regex
-      value: "(?i)>\\s*/dev/null\\s+2>&1\\s*&"
+      value: "(?i)(curl\\s|wget\\s|\\|\\s*(ba)?sh\\b|/dev/tcp|\\bnc\\s+-|bash\\s+-i|/tmp/\\S+\\.(sh|py|elf)|keylog|backdoor|miner|payload|reverse.?shell)[^\\n]{0,120}>\\s*/dev/null\\s+2>&1\\s*&"
       description: "Background execution with full output suppression"
 
     - field: content
       operator: regex
-      value: "(?i)\\bnohup\\s+.{1,200}(&|$)"
+      value: "(?i)\\bnohup\\s+[^\\n]{0,150}(curl|wget|\\|\\s*(ba)?sh\\b|/tmp/|/dev/tcp|\\bnc\\s+-|bash\\s+-i|keylog|backdoor|miner|payload|reverse.?shell|implant|\\.sh\\b)[^\\n]{0,80}(&|$)"
       description: "Persistent background process via nohup"
 
     - field: content
       operator: regex
-      value: "(?i)\\bsystemctl\\s+(enable|start|restart)\\s+\\S+"
+      value: "(?i)\\bsystemctl\\s+(enable|start|restart)\\s+\\S*(backdoor|reverse|shell|miner|payload|implant|malware|c2|evil|/tmp/)\\S*"
       description: "Service installation or activation"
 
     # `npm install -g <pkg>` is extremely common in setup docs (apify-cli, MCP
@@ -63,12 +93,12 @@ detection:
 
     - field: content
       operator: regex
-      value: "(?i)\\bscp\\s+.{1,200}\\S+@\\S+:"
+      value: "(?i)\\bscp\\s+[^\\n]{0,100}(/etc/(shadow|passwd|sudoers)|id_rsa|\\.ssh/|\\.aws/|\\.env\\b|secret|credential|\\.pem\\b)[^\\n]{0,100}\\S+@\\S+:"
       description: "SCP file transfer to remote host"
 
     - field: content
       operator: regex
-      value: "(?i)\\bscreen\\s+-dmS\\s+|\\btmux\\s+new-session\\s+-d"
+      value: "(?i)(screen\\s+-dmS|tmux\\s+new-session\\s+-d)\\s+[^\\n]{0,150}(curl|wget|\\|\\s*(ba)?sh\\b|/tmp/|/dev/tcp|\\bnc\\s+-|bash\\s+-i|keylog|backdoor|miner|payload)"
       description: "Detached screen/tmux session (hidden execution)"
 
   condition: any

@@ -12,17 +12,51 @@ author: "ATR Community"
 date: "2026/03/08"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 
 references:
   owasp_llm:
-    - "LLM03:2025 - Supply Chain Vulnerabilities"
+    - "LLM03:2025"
   owasp_agentic:
-    - "ASI04:2026 - Agentic Supply Chain Vulnerabilities"
+    - "ASI04:2026"
   mitre_atlas:
-    - "AML.T0010 - ML Supply Chain Compromise"
+    - "AML.T0010 - AI Supply Chain Compromise"
 
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MG.3.2"
+      context: >-
+        This rule detects malicious behavior introduced via skill updates or re-registration after initial trust was established, which is exactly the post-acquisition monitoring of pre-trained/third-party components required by MG.3.2. Continuous inspection of tool responses following version changes provides the evidence base for ongoing model/skill supply-chain monitoring.
+      strength: primary
+    - subcategory: "GV.6.1"
+      context: >-
+        Skill update attacks are a third-party/supplier AI risk where a previously vetted component mutates into a malicious one; GV.6.1 requires policies and procedures that govern such third-party AI risks, including detection of post-trust behavioral drift.
+      strength: secondary
+    - subcategory: "MG.4.1"
+      context: >-
+        Monitoring for suspicious patterns in tool arguments and responses after re-registration is a post-deployment monitoring activity; MG.4.1 mandates that such ongoing monitoring plans are implemented to catch emergent malicious behavior.
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the skill supply-chain compromise (Malicious Skill Update or Mutation)."
+      strength: primary
+    - subcategory: "MG.3.1"
+      context: "NIST AI RMF MANAGE 3.1 (third-party resources regularly monitored) is supported where this rule detects the skill supply-chain compromise (Malicious Skill Update or Mutation)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the skill supply-chain compromise (Malicious Skill Update or Mutation)."
+      strength: primary
+    - clause: "8.3"
+      context: "ISO/IEC 42001 Clause 8.3 (AI risk treatment) is supported by this rule, which implements runtime detection of the skill supply-chain compromise (Malicious Skill Update or Mutation) as a treatment control."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the skill supply-chain compromise (Malicious Skill Update or Mutation)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the skill supply-chain compromise (Malicious Skill Update or Mutation)."
+      strength: secondary
 tags:
   category: tool-poisoning
   subcategory: skill-update-attack
@@ -73,7 +107,6 @@ response:
 confidence: 53
 wild_validated: "2026/04/08"
 wild_samples: 53577
-wild_fp_rate: 0
 test_cases:
   true_positives:
     - input:

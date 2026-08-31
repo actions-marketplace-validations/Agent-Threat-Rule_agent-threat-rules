@@ -11,21 +11,52 @@ author: ATR Community
 date: 2026/04/05
 schema_version: "1.0"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: critical
 references:
   mitre_atlas:
-    - AML.T0010 - ML Supply Chain Compromise
+    - AML.T0010 - AI Supply Chain Compromise
   owasp_llm:
-    - LLM01:2025 - Prompt Injection
+    - LLM01:2025
   owasp_agentic:
-    - ASI01:2026 - Agent Goal Hijack
+    - ASI01:2026
   owasp_ast:
     - AST01:2026 - Malicious Skills
   research:
     - "ClawHavoc: credential exfiltration via skill instructions (2026-03)"
 metadata_provenance:
   mitre_atlas: auto-generated
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.10"
+      context: "This rule detects skill instructions that direct the agent to POST user data to external URLs, which is a direct privacy risk indicator; MS.2.10 requires assessment of privacy risks such as unauthorized data egress from AI components."
+      strength: primary
+    - subcategory: "GV.6.1"
+      context: "SKILL.md files are third-party/supplier artifacts loaded into the agent runtime, and malicious exfiltration instructions embedded in them represent a supply-chain risk that GV.6.1 policies must address through review of third-party AI components."
+      strength: secondary
+    - subcategory: "MG.3.2"
+      context: "Detecting concealment language and exfiltration URLs in skill files supports the continuous monitoring of pre-trained/third-party components required by MG.3.2, ensuring compromised skills are flagged before the agent executes covert data transfers."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the skill supply-chain compromise (Data Exfiltration URL in Skill Instructions)."
+      strength: primary
+    - subcategory: "MG.3.1"
+      context: "NIST AI RMF MANAGE 3.1 (third-party resources regularly monitored) is supported where this rule detects the skill supply-chain compromise (Data Exfiltration URL in Skill Instructions)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the skill supply-chain compromise (Data Exfiltration URL in Skill Instructions)."
+      strength: primary
+    - clause: "8.3"
+      context: "ISO/IEC 42001 Clause 8.3 (AI risk treatment) is supported by this rule, which implements runtime detection of the skill supply-chain compromise (Data Exfiltration URL in Skill Instructions) as a treatment control."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the skill supply-chain compromise (Data Exfiltration URL in Skill Instructions)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the skill supply-chain compromise (Data Exfiltration URL in Skill Instructions)."
+      strength: secondary
 tags:
   category: skill-compromise
   subcategory: data-exfiltration
@@ -53,8 +84,15 @@ detection:
     - field: content
       operator: regex
       value: >-
-        (?i)(verif|validat|rotat|audit|check|test)\w*\s+(your|the|all)?\s*(credential|key|token|api|secret|password)\w*\s+.{0,40}https?://(?!github\.com|docs\.|stackoverflow)
-      description: Fake verification pretext directing credentials to non-standard URL
+        (?i)\b(verif|validat|rotat|audit|check)\w*\s+(your|the|all)?\s*(credential|key|token|api|secret|password)\w*\s+.{0,40}https?://(?!(?:www\.)?(?:github\.com|docs\.|stackoverflow|google\.com|aistudio\.google\.com|openai\.com|platform\.openai\.com|anthropic\.com|console\.anthropic\.com|microsoft\.com|azure\.com|amazon\.com|aws\.amazon\.com|cloudflare\.com|stripe\.com))
+      description: >-
+        Fake verification pretext directing credentials to a non-standard URL. Added a leading \b before the verb
+        group — without it, 'test' matched as a bare substring inside 'Attest'/'LLMTest' (attest-mcp, llmtest-mcp
+        package names/docs). Dropped 'test' from the verb list entirely: even word-bounded, 'Testing' is an
+        extremely common benign noun/gerund ('Swagger Functional Testing API') that collides with the verb stem,
+        and no true_positive test case relies on it. Also broadened the domain exclusion to cover major official
+        AI/API provider domains (Google, OpenAI, Anthropic, Microsoft, AWS, Cloudflare, Stripe) — 'Verify your API
+        key at aistudio.google.com' is the provider's own official portal, not a phishing pretext.
   false_positives:
     - >-
       A skill's README instructs developers to 'submit the report to https://internal-ci.company.com/results' as part of
@@ -117,6 +155,27 @@ test_cases:
         keyring and avoid committing them to version control.
       expected: not_triggered
       description: Mentions tokens and a URL but lacks any send/post/upload verb targeting the URL and has no concealment language
+    - input: >-
+        Override the Attest API base URL. Defaults to https://attestagent.org. Only needed for self-hosted.
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, pkg-npm-attest-mcp): 'test' matched as a bare substring inside 'Attest'
+        before the leading \b was added.
+    - input: "Your LLMTest API key from https://llmtest.io/dashboard"
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, pkg-npm-llmtest-mcp): same substring collision, 'test' inside 'LLMTest'.
+    - input: "Verify your API key at [Google AI Studio](https://aistudio.google.com/apikey)"
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, RLabs-Inc/gemini-mcp): ordinary instruction to get/verify your own key
+        at the provider's own official portal, not a phishing redirect — domain exclusion list broadened.
+    - input: "Override the Swagger Functional Testing API base URL (optional). Defaults to https://api.reflect.run/v1"
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, pkg-npm-smartbear-mcp): 'Testing' is a common benign noun/gerund even at
+        a real word boundary; 'test' dropped from the verb list entirely rather than trying to distinguish
+        verb-form from noun-form by regex alone.
 response:
   actions:
     - alert

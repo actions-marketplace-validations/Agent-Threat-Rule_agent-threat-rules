@@ -19,6 +19,7 @@
 import { resolve, join } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { ATREngine } from '../engine.js';
+import { writeMeasurement } from '../measurement/write.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +67,8 @@ interface LayerMetrics {
 interface SkillBenchmarkReport {
   readonly timestamp: string;
   readonly corpus_size: number;
+  /** Rules the engine loaded for this run; the denominator for latency budgets. */
+  readonly rule_count: number;
   readonly malicious_count: number;
   readonly benign_count: number;
   readonly overall_recall: number;
@@ -115,9 +118,11 @@ export async function runSkillBenchmark(options?: {
     ? JSON.parse(readFileSync(expectedPath, 'utf-8'))
     : {};
 
-  // Load engine
+  // Load engine. The rule count is reported because per-sample scan cost is
+  // roughly linear in it, so it is the denominator any latency budget for this
+  // benchmark has to be expressed in -- see tests/skill-benchmark.test.ts.
   const engine = new ATREngine({ rulesDir });
-  await engine.loadRules();
+  const ruleCount = await engine.loadRules();
 
   // Run each sample
   const results: SampleResult[] = [];
@@ -205,6 +210,7 @@ export async function runSkillBenchmark(options?: {
   const report: SkillBenchmarkReport = {
     timestamp: new Date().toISOString(),
     corpus_size: results.length,
+    rule_count: ruleCount,
     malicious_count: malicious.length,
     benign_count: benign.length,
     overall_recall: Math.round(recall * 1000) / 1000,
@@ -231,6 +237,64 @@ export async function runSkillBenchmark(options?: {
   writeFileSync(outputPath, JSON.stringify(report, null, 2));
 
   return report;
+}
+
+// ---------------------------------------------------------------------------
+// Measurement adapter (CLI-only — tests call runSkillBenchmark and skip this)
+// ---------------------------------------------------------------------------
+
+/**
+ * Write the standardized version-pinned Measurement file for a SkillBenchmark
+ * report. Separated from runSkillBenchmark so unit tests can exercise the
+ * benchmark logic without mutating data/measurements/ on disk (which would
+ * make the CI 'sync-stats --check' drift gate flake).
+ *
+ * Called from the CLI block at the bottom of this file and from any
+ * external script that wants to persist the measurement. Safe to call
+ * repeatedly the same day — uses force=true.
+ */
+export function writeSkillBenchmarkMeasurement(report: SkillBenchmarkReport): void {
+  writeMeasurement(
+    {
+      source: 'skill-benchmark',
+      source_version: 'internal-498',
+      measured_at: report.timestamp,
+      samples: report.corpus_size,
+      metrics: {
+        recall: report.overall_recall,
+        precision: report.overall_precision,
+        f1: report.overall_f1,
+        fp_rate: report.fp_rate,
+      },
+      confusion: {
+        tp: report.true_positives,
+        fp: report.false_positives,
+        tn: report.true_negatives,
+        fn: report.false_negatives,
+      },
+      latency_ms: {
+        p50: report.avg_latency_ms,
+        p95: report.max_latency_ms,
+        p99: report.max_latency_ms,
+        mean: report.avg_latency_ms,
+        max: report.max_latency_ms,
+      },
+      breakdown: {
+        layers: {
+          a: report.layer_a,
+          b: report.layer_b,
+          c: report.layer_c,
+        },
+        malicious_count: report.malicious_count,
+        benign_count: report.benign_count,
+        expected_rules_accuracy: report.expected_rules_accuracy,
+        category_accuracy: report.category_accuracy,
+      },
+      notes:
+        'Internal 498-sample SKILL.md benchmark. Layer A = obvious payload, Layer B = obfuscated, Layer C = semantic.',
+    },
+    { force: true },
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +360,10 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
   runSkillBenchmark().then((report) => {
     printReport(report);
     console.log(`Report saved to: data/skill-benchmark/benchmark-report.json`);
+    // Write the standardized version-pinned Measurement file. CLI-only —
+    // unit tests call runSkillBenchmark() directly and skip this.
+    writeSkillBenchmarkMeasurement(report);
+    console.log(`Measurement: data/measurements/skill-benchmark/`);
   }).catch((err) => {
     console.error('Benchmark failed:', err);
     process.exit(1);

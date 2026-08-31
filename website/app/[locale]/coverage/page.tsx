@@ -46,6 +46,48 @@ export default async function CoveragePage({ params }: { params: Promise<{ local
         </p>
       </Reveal>
 
+      {/* How to read this */}
+      <Reveal delay={0.25}>
+        <div className="bg-ash border border-fog p-5 md:p-6 mb-8">
+          <div className="font-data text-xs font-medium text-stone tracking-[3px] uppercase mb-3">
+            {locale === "zh" ? "如何解讀這些數字" : "How to read this"}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-graphite leading-[1.7]">
+            {[
+              {
+                name: "PINT (850 samples)",
+                verdict: locale === "zh"
+                  ? "ATR 在 850 個 PINT 格式對抗性樣本（自建語料，來自 deepset + Lakera Gandalf，非 Lakera 官方私有 benchmark）上達到 63.2% 召回率、99.7% 精準度、0.25% FP——代表規則在真實 MCP 流量中幾乎不誤報。"
+                  : "ATR reaches 63.2% recall, 99.7% precision, and 0.25% FP on 850 PINT-format adversarial samples (self-built from deepset + Lakera Gandalf; not Lakera's official private benchmark) — rules rarely fire on legitimate MCP traffic.",
+              },
+              {
+                name: "HackAPrompt (4,780 samples)",
+                verdict: locale === "zh"
+                  ? "ATR 在 4,780 個 HackAPrompt 競賽樣本上達到 66.0% 召回率、100% 精準度，且不誤報。"
+                  : "ATR catches 66.0% of the 4,780 HackAPrompt competition samples at 100% precision, with no false alarms.",
+              },
+              {
+                name: "Self-test (341 samples)",
+                verdict: locale === "zh"
+                  ? "ATR 在 341 個內部自測樣本上達到 89.4% 召回率、100% 精準度、0% FP——這是與 SKILL.md benchmark 分開的獨立語料。"
+                  : "ATR reaches 89.4% recall, 100% precision, and 0% FP on 341 internal self-test samples — a separate corpus from the SKILL.md benchmark.",
+              },
+              {
+                name: "garak (650 in-the-wild / 3,475 full)",
+                verdict: locale === "zh"
+                  ? "ATR 對 garak in-the-wild jailbreak 集（650 個 prompt）達到 98.0% 召回率；對完整 23-probe garak 套件（3,475 個 prompt）為 38.5%。"
+                  : "ATR reaches 98.0% recall on garak's in-the-wild jailbreak set (650 prompts), and 38.5% on the full 23-probe garak suite (3,475 prompts).",
+              },
+            ].map((item) => (
+              <div key={item.name}>
+                <div className="font-data text-xs text-blue font-semibold mb-1">{item.name}</div>
+                <p>{item.verdict}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+
       {/* Summary cards */}
       <Reveal delay={0.3}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-fog mb-12">
@@ -71,7 +113,7 @@ export default async function CoveragePage({ params }: { params: Promise<{ local
       {/* OWASP Agentic Top 10 */}
       <Reveal>
         <h2 className="font-display text-2xl font-extrabold tracking-[-1px] mb-1 mt-12">OWASP Agentic Top 10</h2>
-        <p className="text-sm text-stone mb-6">{coverage.owaspAgenticCovered}/10 {locale === "zh" ? "個類別已覆蓋。" : "categories covered."}</p>
+        <p className="text-sm text-stone mb-6">{coverage.owaspAgenticCovered}/10 {locale === "zh" ? "個類別都有開火的規則——不是打勾，是偵測。" : "categories, each backed by rules that fire — not a checklist, detections."}</p>
       </Reveal>
       <Reveal delay={0.1}>
         <div className="border border-fog">
@@ -126,8 +168,8 @@ export default async function CoveragePage({ params }: { params: Promise<{ local
 
       {/* SAFE-MCP */}
       <Reveal>
-        <h2 className="font-display text-2xl font-extrabold tracking-[-1px] mb-1 mt-12">SAFE-MCP (OpenSSF)</h2>
-        <p className="text-sm text-stone mb-4">{locale === "zh" ? "85 項技術中已覆蓋 78 項（91.8%）。" : "78 of 85 techniques covered (91.8%)."}</p>
+        <h2 className="font-display text-2xl font-extrabold tracking-[-1px] mb-1 mt-12">SAFE-MCP</h2>
+        <p className="text-sm text-stone mb-4">{locale === "zh" ? "85 項 MCP 攻擊技術中，78 項有對應的偵測規則（91.8%）——其餘 7 項是已知缺口，未補的我們直說。對應表正隨類別重整持續校訂。" : "78 of 85 MCP attack techniques are backed by a detection rule (91.8%) — the remaining 7 are known gaps, stated plainly rather than papered over. Mapping is revised continuously as categories are reconciled."}</p>
         <a
           href="https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/docs/SAFE-MCP-MAPPING.md"
           target="_blank"
@@ -141,7 +183,7 @@ export default async function CoveragePage({ params }: { params: Promise<{ local
       {/* MITRE ATLAS */}
       <Reveal>
         <h2 className="font-display text-2xl font-extrabold tracking-[-1px] mb-1 mt-12">MITRE ATLAS</h2>
-        <p className="text-sm text-stone mb-4">{locale === "zh" ? "每條規則的 YAML 中包含 MITRE ATLAS 參照。在規則瀏覽器中依戰術分組。" : "Per-rule MITRE ATLAS references in each rule YAML. Grouped by tactic in the rule explorer."}</p>
+        <p className="text-sm text-stone mb-4">{locale === "zh" ? "每條規則的 YAML 都帶有 MITRE ATLAS 參照——這是 ATR 對六個框架（ATLAS、OWASP Agentic、OWASP LLM、EU AI Act、NIST AI RMF、ISO 42001）逐條對應的一部分。沒有對應的規則進不了 main，由 CI 強制。在規則瀏覽器中依戰術分組。" : "Every rule's YAML carries a MITRE ATLAS reference — part of ATR's per-rule mapping into six frameworks (ATLAS, OWASP Agentic, OWASP LLM, EU AI Act, NIST AI RMF, ISO 42001). A rule with no mapping does not reach main; CI enforces it. Grouped by tactic in the rule explorer."}</p>
         <Link
           href={`/${locale}/rules`}
           className="font-data text-sm text-blue hover:underline"

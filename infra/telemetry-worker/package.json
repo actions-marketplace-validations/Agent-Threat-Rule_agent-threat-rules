@@ -1,0 +1,16 @@
+{
+  "name": "atr-telemetry-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Worker accepting downstream telemetry reports per docs/telemetry-spec.md",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "echo 'no tests yet — manual via wrangler dev + curl'"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "wrangler": "^3.78.0",
+    "typescript": "^5.5.0"
+  }
+}

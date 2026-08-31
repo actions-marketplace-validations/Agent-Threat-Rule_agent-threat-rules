@@ -9,8 +9,10 @@ import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ATREngine } from '../engine.js';
 import type { AgentEvent, ATRMatch, ScanResult, ScanType } from '../types.js';
+import type { Lane } from '../quality/rule-contract.js';
 import { scanResultToSARIF } from '../converters/sarif.js';
 import { createTCReporter } from '../tc-reporter.js';
+import { createSemanticJudgeFromConfig } from './semantic-judge-config.js';
 
 const SEVERITY_ORDER = ['informational', 'low', 'medium', 'high', 'critical'] as const;
 
@@ -35,8 +37,23 @@ export interface ScanOptions {
   readonly sarif?: boolean;
   readonly severity?: string;
   readonly forceType?: ScanType;
+  readonly failOn?: string;
   readonly reportToCloud?: boolean;
   readonly tcUrl?: string;
+  readonly semantic?: boolean;
+  readonly semanticApiKey?: string;
+  readonly semanticBaseUrl?: string;
+  readonly semanticModel?: string;
+  readonly semanticTimeout?: string;
+  readonly semanticNoJsonMode?: boolean;
+  /**
+   * Detection lane (which rule maturities may fire). Undefined means the
+   * engine's built-in default; `src/cli.ts` resolves `--lane` and `ATR_LANE`
+   * and always passes an explicit value, because the engine itself no longer
+   * reads the environment. Scanning never blocks anything, so the blocking
+   * opt-in has no meaning here; only the lane does.
+   */
+  readonly lane?: Lane;
 }
 
 /** Detect whether the target is an MCP event JSON or SKILL.md file/directory. */
@@ -96,13 +113,19 @@ export async function cmdScanUnified(
     console.error(`${DIM}Threat Cloud: anonymous reporting enabled (--no-report to disable)${RESET}`);
   }
 
+  if (options.failOn !== undefined && !SEVERITY_ORDER.includes(options.failOn as typeof SEVERITY_ORDER[number])) {
+    console.error(`${RED}Error: --fail-on must be one of: ${SEVERITY_ORDER.join(', ')}${RESET}`);
+    process.exit(1);
+  }
+
   const scanType = options.forceType ?? detectInputType(targetPath);
 
+  let failHits = 0;
   try {
     if (scanType === 'skill') {
-      await scanSkillFiles(targetPath, rulesDir, options, reporter);
+      failHits = await scanSkillFiles(targetPath, rulesDir, options, reporter);
     } else {
-      await scanMcpEvents(targetPath, rulesDir, options, reporter);
+      failHits = await scanMcpEvents(targetPath, rulesDir, options, reporter);
     }
   } finally {
     // Flush remaining events before exit
@@ -113,6 +136,12 @@ export async function cmdScanUnified(
       }
     }
   }
+
+  // --fail-on: non-zero exit when matches at/above the threshold were found
+  // (lets pre-commit hooks and CI gates actually block on detections)
+  if (failHits > 0) {
+    process.exitCode = 1;
+  }
 }
 
 // ── MCP Event Scan ─────────────────────────────────────────────
@@ -122,7 +151,7 @@ async function scanMcpEvents(
   rulesDir: string,
   options: ScanOptions,
   reporter?: ReturnType<typeof createTCReporter>,
-): Promise<void> {
+): Promise<number> {
   const fileStat = statSync(eventsPath);
   if (fileStat.size > 50 * 1024 * 1024) {
     console.error(`${RED}Error: Events file exceeds 50MB limit${RESET}`);
@@ -139,25 +168,41 @@ async function scanMcpEvents(
     process.exit(1);
   }
 
-  const engine = new ATREngine({ rulesDir, reporter });
+  const semantic = createSemanticJudgeFromScanOptions(options);
+  const engine = new ATREngine({
+    rulesDir,
+    reporter,
+    semanticJudge: semantic.judge,
+    ...(options.lane ? { lane: options.lane } : {}),
+  });
   await engine.loadRules();
+  if (semantic.enabled && !options.json && !options.sarif) {
+    console.error(`${DIM}Semantic judge: enabled for method=semantic rules${RESET}`);
+  }
 
   const minIdx = SEVERITY_ORDER.indexOf(
     (options.severity ?? 'informational') as typeof SEVERITY_ORDER[number],
   );
 
+  const failIdx = options.failOn !== undefined ? SEVERITY_ORDER.indexOf(options.failOn as typeof SEVERITY_ORDER[number]) : -1;
   const allResults: Array<{ event: AgentEvent; result: ScanResult; filtered: ATRMatch[] }> = [];
   let totalThreats = 0;
+  let failHits = 0;
 
   for (const event of events) {
     if (!event.content) continue; // skip malformed events
-    const result = engine.evaluateFull(event, eventsPath);
+    const result = semantic.enabled
+      ? await engine.evaluateFullAsync(event, eventsPath)
+      : engine.evaluateFull(event, eventsPath);
     const filtered = result.matches.filter(
       (m) => SEVERITY_ORDER.indexOf(m.rule.severity) >= minIdx,
     );
     if (filtered.length > 0) {
       allResults.push({ event, result, filtered });
       totalThreats += filtered.length;
+      if (failIdx >= 0) {
+        failHits += filtered.filter((m) => SEVERITY_ORDER.indexOf(m.rule.severity) >= failIdx).length;
+      }
     }
   }
 
@@ -169,7 +214,7 @@ async function scanMcpEvents(
     }));
     const version = process.env['npm_package_version'] ?? '1.0.0';
     console.log(JSON.stringify(scanResultToSARIF(sarifResults, version), null, 2));
-    return;
+    return failHits;
   }
 
   if (options.json) {
@@ -188,14 +233,14 @@ async function scanMcpEvents(
         matches: filtered.map(formatMatchJson),
       })),
     }, null, 2));
-    return;
+    return failHits;
   }
 
   printScanHeader('MCP', events.length, engine.getRuleCount(), totalThreats);
 
   if (totalThreats === 0) {
     console.log(`${GREEN}No threats detected.${RESET}\n`);
-    return;
+    return failHits;
   }
 
   for (const { event, filtered } of allResults) {
@@ -206,6 +251,7 @@ async function scanMcpEvents(
     }
     console.log('');
   }
+  return failHits;
 }
 
 // ── SKILL.md Scan ──────────────────────────────────────────────
@@ -215,7 +261,7 @@ async function scanSkillFiles(
   rulesDir: string,
   options: ScanOptions,
   reporter?: ReturnType<typeof createTCReporter>,
-): Promise<void> {
+): Promise<number> {
   const skillFiles = collectSkillFiles(targetPath);
 
   if (skillFiles.length === 0) {
@@ -223,15 +269,26 @@ async function scanSkillFiles(
     process.exit(1);
   }
 
-  const engine = new ATREngine({ rulesDir, reporter });
+  const semantic = createSemanticJudgeFromScanOptions(options);
+  const engine = new ATREngine({
+    rulesDir,
+    reporter,
+    semanticJudge: semantic.judge,
+    ...(options.lane ? { lane: options.lane } : {}),
+  });
   await engine.loadRules();
+  if (semantic.enabled && !options.json && !options.sarif) {
+    console.error(`${DIM}Semantic judge: enabled for method=semantic rules${RESET}`);
+  }
 
   const minIdx = SEVERITY_ORDER.indexOf(
     (options.severity ?? 'informational') as typeof SEVERITY_ORDER[number],
   );
 
+  const failIdx = options.failOn !== undefined ? SEVERITY_ORDER.indexOf(options.failOn as typeof SEVERITY_ORDER[number]) : -1;
   const allResults: Array<{ file: string; result: ScanResult; filtered: ATRMatch[] }> = [];
   let totalThreats = 0;
+  let failHits = 0;
 
   for (const file of skillFiles) {
     const fileSize = statSync(file).size;
@@ -240,13 +297,18 @@ async function scanSkillFiles(
       continue;
     }
     const content = readFileSync(file, 'utf-8');
-    const result = engine.scanSkillFull(content, file);
+    const result = semantic.enabled
+      ? await engine.scanSkillFullAsync(content, file)
+      : engine.scanSkillFull(content, file);
     const filtered = result.matches.filter(
       (m) => SEVERITY_ORDER.indexOf(m.rule.severity) >= minIdx,
     );
     if (filtered.length > 0) {
       allResults.push({ file, result, filtered });
       totalThreats += filtered.length;
+      if (failIdx >= 0) {
+        failHits += filtered.filter((m) => SEVERITY_ORDER.indexOf(m.rule.severity) >= failIdx).length;
+      }
     }
   }
 
@@ -258,7 +320,7 @@ async function scanSkillFiles(
     }));
     const version = process.env['npm_package_version'] ?? '1.0.0';
     console.log(JSON.stringify(scanResultToSARIF(sarifResults, version), null, 2));
-    return;
+    return failHits;
   }
 
   if (options.json) {
@@ -273,14 +335,14 @@ async function scanSkillFiles(
         matches: filtered.map(formatMatchJson),
       })),
     }, null, 2));
-    return;
+    return failHits;
   }
 
   printScanHeader('SKILL', skillFiles.length, engine.getRuleCount(), totalThreats);
 
   if (totalThreats === 0) {
     console.log(`  ${GREEN}No threats detected.${RESET}\n`);
-    return;
+    return failHits;
   }
 
   for (const { file, filtered } of allResults) {
@@ -291,6 +353,18 @@ async function scanSkillFiles(
     }
     console.log('');
   }
+  return failHits;
+}
+
+function createSemanticJudgeFromScanOptions(options: ScanOptions) {
+  return createSemanticJudgeFromConfig({
+    ...(options.semantic ? { semantic: 'true' } : {}),
+    ...(options.semanticApiKey ? { 'semantic-api-key': options.semanticApiKey } : {}),
+    ...(options.semanticBaseUrl ? { 'semantic-base-url': options.semanticBaseUrl } : {}),
+    ...(options.semanticModel ? { 'semantic-model': options.semanticModel } : {}),
+    ...(options.semanticTimeout ? { 'semantic-timeout': options.semanticTimeout } : {}),
+    ...(options.semanticNoJsonMode ? { 'semantic-no-json-mode': 'true' } : {}),
+  });
 }
 
 // ── Shared Helpers ─────────────────────────────────────────────

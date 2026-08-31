@@ -14,18 +14,46 @@ author: "ATR Community (via NVIDIA garak in-the-wild corpus)"
 date: "2026/04/19"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_agentic:
-    - "ASI01:2026 - Agent Goal Hijack"
+    - "ASI01:2026"
   mitre_atlas:
     - "AML.T0051 - LLM Prompt Injection"
     - "AML.T0054 - LLM Jailbreak"
   research:
     - "https://arxiv.org/abs/2310.04451"
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.7"
+      context: "This rule detects narrative jailbreak attacks that use fictional mode backstories and dual response formatting to bypass safety controls; MS.2.7 requires continuous evaluation of AI system security and resilience against adversarial prompt injection techniques that subvert guardrails."
+      strength: primary
+    - subcategory: "MS.2.6"
+      context: "Jailbreak attempts that solicit 'unrestricted' responses directly threaten the safety posture of the LLM; MS.2.6 requires ongoing assessment of safety risk magnitude, and detections of these narrative bypass patterns provide measurable evidence of safety control circumvention attempts."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "Detection of dual-response jailbreak prompts must trigger mechanisms to block, deactivate, or override the manipulated response path before unsafe content is generated; MG.2.3 mandates these supersede/disengage controls be in place for adversarial prompt scenarios."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the prompt-injection attempt (Narrative Jailbreak with Dual Response Formatting)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the prompt-injection attempt (Narrative Jailbreak with Dual Response Formatting) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the prompt-injection attempt (Narrative Jailbreak with Dual Response Formatting)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the prompt-injection attempt (Narrative Jailbreak with Dual Response Formatting)."
+      strength: secondary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the prompt-injection attempt (Narrative Jailbreak with Dual Response Formatting) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: prompt-injection
   subcategory: narrative-jailbreak

@@ -1,19 +1,22 @@
 {
-  "version": "2.0.5",
-  "generatedAt": "2026-04-19T03:44:38.844Z",
+  "version": "3.5.0",
+  "generatedAt": "2026-06-16T11:05:13.632Z",
   "rules": {
-    "total": 118,
-    "categories": 9,
+    "total": 793,
+    "effective": 786,
+    "inert": 7,
+    "categories": 10,
     "byCategory": {
-      "agent-manipulation": 13,
-      "context-exfiltration": 16,
-      "data-poisoning": 1,
-      "excessive-autonomy": 5,
-      "model-security": 2,
-      "privilege-escalation": 9,
-      "prompt-injection": 36,
-      "skill-compromise": 24,
-      "tool-poisoning": 12
+      "agent-manipulation": 106,
+      "context-exfiltration": 108,
+      "data-poisoning": 6,
+      "excessive-autonomy": 30,
+      "model-abuse": 39,
+      "model-security": 0,
+      "privilege-escalation": 41,
+      "prompt-injection": 219,
+      "skill-compromise": 41,
+      "tool-poisoning": 85
     }
   },
   "ecosystem": {
@@ -21,7 +24,238 @@
     "skillsFlagged": 1302
   },
   "benchmark": {
-    "pintRecall": 0.614190687361419,
-    "pintPrecision": 0.9964028776978417
-  }
+    "pintRecall": 0.6031042128603105,
+    "pintPrecision": 1
+  },
+  "benchmarks": [
+    {
+      "source": "advbench",
+      "source_version": "upstream-2026-06-16",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 520,
+      "recall": 0.021153846153846155,
+      "precision": 1,
+      "f1": 0.04143126177024482,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/advbench/2026-06-16_advbench-upstream-2026-06-16_atr-3-5-0.json"
+    },
+    {
+      "source": "atr-self-test",
+      "source_version": "internal",
+      "atr_version": "3.5.12",
+      "measured_at": "2026-08-15",
+      "samples": 341,
+      "recall": 0.9657320872274143,
+      "precision": 1,
+      "f1": 0.9825673534072901,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/atr-self-test/2026-08-15_atr-self-test-internal_atr-3-5-12.json"
+    },
+    {
+      "source": "autoresearch",
+      "source_version": "internal-1054",
+      "atr_version": "3.0.0-alpha.0",
+      "measured_at": "2026-05-23",
+      "samples": 1054,
+      "recall": 0.150853889943074,
+      "precision": 1,
+      "f1": 0.26215993404781535,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/autoresearch/2026-05-23_autoresearch-internal-1054_atr-3-0-0-alpha-0.json"
+    },
+    {
+      "source": "garak",
+      "source_version": "inthewild-jailbreak-corpus-650",
+      "atr_version": "3.5.12",
+      "measured_at": "2026-08-15",
+      "samples": 650,
+      "recall": 0.9230769230769231,
+      "precision": 1,
+      "f1": 0.9600000000000001,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/garak/2026-08-15_garak-inthewild-jailbreak-corpus-650_atr-3-5-12.json"
+    },
+    {
+      "source": "garak-full",
+      "source_version": "23-families",
+      "atr_version": "3.5.12",
+      "measured_at": "2026-08-15",
+      "samples": 3475,
+      "recall": 0.5717985611510792,
+      "precision": 1,
+      "f1": 0.7275723178322959,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/garak-full/2026-08-15_garak-full-23-families_atr-3-5-12.json"
+    },
+    {
+      "source": "hackaprompt",
+      "source_version": "v1",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 4780,
+      "recall": 0.6960251046025104,
+      "precision": 1,
+      "f1": 0.8207721721968669,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/hackaprompt/2026-06-16_hackaprompt-v1_atr-3-5-0.json"
+    },
+    {
+      "source": "harmbench",
+      "source_version": "upstream-2026-06-16",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 400,
+      "recall": 0.0275,
+      "precision": 1,
+      "f1": 0.0535279805352798,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/harmbench/2026-06-16_harmbench-upstream-2026-06-16_atr-3-5-0.json"
+    },
+    {
+      "source": "hh-rlhf",
+      "source_version": "snapshot-2026-04",
+      "atr_version": "3.5.11",
+      "measured_at": "2026-08-05",
+      "samples": 4957,
+      "recall": 0.014726649182973573,
+      "precision": 1,
+      "f1": 0.029025844930417495,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/hh-rlhf/2026-08-05_hh-rlhf-snapshot-2026-04_atr-3-5-11.json"
+    },
+    {
+      "source": "jailbreakbench",
+      "source_version": "upstream-2026-06-16",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 100,
+      "recall": 0.06,
+      "precision": 1,
+      "f1": 0.11320754716981131,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/jailbreakbench/2026-06-16_jailbreakbench-upstream-2026-06-16_atr-3-5-0.json"
+    },
+    {
+      "source": "llm-guard",
+      "source_version": "corpus-2026-05-12",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 44,
+      "recall": 0.7727272727272727,
+      "precision": 1,
+      "f1": 0.8717948717948718,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/llm-guard/2026-06-16_llm-guard-corpus-2026-05-12_atr-3-5-0.json"
+    },
+    {
+      "source": "mitre-atlas",
+      "source_version": "snapshot-2026-04",
+      "atr_version": "3.5.11",
+      "measured_at": "2026-08-05",
+      "samples": 182,
+      "recall": 0.3901098901098901,
+      "precision": 1,
+      "f1": 0.5612648221343873,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/mitre-atlas/2026-08-05_mitre-atlas-snapshot-2026-04_atr-3-5-11.json"
+    },
+    {
+      "source": "nemo-guardrails",
+      "source_version": "corpus-2026-05-12",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 6,
+      "recall": 1,
+      "precision": 1,
+      "f1": 1,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/nemo-guardrails/2026-06-16_nemo-guardrails-corpus-2026-05-12_atr-3-5-0.json"
+    },
+    {
+      "source": "owasp-llm-top10",
+      "source_version": "snapshot-2026-04",
+      "atr_version": "3.5.11",
+      "measured_at": "2026-08-05",
+      "samples": 56,
+      "recall": 0.16071428571428573,
+      "precision": 1,
+      "f1": 0.27692307692307694,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/owasp-llm-top10/2026-08-05_owasp-llm-top10-snapshot-2026-04_atr-3-5-11.json"
+    },
+    {
+      "source": "pint",
+      "source_version": "v1",
+      "atr_version": "3.5.12",
+      "measured_at": "2026-08-15",
+      "samples": 850,
+      "recall": 0.6541019955654102,
+      "precision": 1,
+      "f1": 0.7908847184986595,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/pint/2026-08-15_pint-v1_atr-3-5-12.json"
+    },
+    {
+      "source": "promptbench",
+      "source_version": "snapshot-2026-04",
+      "atr_version": "3.5.11",
+      "measured_at": "2026-08-05",
+      "samples": 3280,
+      "recall": 0.15701219512195122,
+      "precision": 1,
+      "f1": 0.27140974967061926,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/promptbench/2026-08-05_promptbench-snapshot-2026-04_atr-3-5-11.json"
+    },
+    {
+      "source": "promptfoo",
+      "source_version": "corpus-2026-05-12",
+      "atr_version": "3.5.0",
+      "measured_at": "2026-06-16",
+      "samples": 44,
+      "recall": 0.9772727272727273,
+      "precision": 1,
+      "f1": 0.9885057471264368,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/promptfoo/2026-06-16_promptfoo-corpus-2026-05-12_atr-3-5-0.json"
+    },
+    {
+      "source": "promptinject",
+      "source_version": "snapshot-2026-04",
+      "atr_version": "3.5.11",
+      "measured_at": "2026-08-05",
+      "samples": 1080,
+      "recall": 1,
+      "precision": 1,
+      "f1": 1,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/promptinject/2026-08-05_promptinject-snapshot-2026-04_atr-3-5-11.json"
+    },
+    {
+      "source": "skill-benchmark",
+      "source_version": "internal-498",
+      "atr_version": "3.5.12",
+      "measured_at": "2026-08-15",
+      "samples": 498,
+      "recall": 1,
+      "precision": 0.97,
+      "f1": 0.985,
+      "fp_rate": 0.002,
+      "measurement_file": "data/measurements/skill-benchmark/2026-08-15_skill-benchmark-internal-498_atr-3-5-12.json"
+    },
+    {
+      "source": "wild-scan",
+      "source_version": "corpus-2026-04-14",
+      "atr_version": "2.0.0",
+      "measured_at": "2026-04-14",
+      "samples": 96096,
+      "recall": 0,
+      "precision": 0.5768049155145929,
+      "f1": 0,
+      "fp_rate": 0,
+      "measurement_file": "data/measurements/wild-scan/2026-04-14_wild-scan-corpus-2026-04-14_atr-2-0-0.json"
+    }
+  ],
+  "benchmarks_generated_at": "2026-08-15T10:07:07.836Z"
 }

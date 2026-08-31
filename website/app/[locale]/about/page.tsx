@@ -1,4 +1,5 @@
 import { Reveal } from "@/components/Reveal";
+import { loadSiteStats } from "@/lib/stats";
 import { locales, type Locale } from "@/lib/i18n";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -73,8 +74,8 @@ const MILESTONES: Milestone[] = [
       zh: "大規模惡意軟體行動研究發布",
     },
     detail: {
-      en: "Scanned 96,096 skills across five registries. Documented 751 malicious skills from three coordinated threat actors. Notified NousResearch via issue #9809.",
-      zh: "跨五個 registry 掃描 96,096 個 skill，記錄 751 個惡意 skill 與三個協同行為者，透過 issue #9809 通報 NousResearch。",
+      en: "Scanned 96,096 skills across five registries. Documented malicious skills from three coordinated threat actors (552 confirmed on the live blacklist). Notified NousResearch via issue #9809.",
+      zh: "跨五個 registry 掃描 96,096 個 skill，記錄三個協同行為者的惡意 skill（即時黑名單已確認 552 個），透過 issue #9809 通報 NousResearch。",
     },
   },
   {
@@ -88,6 +89,94 @@ const MILESTONES: Milestone[] = [
       zh: "113 條偵測規則，跨 8 個類別。完整對照 MITRE ATLAS、OWASP Agentic、OWASP LLM、OWASP AST。",
     },
   },
+  {
+    date: "2026-04-21",
+    title: {
+      en: "v2.0.11 · NVIDIA garak coverage",
+      zh: "v2.0.11 · NVIDIA garak 覆蓋",
+    },
+    detail: {
+      en: "193 new rules covering the full NVIDIA garak probe corpus (311 total). garak in-the-wild jailbreak subset recall: 97.1% (646/666) at the time.",
+      zh: "新增 193 條規則，涵蓋完整 NVIDIA garak probe corpus（總計 311 條）。garak in-the-wild jailbreak 子集召回率（當時）：97.1%（646/666）。",
+    },
+  },
+  {
+    date: "2026-04-22",
+    title: {
+      en: "Cisco AI Defense production rollout (PR #99)",
+      zh: "Cisco AI Defense production 上線 (PR #99)",
+    },
+    detail: {
+      en: "Follow-up production PR after the 34-rule PoC. Lands the full ATR rule pack inside Cisco AI Defense's skill-scanner. ATR now ships in two Cisco production paths: rule-packs CLI and skill-scanner.",
+      zh: "34 條 PoC 之後的 production 跟進 PR,把完整 ATR 規則集送進 Cisco AI Defense 的 skill-scanner。ATR 同時走兩條 Cisco production 路徑:rule-packs CLI + skill-scanner。",
+    },
+  },
+  {
+    date: "2026-04-26",
+    title: {
+      en: "Microsoft AGT 287-rule expansion + weekly auto-sync (PR #1277)",
+      zh: "Microsoft AGT 287 條規則擴張 + 每週自動同步 (PR #1277)",
+    },
+    detail: {
+      en: "Follow-up to PR #908's 15-rule PoC. Adds 272 more rules (287 total) and a workflow that auto-syncs ATR upstream releases every week. First standards-grade auto-sync pipeline.",
+      zh: "PR #908 (15 條 PoC) 的 production 跟進。新增 272 條規則 (合計 287 條),並加上每週自動同步 ATR 上游釋出版本的 workflow。第一條標準級自動同步管線。",
+    },
+  },
+  {
+    date: "2026-05-10",
+    title: {
+      en: "MISP / CIRCL taxonomy + galaxy merged",
+      zh: "MISP / CIRCL taxonomy + galaxy 合併",
+    },
+    detail: {
+      en: "Alexandre Dulaunoy (CIRCL) merged ATR rule-ID taxonomy (misp-taxonomies #323) and threat-intel galaxy (misp-galaxy #1207) into MISP's core distribution. First neutral standards-body adoption.",
+      zh: "Alexandre Dulaunoy (CIRCL) 把 ATR rule-ID taxonomy (misp-taxonomies #323) 跟 threat-intel galaxy (misp-galaxy #1207) 合進 MISP 主分發。第一個中立標準機構採用。",
+    },
+  },
+  {
+    date: "2026-05-11",
+    title: {
+      en: "OWASP Agent Security Regression Harness (#74) + Gen Digital Sage (#33) both merged",
+      zh: "OWASP Agent Security Regression Harness (#74) 與 Gen Digital Sage (#33) 同日合併",
+    },
+    detail: {
+      en: "OWASP Foundation's regression-harness project references ATR as its canonical agent-threat detection ruleset (PR #74, merged by Mert Satilmaz). On the same day, Gen Digital (Norton / Avast / LifeLock parent) merged the full ATR rule pack into the Sage agentic-AI risk-scoring layer (PR #33).",
+      zh: "OWASP Foundation 的 regression-harness 專案把 ATR 列為標準 agent-threat 偵測 ruleset (PR #74, Mert Satilmaz 合併)。同一天,Gen Digital (Norton / Avast / LifeLock 母集團) 把完整 ATR 規則集合進 Sage agentic-AI 風險評分層 (PR #33)。",
+    },
+  },
+  {
+    date: "2026-05-22",
+    title: {
+      en: "ATR website standards-form rewrite",
+      zh: "ATR 官網標準體裁重寫",
+    },
+    detail: {
+      en: "Hero, footer, and information architecture rewritten to match peer-format positioning (Sigma / YARA / ATT&CK / NIST AI RMF). Integration intake pipeline shipped: structured issue form, auto-triage workflow, ADOPTERS.md as machine-readable source of truth.",
+      zh: "Hero、footer、資訊架構全面改寫為標準體裁,與 Sigma / YARA / ATT&CK / NIST AI RMF 對齊。Integration intake 管線上線:結構化 issue form、自動 triage workflow、ADOPTERS.md 作為機器可讀來源。",
+    },
+  },
+  {
+    date: "2026-06",
+    title: {
+      en: "v3.5.0 · detection lanes ship",
+      zh: "v3.5.0 · 偵測車道上線",
+    },
+    detail: {
+      en: "v3.5.0 (652 rules at release) introduced detection lanes (enforce / alert / hunt) — maturity-driven precision, with false-positive rates reported per lane rather than as a single figure.",
+      zh: "v3.5.0（發布時 652 條規則）引入偵測車道(enforce / alert / hunt)——以成熟度驅動精確度,誤報率逐車道揭露,而非用單一數字概括。",
+    },
+  },
+  {
+    date: "2026-07",
+    title: {
+      en: "Adoption re-verified · auto-publish flywheel",
+      zh: "採用全面現驗 · 自動發布飛輪",
+    },
+    detail: {
+      en: "Every adopter PR state re-verified against GitHub — new shipped integrations recorded across FINOS, SigmaHQ, rulezet/CIRCL, AMD GAIA, and AG2. The crystallization flywheel now auto-publishes new rules to npm on merge; rule count, spec version, and the adopter wall on this site are all rebuilt from repo state at deploy time.",
+      zh: "所有採用者 PR 狀態對 GitHub 全面現驗——FINOS、SigmaHQ、rulezet/CIRCL、AMD GAIA、AG2 等新出貨整合入列。結晶飛輪已在 merge 時自動發布新規則到 npm;本站的規則數、規範版本、採用者牆全部在部署時從 repo 狀態重建。",
+    },
+  },
 ];
 
 export default async function AboutPage({
@@ -98,6 +187,7 @@ export default async function AboutPage({
   const { locale: rawLocale } = await params;
   const locale = (locales.includes(rawLocale as Locale) ? rawLocale : "en") as Locale;
   const zh = locale === "zh";
+  const ruleCount = loadSiteStats().ruleCount;
 
   return (
     <div className="pt-20 pb-20 px-5 md:px-6 max-w-[860px] mx-auto">
@@ -133,6 +223,16 @@ export default async function AboutPage({
           {zh
             ? "規則以 MIT 授權公開，YAML 格式儲存於 GitHub。任何人都可以整合、修改、或貢獻回上游。沒有付費功能，沒有廠商鎖定。"
             : "Rules are published under MIT license in YAML format on GitHub. Anyone may integrate, modify, or contribute upstream. There are no paid features. There is no vendor lock-in."}
+        </p>
+        <p className="text-sm md:text-base text-graphite leading-[1.8] mt-4">
+          {zh
+            ? <>標準由社群驅動，並透過每日自動結晶飛輪持續擴張——紅隊大掃描與 CVE 攝取兩條管線各自跑完完整 sweep，把規則集從 462 條長到 {ruleCount} 條。</>
+            : <>The standard is community-driven and grows through daily auto-crystallization flywheels — a red-team mega-scan pipeline and a CVE-ingestion pipeline each ran full sweeps, expanding the ruleset from 462 to {ruleCount} rules.</>}
+        </p>
+        <p className="text-sm md:text-base text-graphite leading-[1.8] mt-4">
+          {zh
+            ? "但成長從不是目的——對精確度誠實才是。v3.5.0 引入偵測車道:每條規則標明成熟度,使用者自己決定要信任到什麼程度。enforce 車道只讓最成熟的規則開火(在 65,000 筆良性語料上約 0.24% 誤報);預設的 hunt 車道把全部規則當建議性訊號跑(約 9%)。ATR 逐車道揭露誤報率,從不用單一個好看的數字一概而論。一個標準的可信度,取決於它願不願意公開自己最差的數字。"
+            : "But growth was never the point — honesty about precision is. The v3.5.0 release introduced detection lanes: every rule declares a maturity, and the consumer decides how far to trust it. The enforce lane fires only the most mature rules (~0.24% false positives on a 65,000-sample benign corpus); the default hunt lane runs everything as advisory (~9%). ATR reports false-positive rates lane by lane, never as a single flattering number. A standard earns trust by publishing its worst figure, not hiding it."}
         </p>
       </Section>
 
@@ -196,8 +296,8 @@ export default async function AboutPage({
         </p>
         <p className="text-sm md:text-base text-graphite leading-[1.8] mt-4">
           {zh
-            ? "目前的外部貢獻來自 Cisco AI Defense（PR #79，34 條規則）與 Microsoft AGT（PR #908，15 條規則）工程師——這種「企業把鞋帶綁緊就提 PR」的採用模式，是 ATR 想要的治理質感。"
-            : "External contributions to date come from engineers at Cisco AI Defense (PR #79, 34 rules) and Microsoft AGT (PR #908, 15 rules). This pattern — enterprises integrating via pull request instead of private forks — is the governance texture ATR is built for."}
+            ? "目前的外部採用包含兩條生產環境部署(Cisco AI Defense 完整規則集進 skill-scanner、Microsoft AGT 287 條規則加每週自動同步),外加 Gen Digital Sage 已合併的規則包,兩個標準機構已合併(MISP/CIRCL 的 taxonomies #323 + galaxy #1207、OWASP A-S-R-H #74),以及兩條送審中的 standards-body 提案(NIST AI RMF 社群 OSCAL catalog 已自 publish · usnistgov/oscal-content#338 協作分支審查中,非 NIST 背書;OpenTelemetry GenAI SIG 的 agent.threat.detection.* PR #165 review 中)——這種「企業把鞋帶綁緊就提 PR」的採用模式,是 ATR 想要的治理質感。"
+            : "External adoption to date includes two in production (Cisco AI Defense's full rule pack in skill-scanner, Microsoft AGT's 287 rules plus weekly auto-sync) plus Gen Digital's merged Sage pack; two standards-body integrations actually merged (MISP / CIRCL taxonomies #323 + galaxy #1207, and OWASP A-S-R-H #74); and two standards-body submissions in review (a community-authored OSCAL catalog for NIST AI RMF self-published by the ATR maintainers, with usnistgov/oscal-content#338 collaboration branch in review — not a NIST endorsement; and the agent.threat.detection.* semantic-conventions PR #165 in OpenTelemetry GenAI SIG review). This pattern — enterprises integrating via pull request instead of private forks — is the governance texture ATR is built for."}
         </p>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2">
           <a

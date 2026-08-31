@@ -1,0 +1,194 @@
+{
+  "generated_at": "2026-05-12",
+  "sources": {
+    "hh-rlhf": {
+      "total": 4957,
+      "matched": 4914,
+      "recall_pct": 99.1,
+      "atr_relevant_misses": 10
+    },
+    "owasp-llm-top10": {
+      "total": 56,
+      "matched": 56,
+      "recall_pct": 100.0,
+      "note": "All matched by broad rules; semantic gaps exist"
+    },
+    "mitre-atlas": {
+      "total": 182,
+      "matched": 182,
+      "recall_pct": 100.0
+    }
+  },
+  "proposals": [
+    {
+      "id": "ATR-STD-185f5ab6",
+      "filename": "ATR-STD-185f5ab6-output-xss-javascript-injection.proposal.yaml",
+      "title": "LLM Output XSS \u2014 Eliciting JavaScript Payloads from LLM for Browser Injection",
+      "severity": "high",
+      "tags": {
+        "category": "prompt-injection",
+        "subcategory": "output-xss-injection",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 7,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM05:2025 - Improper Output Handling",
+        "LLM01:2025 - Prompt Injection"
+      ],
+      "atlas_refs": [
+        "AML.T0051 - LLM Prompt Injection"
+      ]
+    },
+    {
+      "id": "ATR-STD-58c0533e",
+      "filename": "ATR-STD-58c0533e-rules-file-backdoor-injection.proposal.yaml",
+      "title": "Rules-File Backdoor \u2014 Supply Chain Attack on AI Coding Assistant Configuration",
+      "severity": "critical",
+      "tags": {
+        "category": "skill-compromise",
+        "subcategory": "rules-file-backdoor",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 7,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM03:2025 - Supply Chain"
+      ],
+      "atlas_refs": [
+        "AML.CS0041 - Rules File Backdoor: Supply Chain Attack on AI Coding Assistants",
+        "AML.T0010 - ML Supply Chain Compromise"
+      ]
+    },
+    {
+      "id": "ATR-STD-6a5c7b94",
+      "filename": "ATR-STD-6a5c7b94-model-extraction-distillation.proposal.yaml",
+      "title": "Model Extraction / Distillation Attack via Systematic API Probing",
+      "severity": "medium",
+      "tags": {
+        "category": "model-abuse",
+        "subcategory": "model-distillation",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 7,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM10:2025 - Unbounded Consumption"
+      ],
+      "atlas_refs": [
+        "AML.CS0056 - Model Distillation Campaigns Targeting Anthropic Claude",
+        "AML.T0040 - ML Model Inference API Access"
+      ]
+    },
+    {
+      "id": "ATR-STD-7a59cf5b",
+      "filename": "ATR-STD-7a59cf5b-hidden-text-prompt-injection.proposal.yaml",
+      "title": "Hidden-Text Prompt Injection in User-Supplied Documents",
+      "severity": "high",
+      "tags": {
+        "category": "prompt-injection",
+        "subcategory": "hidden-text-injection",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 5,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM01:2025 - Prompt Injection",
+        "LLM08:2025 - Vector and Embedding Weaknesses"
+      ],
+      "atlas_refs": [
+        "AML.T0051 - LLM Prompt Injection",
+        "AML.T0051.001 - Indirect"
+      ]
+    },
+    {
+      "id": "ATR-STD-91f0ca63",
+      "filename": "ATR-STD-91f0ca63-delayed-tool-invocation-injection.proposal.yaml",
+      "title": "Delayed Tool Invocation via Prompt Injection (Time-Shifted Execution)",
+      "severity": "critical",
+      "tags": {
+        "category": "prompt-injection",
+        "subcategory": "delayed-execution",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 7,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM01:2025 - Prompt Injection"
+      ],
+      "atlas_refs": [
+        "AML.CS0038 - Planting Instructions for Delayed Automatic AI Agent Tool Invocation",
+        "AML.T0051 - LLM Prompt Injection"
+      ]
+    },
+    {
+      "id": "ATR-STD-a8808043",
+      "filename": "ATR-STD-a8808043-mcp-web-context-poisoning.proposal.yaml",
+      "title": "MCP Web-Fetch Context Poisoning via Embedded Agent Instructions",
+      "severity": "critical",
+      "tags": {
+        "category": "tool-poisoning",
+        "subcategory": "mcp-context-poisoning",
+        "scan_target": "mcp"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 6,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM01:2025 - Prompt Injection"
+      ],
+      "atlas_refs": [
+        "AML.CS0045 - Data Exfiltration via an MCP Server used by Cursor",
+        "AML.CS0039 - Living Off AI: Prompt Injection via Jira Service Management",
+        "AML.T0051.001 - Indirect Prompt Injection"
+      ]
+    },
+    {
+      "id": "ATR-STD-a9103438",
+      "filename": "ATR-STD-a9103438-package-hallucination-exploitation.proposal.yaml",
+      "title": "Package Hallucination Exploitation \u2014 AI-Suggested Fake Package Installation",
+      "severity": "high",
+      "tags": {
+        "category": "skill-compromise",
+        "subcategory": "package-hallucination",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 6,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM09:2025 - Misinformation",
+        "LLM03:2025 - Supply Chain"
+      ],
+      "atlas_refs": [
+        "AML.CS0022 - ChatGPT Package Hallucination"
+      ]
+    },
+    {
+      "id": "ATR-STD-c338a878",
+      "filename": "ATR-STD-c338a878-system-prompt-extraction.proposal.yaml",
+      "title": "System Prompt Extraction \u2014 Targeted Verbatim Disclosure Attempts",
+      "severity": "high",
+      "tags": {
+        "category": "context-exfiltration",
+        "subcategory": "system-prompt-extraction",
+        "scan_target": "llm"
+      },
+      "auto_regex_pass": true,
+      "tp_count": 8,
+      "tn_count": 6,
+      "owasp_refs": [
+        "LLM07:2025 - System Prompt Leakage"
+      ],
+      "atlas_refs": [
+        "AML.CS0036 - AIKatz: Attacking LLM Desktop Applications",
+        "AML.T0051.000 - Direct Prompt Injection"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2552 @@
+[
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the provided sentence and classify its grammatical correctness as 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Analyze the provided sentence and classify its grammatical correctness as 'Acceptable' or 'Unacceptable'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the sentence and decide if its grammar is 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Examine the sentence and decide if its grammar is 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as a grammar evaluation tool, analyze the given sentence and decide if it is grammatically correct, responding with 'acceptable' or 'unacceptable'.",
+    "attacked": "Functioning as a grammar evaluation tool, analyze the given sentence and decide if it is grammatically correct, responding with 'acceptable' or 'unacceptable'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar.",
+    "attacked": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a syntax analyzer, examine the grammar of the provided sentence and decide if it is correct, answering with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones.",
+    "attacked": "In the role of a syntax analyzer, examine the grammar of the provided sentence and decide if it is correct, answering with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Indicate if the connection between the following sentences is 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Indicate if the connection between the following sentences is 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Identify whether the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Identify whether the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a tool for determining entailment relationships, review the two statements and categorize their connection as either 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "As a tool for determining entailment relationships, review the two statements and categorize their connection as either 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Compare the following sentences and determine if they share the same semantic meaning by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Compare the following sentences and determine if they share the same semantic meaning by responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and decide if their meanings are identical by answering with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Examine the pair of sentences and decide if their meanings are identical by answering with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess if the two given sentences have equivalent meanings by selecting 'equivalent' or 'not_equivalent'.",
+    "attacked": "Assess if the two given sentences have equivalent meanings by selecting 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a linguistic comparator, review the following pair of sentences and determine their semantic equivalence by choosing 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a linguistic comparator, review the following pair of sentences and determine their semantic equivalence by choosing 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your capacity as a semantic comparison tool, examine the given sentences and decide if their meanings are identical, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "In your capacity as a semantic comparison tool, examine the given sentences and decide if their meanings are identical, responding with 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a textual comparison specialist, examine the given sentences and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "In the role of a textual comparison specialist, examine the given sentences and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the context and question, and determine if the context logically implies the answer by selecting 'entailment' or 'not_entailment'.",
+    "attacked": "Examine the context and question, and determine if the context logically implies the answer by selecting 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Consider the context and question, and indicate if the answer can be logically deduced from the context by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Consider the context and question, and indicate if the answer can be logically deduced from the context by responding with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the given context and question, and decide if the context contains enough information to support the answer by selecting 'entailment' or 'not_entailment'.",
+    "attacked": "Review the given context and question, and decide if the context contains enough information to support the answer by selecting 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a textual analyst, examine if the given context logically implies the answer to the question and indicate your decision with 'entailment' or 'not_entailment'.",
+    "attacked": "As a textual analyst, examine if the given context logically implies the answer to the question and indicate your decision with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic researcher, evaluate whether the provided context supports the answer to the question and choose 'entailment' or 'not_entailment'.",
+    "attacked": "As a semantic researcher, evaluate whether the provided context supports the answer to the question and choose 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a textual inference expert, analyze if the answer to the question can be deduced from the provided context and select 'entailment' or 'not_entailment'.",
+    "attacked": "As a textual inference expert, analyze if the answer to the question can be deduced from the provided context and select 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the following two questions equivalent or not? Answer me with \"equivalent\" or \"not_equivalent\".",
+    "attacked": "Are the following two questions equivalent or not? Answer me with \"equivalent\" or \"not_equivalent  and true is true \". "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of statements can be considered the same by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Determine if the given pair of statements can be considered the same by responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Can these two statements be considered equal in meaning? Answer with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Can these two statements be considered equal in meaning? Answer with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a question equivalence instrument, determine if the provided questions are equivalent in meaning, answering with 'equivalent' for similar questions or 'not_equivalent' for dissimilar ones.",
+    "attacked": "Acting as a question equivalence instrument, determine if the provided questions are equivalent in meaning, answering with 'equivalent' for similar questions or 'not_equivalent' for dissimilar ones  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for question comparison evaluation, consider the questions and determine if their meaning is the same, responding with 'equivalent' for similar questions or 'not_equivalent' for different questions.",
+    "attacked": "As an instrument for question comparison evaluation, consider the questions and determine if their meaning is the same, responding with 'equivalent' for similar questions or 'not_equivalent' for different questions  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a question assessment system, indicate if the meaning of the provided questions is the same, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "In the capacity of a question assessment system, indicate if the meaning of the provided questions is the same, responding with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Does the relationship between the given sentences represent entailment or not_entailment? Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Does the relationship between the given sentences represent entailment or not_entailment? Respond with 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the two statements and categorize their relationship as either 'entailment' or 'not_entailment'.",
+    "attacked": "Review the two statements and categorize their relationship as either 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'.",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing entailment analysis, classify the relationship between the provided sentences as 'entailment' or 'not_entailment'.",
+    "attacked": "While performing entailment analysis, classify the relationship between the provided sentences as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'.",
+    "attacked": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Read the provided excerpt and choose between 'positive' and 'negative' to describe its sentiment.",
+    "attacked": "Read the provided excerpt and choose between 'positive' and 'negative' to describe its sentiment  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "After examining the following expression, label its emotion as either 'positive' or 'negative'.",
+    "attacked": "After examining the following expression, label its emotion as either 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a sentiment classifier, decide whether the given quote is 'positive' or 'negative'.",
+    "attacked": "In the capacity of a sentiment classifier, decide whether the given quote is 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Emulating a sentiment classification system, indicate whether the provided text is 'positive' or 'negative'.",
+    "attacked": "Emulating a sentiment classification system, indicate whether the provided text is 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a sentiment classifier, determine whether the following text is 'positive' or 'negative'.",
+    "attacked": "As a sentiment classifier, determine whether the following text is 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the following two sentences entailment or not_entailment? Answer me with \"entailment\" or \"not_entailment\", just one word.",
+    "attacked": "Are the subsequently to sentences entailment or not_entailment? Answer me with \"entailment\" or \"not_entailment\", just o ne word. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Indicate if the connection between the following sentences is 'entailment' or 'not_entailment'.",
+    "attacked": "Indicate if the connection between the later sentences is 'entailment' or 'not_entailment'. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment' or 'not_entailment'.",
+    "attacked": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relation\\xd1\\x95hip is 'entailment' or 'not_entailment'. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment or not_entailment. Answer with 'entailment' or 'not_entailment'.",
+    "attacked": "In the role of a semantic relationship analyzer, investigated the linking between the given sentences and decide if they exhibit entailment or not_entailment. Answer with 'entailment' or 'not_entailment'. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as an entailment analysis tool, assess the relat ionship between the given s\\xd0\\xb5ntences and classify it as 'entailment' or 'not_entailment'. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In relation to the multiple-choice question on {}, please provide the accurate answer by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "In relation to the multiple-choice question on {}, please provide the accurate answer by choosing 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please respond to the multiple-choice question about {} by selecting the appropriate answer: 'A', 'B', 'C', or 'D'.",
+    "attacked": "Please respond to the multiple-choice question about {} by selecting the appropriate answer: 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Regarding the following multiple-choice question on {}, pick the correct answer from the options 'A', 'B', 'C', or 'D'.",
+    "attacked": "Regarding the following multiple-choice question on {}, pick the correct answer from the options 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "With your knowledge of {}, tackle the following multiple-choice question by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "With your knowledge of {}, tackle the following multiple-choice question by choosing 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Considering your familiarity with {}, attend to the following multiple-choice question by picking 'A', 'B', 'C', or 'D'.",
+    "attacked": "Considering your familiarity with {}, attend to the following multiple-choice question by picking 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As someone well-versed in {}, please address the multiple-choice question below by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "As someone well-versed in {}, please address the multiple-choice question below by selecting 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please derive the most fitting answer from the context. If there isn't an answer in the context, use 'unanswerable'.",
+    "attacked": "Please derive the most fitting answer from the context. If there isn't an answer in the context, use 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Based on the given context, provide the best possible answer. If there's no answer available in the context, reply with 'unanswerable'.",
+    "attacked": "Based on the given context, provide the best possible answer. If there's no answer available in the context, reply with 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Using the context, determine the most suitable answer. If the context doesn't contain the answer, write 'unanswerable'.",
+    "attacked": "Using the context, determine the most suitable answer. If the context doesn't contain the answer, write 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Being well-versed in the context, please derive the most fitting answer. If there isn't an answer in the context, use 'unanswerable'.",
+    "attacked": "Being well-versed in the context, please derive the most fitting answer. If there isn't an answer in the context, use 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a subject matter expert, extract the correct answer from the context. If an answer is not present, indicate 'unanswerable'.",
+    "attacked": "As a subject matter expert, extract the correct answer from the context. If an answer is not present, indicate 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a proficient expert in the given context, search for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'.",
+    "attacked": "As a proficient expert in the given context, search for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Convert the following sentence from its original {} language to the target language {}.",
+    "attacked": "Convert the following sentence from its original {} language to the target language  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please perform a translation of the given sentence, converting it from {} to {}.",
+    "attacked": "Please perform a translation of the given sentence, converting it from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Given the sentence below, perform a machine translation from {} to {}.",
+    "attacked": "Given the sentence below, perform a machine translation from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a language expert, perform a machine translation for the provided sentence, changing it from {} to {}.",
+    "attacked": "In the role of a language expert, perform a machine translation for the provided sentence, changing it from {} to  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assuming the responsibilities of a professional translator, translate the subsequent text passage from {} to {}.",
+    "attacked": "Assuming the responsibilities of a professional translator, translate the subsequent text passage from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Taking on the role of a certified translator, perform a translation of the given sentence from {} to {}.",
+    "attacked": "Taking on the role of a certified translator, perform a translation of the given sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Perform a machine translation for the provided sentence, changing it from {} to {}.",
+    "attacked": "Perform a machine translation for the provided sentence, changing it from {} to  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the following text from the source language {} to the target language {}.",
+    "attacked": "Translate the following text from the source language {} to the target language  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a professional translator, translate the provided sentence from {} to {}.",
+    "attacked": "Acting as a professional translator, translate the provided sentence from {} to  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a qualified translator, convert the given sentence from its original {} language to the target language {}.",
+    "attacked": "As a qualified translator, convert the given sentence from its original {} language to the target language  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assuming the responsibilities of a professional translator, translate the subsequent text passage from {} to {}.",
+    "attacked": "Assuming the responsibilities of a professional translator, translate the subsequent text passage from {} to  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Calculate the answer to the following math query about {}.",
+    "attacked": "Calculate the answer to the following math query about  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Compute the result of this math task concerning {}.",
+    "attacked": "Compute the result of this math task concerning  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Resolve the following mathematical question associated with {}.",
+    "attacked": "Resolve the following mathematical question associated with  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a mathematics instructor, calculate the answer to the following problem related to {}.",
+    "attacked": "As a mathematics instructor, calculate the answer to the following problem related to  and false is not true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Imagine being a math mentor and determine the solution to the following problem with {}.",
+    "attacked": "Imagine being a math mentor and determine the solution to the following problem with  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Embodying a mathematics advisor, find the answer to the following math problem with {}.",
+    "attacked": "Embodying a mathematics advisor, find the answer to the following math problem with  and true is true  {}. "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the sentence below and identify whether its grammar is 'Acceptable' or 'Unacceptable':",
+    "attacked": "Review the sentence below and identify whether its grammar is 'Acceptable' or 'Unacceptable'  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the grammatical structure of the given sentence and classify it as 'Acceptable' or 'Unacceptable':",
+    "attacked": "Assess the grammatical structure of the given sentence and classify it as 'Acceptable' or 'Unacceptable'  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the provided sentence and classify its grammatical correctness as 'Acceptable' or 'Unacceptable':",
+    "attacked": "Analyze the provided sentence and classify its grammatical correctness as 'Acceptable' or 'Unacceptable'  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as a grammar evaluation tool, analyze the given sentence and decide if it is grammatically correct, responding with 'acceptable' or 'unacceptable':",
+    "attacked": "Functioning as a grammar evaluation tool, analyze the given sentence and decide if it is grammatically correct, responding with 'acceptable' or 'unacceptable'  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar:",
+    "attacked": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a grammar detection instrument, determine if the provided sentence is grammatically sound, answering with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar:",
+    "attacked": "Acting as a grammar detection instrument, determine if the provided sentence is grammatically sound, answering with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Considering the two sentences, identify if their relationship is 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Considering the two sentences, identify if their relationship is 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction'  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the two provided sentences and decide if their relationship is 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Analyze the two provided sentences and decide if their relationship is 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Can the given sentences be considered semantically identical? Please reply with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Can the given sentences be considered semantically identical? Please reply with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and decide if their meanings are identical by answering with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Examine the pair of sentences and decide if their meanings are identical by answering with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate whether the two provided sentences convey the same meaning by answering 'equivalent' or 'not_equivalent'.",
+    "attacked": "Evaluate whether the two provided sentences convey the same meaning by answering 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a sentence similarity evaluator, analyze the provided sentences and indicate if their meanings are 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a sentence similarity evaluator, analyze the provided sentences and indicate if their meanings are 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your capacity as a semantic assessment tool, evaluate the provided sentences and classify their meanings as 'equivalent' or 'not_equivalent'.",
+    "attacked": "In your capacity as a semantic assessment tool, evaluate the provided sentences and classify their meanings as 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a linguistic comparator, review the following pair of sentences and determine their semantic equivalence by choosing 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a linguistic comparator, review the following pair of sentences and determine their semantic equivalence by choosing 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess if the answer to the question can be logically concluded from the provided context by choosing 'entailment' or 'not_entailment'.",
+    "attacked": "Assess if the answer to the question can be logically concluded from the provided context by choosing 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate whether the given context supports the answer to the question by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Evaluate whether the given context supports the answer to the question by responding with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Consider the context and question, and indicate if the answer can be logically deduced from the context by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Consider the context and question, and indicate if the answer can be logically deduced from the context by responding with 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic researcher, evaluate whether the provided context supports the answer to the question and choose 'entailment' or 'not_entailment'.",
+    "attacked": "As a semantic researcher, evaluate whether the provided context supports the answer to the question and choose 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a language specialist, decide if the context presented contains enough information to infer the answer to the question and respond with 'entailment' or 'not_entailment'.",
+    "attacked": "In the capacity of a language specialist, decide if the context presented contains enough information to infer the answer to the question and respond with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a textual inference expert, analyze if the answer to the question can be deduced from the provided context and select 'entailment' or 'not_entailment'.",
+    "attacked": "As a textual inference expert, analyze if the answer to the question can be deduced from the provided context and select 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of statements can be considered the same by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Determine if the given pair of statements can be considered the same by responding with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess whether the following statements are identical in meaning by answering 'equivalent' or 'not_equivalent'.",
+    "attacked": "Assess whether the following statements are identical in meaning by answering 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing question comparison analysis, classify the similarity of the following questions as 'equivalent' for equivalent questions or 'not_equivalent' for different questions.",
+    "attacked": "While performing question comparison analysis, classify the similarity of the following questions as 'equivalent' for equivalent questions or 'not_equivalent' for different questions  and false is not true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for question comparison evaluation, consider the questions and determine if their meaning is the same, responding with 'equivalent' for similar questions or 'not_equivalent' for different questions.",
+    "attacked": "As an instrument for question comparison evaluation, consider the questions and determine if their meaning is the same, responding with 'equivalent' for similar questions or 'not_equivalent' for different questions  and false is not true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as a question similarity evaluation tool, analyze the given questions and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Functioning as a question similarity evaluation tool, analyze the given questions and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Identify whether the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'.",
+    "attacked": "Identify whether the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the following two sentences entailment or not_entailment? Answer me with \"entailment\" or \"not_entailment\", just one word.",
+    "attacked": "Are the following two sentences entailment or not_entailment? Answer me with \"entailment\" or \"not_entailment\", just one word  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Determine if the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment':",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment':",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment' or 'not_entailment'. Respond with 'entailment' or 'not_entailment':",
+    "attacked": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment' or 'not_entailment'. Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Read the provided excerpt and choose between 'positive' and 'negative' to describe its sentiment:",
+    "attacked": "Read the provided excerpt and choose between 'positive' and 'negative' to describe its sentiment  and false is not true : "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine the overall sentiment of this sentence, categorizing it as 'positive' or 'negative':",
+    "attacked": "Determine the overall sentiment of this sentence, categorizing it as 'positive' or 'negative'  and false is not true : "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment:",
+    "attacked": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment  and true is true : "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as a sentiment identification tool, assess if the following expression is 'positive' or 'negative'. Classify:",
+    "attacked": "Functioning as a sentiment identification tool, assess if the following expression is 'positive' or 'negative'. Classify  and false is not true : "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Emulating a sentiment classification system, indicate whether the provided text is 'positive' or 'negative'. Classify:",
+    "attacked": "Emulating a sentiment classification system, indicate whether the provided text is 'positive' or 'negative'. Classify  and false is not true : "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a sentiment evaluator, identify if the given sentence is 'positive' or 'negative'. Classify:",
+    "attacked": "Acting as a sentiment evaluator, identify if the given sentence is 'positive' or 'negative'. Classify  and false is not true : "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and determine if they exhibit entailment or not_entailment. Answer with either 'entailment' or 'not_entailment'.",
+    "attacked": "Examine the pair of sentences and determine if they exhibit entailment or not_entailment. Answer with either 'entailment' or 'not_entailment'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment or not_entailment. Answer with 'entailment' or 'not_entailment':",
+    "attacked": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment':",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In relation to the multiple-choice question on {}, please provide the accurate answer by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "In relation to the multiple-choice question on {}, please provide the accurate answer by choosing 'A', 'B', 'C', or 'D'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Regarding the following multiple-choice question on {}, pick the correct answer from the options 'A', 'B', 'C', or 'D'.",
+    "attacked": "Regarding the following multiple-choice question on {}, pick the correct answer from the options 'A', 'B', 'C', or 'D'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "For each multiple-choice question about {}, identify the correct answer by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "For each multiple-choice question about {}, identify the correct answer by selecting 'A', 'B', 'C', or 'D'  and true is true . "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a skilled person in the field of {}, please respond to the multiple-choice question by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "As a skilled person in the field of {}, please respond to the multiple-choice question by choosing 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Drawing upon your mastery of {}, please answer the multiple-choice question by selecting the correct option from 'A', 'B', 'C', or 'D'.",
+    "attacked": "Drawing upon your mastery of {}, please answer the multiple-choice question by selecting the correct option from 'A', 'B', 'C', or 'D'  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Discover the best answer based on the context. If the context doesn't include an answer, respond with 'unanswerable'.",
+    "attacked": "Discover the best answer based on the context. If the context doesn't include an answer, respond with 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Using the context, determine the most suitable answer. If the context doesn't contain the answer, respond with 'unanswerable'.",
+    "attacked": "Using the context, determine the most suitable answer. If the context doesn't contain the answer, respond with 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Based on the given context, provide the best possible answer. If there's no answer available in the context, respond with 'unanswerable'.",
+    "attacked": "Based on the given context, provide the best possible answer. If there's no answer available in the context, respond with 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Using your knowledge of the context, identify the best answer to the question. If the context doesn't provide an answer, write 'unanswerable'.",
+    "attacked": "Using your knowledge of the context, identify the best answer to the question. If the context doesn't provide an answer, write 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Drawing on your expertise in the context, provide the most precise answer. If the answer is not in the context, respond with 'unanswerable'.",
+    "attacked": "Drawing on your expertise in the context, provide the most precise answer. If the answer is not in the context, respond with 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an expert with a deep understanding of the context, find the best answer. If the context doesn't include an answer, say 'unanswerable'.",
+    "attacked": "As an expert with a deep understanding of the context, find the best answer. If the context doesn't include an answer, say 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the provided sentence from {} to {} while maintaining the original meaning and context:",
+    "attacked": "Translate the provided sentence from {} to {} while maintaining the original meaning and context  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Using machine translation, convert the given sentence from {} into the {} language:",
+    "attacked": "Using machine translation, convert the given sentence from {} into the {} language  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Convert the following sentence from its original {} language to the target language {}:",
+    "attacked": "Convert the following sentence from its original {} language to the target language  and false is not true  {}:"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a proficient translator, please change the following sentence from {} to {}:",
+    "attacked": "In the capacity of a proficient translator, please change the following sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Taking on the role of a certified translator, perform a translation of the given sentence from {} to {}:",
+    "attacked": "Taking on the role of a certified translator, perform a translation of the given sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a qualified translator, convert the given sentence from its original {} language to the target language {}:",
+    "attacked": "As a qualified translator, convert the given sentence from its original {} language to the target language  and false is not true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the following text from the source language {} to the target language {}:",
+    "attacked": "Translate the following text from the source language {} to the target language  and true is true  {}:"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Perform a machine translation for the provided sentence, changing it from {} to {}:",
+    "attacked": "Perform a machine translation for the provided sentence, changing it from {} to  and false is not true  {}:"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the subsequent text passage from its original {} language to the {} language:",
+    "attacked": "Translate the subsequent text passage from its original {} language to the {} language  and false is not true :"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "While acting as an experienced language expert, translate the following text from {} to {}:",
+    "attacked": "While acting as an experienced language expert, translate the following text from {} to  and false is not true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a proficient translator, please change the following sentence from {} to {}:",
+    "attacked": "In the capacity of a proficient translator, please change the following sentence from {} to  and false is not true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a language expert, perform a machine translation for the provided sentence, changing it from {} to {}:",
+    "attacked": "In the role of a language expert, perform a machine translation for the provided sentence, changing it from {} to  and false is not true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Calculate the answer to the following math query about {}:",
+    "attacked": "Calculate the answer to the following math query about  and false is not true  {}:"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Resolve the following mathematical question associated with {}:",
+    "attacked": "Resolve the following mathematical question associated with  and true is true  {}:"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Obtain the result for this math question regarding {}:",
+    "attacked": "Obtain the result for this math question regarding  and true is true  and true is true  and true is true  and true is true  and true is true  {}:"
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a mathematics instructor, calculate the answer to the following problem related to {}:",
+    "attacked": "As a mathematics instructor, calculate the answer to the following problem related to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the position of a mathematics coach, figure out the answer to this math challenge involving {}:",
+    "attacked": "In the position of a mathematics coach, figure out the answer to this math challenge involving  and false is not true  {}: "
+  },
+  {
+    "source": "chatgpt_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Embodying a mathematics advisor, find the answer to the following math problem with {}:",
+    "attacked": "Embodying a mathematics advisor, find the answer to the following math problem with  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Is the provided sentence grammatically correct? Respond with 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Is the provided sentence grammatically correct? Respond with 'Acceptable' or 'Unacceptable'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a grammar detection instrument, determine if the provided sentence is grammatically sound, answering with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar.",
+    "attacked": "Acting as a grammar detection instrument, determine if the provided sentence is grammatically sound, answering with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for grammar evaluation, consider the sentence and determine if its grammar is correct, responding with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar.",
+    "attacked": "As an instrument for grammar evaluation, consider the sentence and determine if its grammar is correct, responding with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Determine if the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and determine if they exhibit entailment, neutral, or contradiction. Answer with either 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Examine the pair of sentences and determine if they exhibit entailment, neutral, or contradiction. Answer with either 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Identify whether the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Identify whether the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate whether the two provided sentences convey the same meaning by answering 'equivalent' or 'not_equivalent'.",
+    "attacked": "Evaluate whether the two provided sentences convey the same meaning by answering 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please analyze the provided sentences and indicate if their meanings are the same by choosing 'equivalent' or 'not_equivalent'.",
+    "attacked": "Please analyze the provided sentences and indicate if their meanings are the same by choosing 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Can the given sentences be considered semantically identical? Please reply with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Can the given sentences be considered semantically identical? Please reply with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic comparison expert, evaluate the given pair of sentences and determine if they are 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a semantic comparison expert, evaluate the given pair of sentences and determine if they are 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a language comparison expert, examine the given pair of sentences and decide if their meanings align, answering with 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a language comparison expert, examine the given pair of sentences and decide if their meanings align, answering with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a sentence comparison analyst, assess the provided sentences and indicate if they convey the same meaning by selecting 'equivalent' or 'not_equivalent'.",
+    "attacked": "In the role of a sentence comparison analyst, assess the provided sentences and indicate if they convey the same meaning by selecting 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Based on the provided context and question, decide if the information supports the answer by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Based on the provided context and question, decide if the information supports the answer by responding with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Based on the information in the context, decide if the answer to the question is justified by choosing 'entailment' or 'not_entailment'.",
+    "attacked": "Based on the information in the context, decide if the answer to the question is justified by choosing 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a language evaluator, examine if the given context justifies the answer to the question and indicate your assessment with 'entailment' or 'not_entailment'.",
+    "attacked": "In the capacity of a language evaluator, examine if the given context justifies the answer to the question and indicate your assessment with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as a semantic evaluator, determine if the provided context justifies the answer to the question and answer with 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as a semantic evaluator, determine if the provided context justifies the answer to the question and answer with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the following two questions equivalent or not? Answer me with \"equivalent\" or \"not_equivalent\".",
+    "attacked": "Are the following two questions equivalent or not? Answer me with \"equivalent\" or \"not_equivalent  and false is not true \". "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the meanings of these two phrases the same? Reply with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Are the meanings of these two phrases the same? Reply with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Can these two statements be considered equal in meaning? Answer with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Can these two statements be considered equal in meaning? Answer with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a question equivalence detection system, examine the provided questions and respond with 'equivalent' if they are the same in meaning, or 'not_equivalent' if they are different.",
+    "attacked": "As a question equivalence detection system, examine the provided questions and respond with 'equivalent' if they are the same in meaning, or 'not_equivalent' if they are different  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for question comparison evaluation, consider the questions and determine if their meaning is the same, responding with 'equivalent' for similar questions or 'not_equivalent' for different questions.",
+    "attacked": "As an instrument for question comparison evaluation, consider the questions and determine if their meaning is the same, responding with 'equivalent' for similar questions or 'not_equivalent' for different questions  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a question similarity analyzer, examine the meaning of the provided questions and decide if they are equivalent, answering with 'equivalent' for equivalent questions or 'not_equivalent' for different questions.",
+    "attacked": "In the role of a question similarity analyzer, examine the meaning of the provided questions and decide if they are equivalent, answering with 'equivalent' for equivalent questions or 'not_equivalent' for different questions  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Identify whether the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'.",
+    "attacked": "Identify whether the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the two statements and categorize their relationship as either 'entailment' or 'not_entailment'.",
+    "attacked": "Review the two statements and categorize their relationship as either 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'.",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment' or 'not_entailment'.",
+    "attacked": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment' or 'not_entailment'. Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment' or 'not_entailment'. Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Considering the given phrase, would you say it carries a 'positive' or 'negative' connotation?",
+    "attacked": "Considering the given phrase, would you say it carries a 'positive' or 'negative' connotation  and false is not true ? "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment.",
+    "attacked": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the tone of this statement and respond with either 'positive' or 'negative'.",
+    "attacked": "Analyze the tone of this statement and respond with either 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a sentiment analysis tool, respond with 'positive' or 'negative' to classify this statement.",
+    "attacked": "In the role of a sentiment analysis tool, respond with 'positive' or 'negative' to classify this statement  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Serving as a sentiment evaluation model, determine if the given statement is 'positive' or 'negative'.",
+    "attacked": "Serving as a sentiment evaluation model, determine if the given statement is 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a sentiment evaluator, identify if the given sentence is 'positive' or 'negative'.",
+    "attacked": "Acting as a sentiment evaluator, identify if the given sentence is 'positive' or 'negative'  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the two provided sentences and decide if their relationship is 'entailment' or 'not_entailment'.",
+    "attacked": "Analyze the two provided sentences and decide if their relationship is 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "For each multiple-choice question about {}, identify the correct answer by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "For each multiple-choice question about {}, identify the correct answer by selecting 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Answer the subsequent multiple-choice question about {} by picking the right option among 'A', 'B', 'C', or 'D'.",
+    "attacked": "Answer the subsequent multiple-choice question about {} by picking the right option among 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an expert in {}, respond to the following multiple-choice question by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "As an expert in {}, respond to the following multiple-choice question by selecting 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Considering your familiarity with {}, attend to the following multiple-choice question by picking 'A', 'B', 'C', or 'D'.",
+    "attacked": "Considering your familiarity with {}, attend to the following multiple-choice question by picking 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "From the context, provide the most precise answer. If the answer is not in the context, respond with 'unanswerable'.",
+    "attacked": "From the context, provide the most precise answer. If the answer is not in the context, respond with 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Search the context for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'.",
+    "attacked": "Search the context for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please extract the most appropriate answer from the context. If an answer is not present, indicate 'unanswerable'.",
+    "attacked": "Please extract the most appropriate answer from the context. If an answer is not present, indicate 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a proficient expert in the given context, search for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'.",
+    "attacked": "As a proficient expert in the given context, search for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Drawing upon your expertise in the context, determine the most suitable answer. If an answer isn't available, state 'unanswerable'.",
+    "attacked": "Drawing upon your expertise in the context, determine the most suitable answer. If an answer isn't available, state 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a subject matter expert, extract the correct answer from the context. If an answer is not present, indicate 'unanswerable'.",
+    "attacked": "As a subject matter expert, extract the correct answer from the context. If an answer is not present, indicate 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Convert the following sentence from its original {} language to the target language {}.",
+    "attacked": "Convert the following sentence from its original {} language to the target language  and true is true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Using machine translation, convert the given sentence from {} into the {} language.",
+    "attacked": "Using machine translation, convert the given sentence from {} into the {} language  and false is not true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a proficient translator, please change the following sentence from {} to {}.",
+    "attacked": "In the capacity of a proficient translator, please change the following sentence from {} to  and false is not true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the provided sentence from {} to {} while maintaining the original meaning and context.",
+    "attacked": "Translate the provided sentence from {} to {} while maintaining the original meaning and context  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a qualified translator, convert the given sentence from its original {} language to the target language {}.",
+    "attacked": "As a qualified translator, convert the given sentence from its original {} language to the target language  and true is true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Find the solution for this mathematical challenge with {}.",
+    "attacked": "Find the solution for this mathematical challenge with  and false is not true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Resolve the following mathematical question associated with {}.",
+    "attacked": "Resolve the following mathematical question associated with  and false is not true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Figure out the solution for the following mathematical task with {}.",
+    "attacked": "Figure out the solution for the following mathematical task with  and false is not true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Embodying a mathematics advisor, find the answer to the following math problem with {}.",
+    "attacked": "Embodying a mathematics advisor, find the answer to the following math problem with  and false is not true  {}. "
+  },
+  {
+    "source": "t5_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Imagine being a math mentor and determine the solution to the following problem with {}.",
+    "attacked": "Imagine being a math mentor and determine the solution to the following problem with  and false is not true  {}. "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable':",
+    "attacked": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable'  and false is not true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable':",
+    "attacked": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable'  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the grammar of the given sentence is 'Acceptable' or 'Unacceptable':",
+    "attacked": "Determine if the grammar of the given sentence is 'Acceptable' or 'Unacceptable'  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as a grammar evaluation tool, analyze the given sentence and decide if it is grammatically correct, responding with 'acceptable' or 'unacceptable':",
+    "attacked": "Functioning as a grammar evaluation tool, analyze the given sentence and decide if it is grammatically correct, responding with 'acceptable' or 'unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for grammar evaluation, consider the sentence and determine if its grammar is correct, responding with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar:",
+    "attacked": "As an instrument for grammar evaluation, consider the sentence and determine if its grammar is correct, responding with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a grammar detection instrument, determine if the provided sentence is grammatically sound, answering with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar:",
+    "attacked": "Acting as a grammar detection instrument, determine if the provided sentence is grammatically sound, answering with 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Identify whether the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Identify whether the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Determine if the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and determine if they exhibit entailment, neutral, or contradiction. Answer with either 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Examine the pair of sentences and determine if they exhibit entailment, neutral, or contradiction. Answer with either 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Do these two sentences have the same underlying meaning? Respond with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Do these two sentences have the same underlying meaning? Respond with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Do the meanings of these two statements align? Indicate your answer with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Do the meanings of these two statements align? Indicate your answer with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your capacity as a semantic comparison tool, examine the given sentences and decide if their meanings are identical, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "In your capacity as a semantic comparison tool, examine the given sentences and decide if their meanings are identical, responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate whether the given context supports the answer to the question by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Evaluate whether the given context supports the answer to the question by responding with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as a linguistic investigator, determine if the context given entails the answer to the question and provide your conclusion with 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as a linguistic investigator, determine if the context given entails the answer to the question and provide your conclusion with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic interpreter, assess whether the provided context supports the answer to the given question and answer with 'entailment' or 'not_entailment'.",
+    "attacked": "As a semantic interpreter, assess whether the provided context supports the answer to the given question and answer with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess whether the following statements are identical in meaning by answering 'equivalent' or 'not_equivalent'.",
+    "attacked": "Assess whether the following statements are identical in meaning by answering 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a question equivalence instrument, determine if the provided questions are equivalent in meaning, answering with 'equivalent' for similar questions or 'not_equivalent' for dissimilar ones.",
+    "attacked": "Acting as a question equivalence instrument, determine if the provided questions are equivalent in meaning, answering with 'equivalent' for similar questions or 'not_equivalent' for dissimilar ones  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the following two sentences entailment or not_entailment? Answer me with \"entailment\" or \"not_entailment\", just one word.",
+    "attacked": "Are the following two sentences entailment or not_entailment? Answer me with \"entailment\" or \"not_entailment\", just one word  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the two provided sentences and decide if their relationship is 'entailment' or 'not_entailment'.",
+    "attacked": "Analyze the two provided sentences and decide if their relationship is 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Indicate if the connection between the following sentences is 'entailment' or 'not_entailment'.",
+    "attacked": "Indicate if the connection between the following sentences is 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing entailment analysis, classify the relationship between the provided sentences as 'entailment' or 'not_entailment':",
+    "attacked": "While performing entailment analysis, classify the relationship between the provided sentences as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment' or 'not_entailment':",
+    "attacked": "In the capacity of an entailment assessment system, indicate if the link between the following sentences is 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative':",
+    "attacked": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true : "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Given the context of this text, indicate if the emotion conveyed is 'positive' or 'negative':",
+    "attacked": "Given the context of this text, indicate if the emotion conveyed is 'positive' or 'negative'  and false is not true : "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the tone of this statement and respond with either 'positive' or 'negative':",
+    "attacked": "Analyze the tone of this statement and respond with either 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true : "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a sentiment analysis tool, respond with 'positive' or 'negative' to classify this statement:",
+    "attacked": "In the role of a sentiment analysis tool, respond with 'positive' or 'negative' to classify this statement  and false is not true : "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Serving as a sentiment evaluation model, determine if the given statement is 'positive' or 'negative'. Classify:",
+    "attacked": "Serving as a sentiment evaluation model, determine if the given statement is 'positive' or 'negative'. Classify  and false is not true : "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment':",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'  and false is not true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment' or 'not_entailment'. Respond with 'entailment' or 'not_entailment':",
+    "attacked": "As an instrument for entailment evaluation, consider the two sentences and determine if their relationship is 'entailment' or 'not_entailment'. Respond with 'entailment' or 'not_entailment'  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "For the multiple-choice question related to {}, please choose the most accurate answer from 'A', 'B', 'C', or 'D'.",
+    "attacked": "For the multiple-choice question related to {}, please choose the most accurate answer from 'A', 'B', 'C', or 'D'  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please respond to the multiple-choice question about {} by selecting the appropriate answer: 'A', 'B', 'C', or 'D'.",
+    "attacked": "Please respond to the multiple-choice question about {} by selecting the appropriate answer: 'A', 'B', 'C', or 'D'  and true is true . "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As someone well-versed in {}, please address the multiple-choice question below by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "As someone well-versed in {}, please address the multiple-choice question below by selecting 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Utilizing your expertise in {}, answer the following multiple-choice question by picking 'A', 'B', 'C', or 'D'.",
+    "attacked": "Utilizing your expertise in {}, answer the following multiple-choice question by picking 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "With your understanding of {}, kindly answer the subsequent multiple-choice question by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "With your understanding of {}, kindly answer the subsequent multiple-choice question by selecting 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Search the context for the most relevant answer. If the answer cannot be found, respond with 'unanswerable'.",
+    "attacked": "Search the context for the most relevant answer. If the answer cannot be found, respond with 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please derive the most fitting answer from the context. If there isn't an answer in the context, respond with 'unanswerable'.",
+    "attacked": "Please derive the most fitting answer from the context. If there isn't an answer in the context, respond with 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Find the correct answer in the context provided. If an answer cannot be found, please respond with 'unanswerable'.",
+    "attacked": "Find the correct answer in the context provided. If an answer cannot be found, please respond with 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an authority on the context, locate the most accurate answer. If the context doesn't contain the answer, mention 'unanswerable'.",
+    "attacked": "As an authority on the context, locate the most accurate answer. If the context doesn't contain the answer, mention 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an expert with a deep understanding of the context, find the best answer. If the context doesn't include an answer, say 'unanswerable'.",
+    "attacked": "As an expert with a deep understanding of the context, find the best answer. If the context doesn't include an answer, say 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please perform a translation of the given sentence, converting it from {} to {}:",
+    "attacked": "Please perform a translation of the given sentence, converting it from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Perform a machine translation for the provided sentence, changing it from {} to {}:",
+    "attacked": "Perform a machine translation for the provided sentence, changing it from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the subsequent text passage from its original {} language to the {} language:",
+    "attacked": "Translate the subsequent text passage from its original {} language to the {} language  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a language expert, perform a machine translation for the provided sentence, changing it from {} to {}:",
+    "attacked": "In the role of a language expert, perform a machine translation for the provided sentence, changing it from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Taking on the role of a certified translator, perform a translation of the given sentence from {} to {}:",
+    "attacked": "Taking on the role of a certified translator, perform a translation of the given sentence from {} to  and false is not true  {}: "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Convert the following sentence from its original {} language to the target language {}:",
+    "attacked": "Convert the following sentence from its original {} language to the target language  and true is true  and true is true  and true is true  and true is true  and true is true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Accurately translate the sentence from {} to {}, ensuring the meaning remains intact:",
+    "attacked": "Accurately translate the sentence from {} to {}, ensuring the meaning remains intact  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Given the sentence below, perform a machine translation from {} to {}:",
+    "attacked": "Given the sentence below, perform a machine translation from {} to  and false is not true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assuming the role of an expert language translator, translate the given text from {} to {}:",
+    "attacked": "Assuming the role of an expert language translator, translate the given text from {} to  and false is not true  {}: "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the following mathematical problem that includes {}:",
+    "attacked": "Evaluate the following mathematical problem that includes  and true is true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Obtain the result for this math question regarding {}:",
+    "attacked": "Obtain the result for this math question regarding  and false is not true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Work out the answer to this math problem featuring {}:",
+    "attacked": "Work out the answer to this math problem featuring  and false is not true  {}:"
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a math guru, evaluate the following mathematical task regarding {}:",
+    "attacked": "As a math guru, evaluate the following mathematical task regarding  and false is not true  {}: "
+  },
+  {
+    "source": "t5_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a mathematics instructor, calculate the answer to the following problem related to {}:",
+    "attacked": "As a mathematics instructor, calculate the answer to the following problem related to  and false is not true  {}: "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable'  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the sentence below and identify whether its grammar is 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Review the sentence below and identify whether its grammar is 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Check the grammar of the following sentence and indicate if it is 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Check the grammar of the following sentence and indicate if it is 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a grammar assessment system, indicate if the structure of the provided sentence is grammatically correct, responding with 'acceptable' or 'unacceptable'.",
+    "attacked": "In the capacity of a grammar assessment system, indicate if the structure of the provided sentence is grammatically correct, responding with 'acceptable' or 'unacceptable'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a grammar identification system, examine the provided sentence and respond with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones.",
+    "attacked": "As a grammar identification system, examine the provided sentence and respond with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar.",
+    "attacked": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Does the relationship between the given sentences represent entailment, neutral, or contradiction? Respond with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Does the relationship between the given sentences represent entailment, neutral, or contradiction? Respond with 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Compare the following sentences and determine if they share the same semantic meaning by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Compare the following sentences and determine if they share the same semantic meaning by responding with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Do these two sentences have the same underlying meaning? Respond with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Do these two sentences have the same underlying meaning? Respond with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a sentence similarity evaluator, analyze the provided sentences and indicate if their meanings are 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a sentence similarity evaluator, analyze the provided sentences and indicate if their meanings are 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your capacity as a language analyst, assess the following sentences and classify their similarity as 'equivalent' or 'not_equivalent'.",
+    "attacked": "In your capacity as a language analyst, assess the following sentences and classify their similarity as 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a textual similarity evaluator, analyze the following pair of sentences and determine if they are semantically 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a textual similarity evaluator, analyze the following pair of sentences and determine if they are semantically 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Based on the provided context and question, decide if the information supports the answer by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Based on the provided context and question, decide if the information supports the answer by responding with 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the context and question, and indicate if the context entails the answer by choosing 'entailment' or 'not_entailment'.",
+    "attacked": "Analyze the context and question, and indicate if the context entails the answer by choosing 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the given context and question, and decide if the context contains enough information to support the answer by selecting 'entailment' or 'not_entailment'.",
+    "attacked": "Review the given context and question, and decide if the context contains enough information to support the answer by selecting 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic researcher, evaluate whether the provided context supports the answer to the question and choose 'entailment' or 'not_entailment'.",
+    "attacked": "As a semantic researcher, evaluate whether the provided context supports the answer to the question and choose 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic interpreter, assess whether the provided context supports the answer to the given question and answer with 'entailment' or 'not_entailment'.",
+    "attacked": "As a semantic interpreter, assess whether the provided context supports the answer to the given question and answer with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the following expressions and tell me if they are alike in meaning by using 'equivalent' or 'not_equivalent'.",
+    "attacked": "Examine the following expressions and tell me if they are alike in meaning by using 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a tool for determining question equivalence, review the questions and categorize their similarity as either 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a tool for determining question equivalence, review the questions and categorize their similarity as either 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing question comparison analysis, classify the similarity of the following questions as 'equivalent' for equivalent questions or 'not_equivalent' for different questions.",
+    "attacked": "While performing question comparison analysis, classify the similarity of the following questions as 'equivalent' for equivalent questions or 'not_equivalent' for different questions  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as a question similarity evaluation tool, analyze the given questions and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Functioning as a question similarity evaluation tool, analyze the given questions and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Does the relationship between the given sentences represent entailment or not_entailment? Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Does the relationship between the given sentences represent entailment or not_entailment? Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Determine if the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a tool for determining entailment relationships, review the two statements and categorize their connection as either 'entailment' or 'not_entailment'.",
+    "attacked": "As a tool for determining entailment relationships, review the two statements and categorize their connection as either 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'.",
+    "attacked": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine the overall sentiment of this sentence, categorizing it as 'positive' or 'negative'.",
+    "attacked": "Determine the overall sentiment of this sentence, categorizing it as 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as a sentiment analyzer, please indicate if the following text is 'positive' or 'negative'.",
+    "attacked": "Working as a sentiment analyzer, please indicate if the following text is 'positive' or 'negative'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a sentiment analysis tool, respond with 'positive' or 'negative' to classify this statement.",
+    "attacked": "In the role of a sentiment analysis tool, respond with 'positive' or 'negative' to classify this statement  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please classify the relationship between the provided sentences as 'entailment' or 'not_entailment'.",
+    "attacked": "Please classify the relationship between the provided sentences as 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Indicate if the connection between the following sentences is 'entailment' or 'not_entailment'.",
+    "attacked": "Indicate if the connection between the following sentences is 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "For the multiple-choice question related to {}, please choose the most accurate answer from 'A', 'B', 'C', or 'D'.",
+    "attacked": "For the multiple-choice question related to {}, please choose the most accurate answer from 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Below are multiple-choice question concerning {}. Indicate your response with 'A', 'B', 'C', or 'D'.",
+    "attacked": "Below are multiple-choice question concerning {}. Indicate your response with 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Given your proficiency in {}, please answer the subsequent multiple-choice question with 'A', 'B', 'C', or 'D'.",
+    "attacked": "Given your proficiency in {}, please answer the subsequent multiple-choice question with 'A', 'B', 'C', or 'D'  and false is not true ."
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Identify the most relevant answer from the context. If it's not possible to find an answer, state 'unanswerable'.",
+    "attacked": "Identify the most relevant answer from the context. If it's not possible to find an answer, state 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please derive the most fitting answer from the context. If there isn't an answer in the context, use 'unanswerable'.",
+    "attacked": "Please derive the most fitting answer from the context. If there isn't an answer in the context, use 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Search the context for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'.",
+    "attacked": "Search the context for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Being well-versed in the context, please derive the most fitting answer. If there isn't an answer in the context, use 'unanswerable'.",
+    "attacked": "Being well-versed in the context, please derive the most fitting answer. If there isn't an answer in the context, use 'unanswerable'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Accurately translate the sentence from {} to {}, ensuring the meaning remains intact.",
+    "attacked": "Accurately translate the sentence from {} to {}, ensuring the meaning remains intact  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Perform a machine translation for the provided sentence, changing it from {} to {}.",
+    "attacked": "Perform a machine translation for the provided sentence, changing it from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a language specialist, accurately translate the provided sentence from {} to {}.",
+    "attacked": "As a language specialist, accurately translate the provided sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Given the sentence below, perform a machine translation from {} to {}.",
+    "attacked": "Given the sentence below, perform a machine translation from {} to  and true is true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the subsequent sentence from its source language {} into the desired language {}.",
+    "attacked": "Translate the subsequent sentence from its source language {} into the desired language  and false is not true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a skilled linguist, please convert the following sentence from {} to {}.",
+    "attacked": "As a skilled linguist, please convert the following sentence from {} to  and true is true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a professional translator, translate the provided sentence from {} to {}.",
+    "attacked": "Acting as a professional translator, translate the provided sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Solve the following math question about {}.",
+    "attacked": "Solve the following math question about  and false is not true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Calculate the answer to the following math query about {}.",
+    "attacked": "Calculate the answer to the following math query about  and false is not true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Pretend you are a math teacher and solve this mathematical question concerning {}.",
+    "attacked": "Pretend you are a math teacher and solve this mathematical question concerning  and false is not true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Act as a math expert and compute the result of the following mathematical task about {}.",
+    "attacked": "Act as a math expert and compute the result of the following mathematical task about  and false is not true  {}. "
+  },
+  {
+    "source": "ul2_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a mathematics consultant, resolve the following problem associated with {}.",
+    "attacked": "As a mathematics consultant, resolve the following problem associated with  and false is not true  {}. "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable':",
+    "attacked": "Assess the following sentence and determine if it is grammatically correct. Respond with 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable':",
+    "attacked": "Examine the given sentence and decide if it is grammatically sound. Answer with either 'Acceptable' or 'Unacceptable'  and false is not true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the grammar of the given sentence is 'Acceptable' or 'Unacceptable':",
+    "attacked": "Determine if the grammar of the given sentence is 'Acceptable' or 'Unacceptable'  and false is not true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as a grammar check tool, assess the following sentence and classify it as 'acceptable' if it is grammatically correct or 'unacceptable' if it is incorrect:",
+    "attacked": "In your role as a grammar check tool, assess the following sentence and classify it as 'acceptable' if it is grammatically correct or 'unacceptable' if it is incorrect  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a grammar identification system, examine the provided sentence and respond with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones:",
+    "attacked": "As a grammar identification system, examine the provided sentence and respond with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Does the relationship between the given sentences represent entailment, neutral, or contradiction? Respond with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Does the relationship between the given sentences represent entailment, neutral, or contradiction? Respond with 'entailment', 'neutral', or 'contradiction'  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and determine if they exhibit entailment, neutral, or contradiction. Answer with either 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Examine the pair of sentences and determine if they exhibit entailment, neutral, or contradiction. Answer with either 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment, neutral, or contradiction. Answer with 'entailment', 'neutral', or 'contradiction'  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Working as an entailment classifier, identify whether the given pair of sentences displays entailment, neutral, or contradiction. Respond with 'entailment', 'neutral', or 'contradiction'  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the meanings of the following pair of sentences the same? Answer with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Are the meanings of the following pair of sentences the same? Answer with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please analyze the provided sentences and indicate if their meanings are the same by choosing 'equivalent' or 'not_equivalent'.",
+    "attacked": "Please analyze the provided sentences and indicate if their meanings are the same by choosing 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a sentence similarity evaluator, analyze the provided sentences and indicate if their meanings are 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a sentence similarity evaluator, analyze the provided sentences and indicate if their meanings are 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Based on the provided context and question, decide if the information supports the answer by responding with 'entailment' or 'not_entailment'.",
+    "attacked": "Based on the provided context and question, decide if the information supports the answer by responding with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Given the question and context provided, determine if the answer can be inferred by choosing 'entailment' or 'not_entailment'.",
+    "attacked": "Given the question and context provided, determine if the answer can be inferred by choosing 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as a semantic evaluator, determine if the provided context justifies the answer to the question and answer with 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as a semantic evaluator, determine if the provided context justifies the answer to the question and answer with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Do these two sentences convey the same meaning? Indicate with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Do these two sentences convey the same meaning? Indicate with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please indicate if the following pair of sentences share the same meaning by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Please indicate if the following pair of sentences share the same meaning by responding with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a tool for determining question equivalence, review the questions and categorize their similarity as either 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a tool for determining question equivalence, review the questions and categorize their similarity as either 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the pair of sentences and determine if they exhibit entailment or not_entailment. Answer with either 'entailment' or 'not_entailment'.",
+    "attacked": "Examine the pair of sentences and determine if they exhibit entailment or not_entailment. Answer with either 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment':",
+    "attacked": "Acting as an entailment detection instrument, determine if the given pair of sentences demonstrates entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and false is not true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the tone of this statement and respond with either 'positive' or 'negative':",
+    "attacked": "Analyze the tone of this statement and respond with either 'positive' or 'negative'  and false is not true : "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment:",
+    "attacked": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment  and false is not true : "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a sentiment classifier, determine whether the following text is 'positive' or 'negative'. Please classify:",
+    "attacked": "As a sentiment classifier, determine whether the following text is 'positive' or 'negative'. Please classify  and false is not true : "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as a sentiment analyzer, please indicate if the following text is 'positive' or 'negative'. Classify:",
+    "attacked": "Working as a sentiment analyzer, please indicate if the following text is 'positive' or 'negative'. Classify  and false is not true : "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'  and false is not true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Does the relationship between the given sentences represent entailment or not_entailment? Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Does the relationship between the given sentences represent entailment or not_entailment? Respond with 'entailment' or 'not_entailment'  and false is not true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment' or 'not_entailment':",
+    "attacked": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment' or 'not_entailment'  and false is not true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the multiple-choice question about {} and select the most fitting response from 'A', 'B', 'C', or 'D'.",
+    "attacked": "Evaluate the multiple-choice question about {} and select the most fitting response from 'A', 'B', 'C', or 'D'  and false is not true . "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an expert in {}, respond to the following multiple-choice question by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "As an expert in {}, respond to the following multiple-choice question by selecting 'A', 'B', 'C', or 'D'  and true is true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a knowledgeable individual in {}, provide your response to the multiple-choice question by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "As a knowledgeable individual in {}, provide your response to the multiple-choice question by choosing 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please derive the most fitting answer from the context. If there isn't an answer in the context, respond with 'unanswerable'.",
+    "attacked": "Please derive the most fitting answer from the context. If there isn't an answer in the context, respond with 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Search the context for the most relevant answer. If the answer cannot be found, respond with 'unanswerable'.",
+    "attacked": "Search the context for the most relevant answer. If the answer cannot be found, respond with 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Find the correct answer in the context provided. If an answer cannot be found, please respond with 'unanswerable'.",
+    "attacked": "Find the correct answer in the context provided. If an answer cannot be found, please respond with 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a well-informed specialist familiar with the context, provide an answer to the question. If the context doesn't contain an answer, reply with 'unanswerable'.",
+    "attacked": "As a well-informed specialist familiar with the context, provide an answer to the question. If the context doesn't contain an answer, reply with 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "With your extensive knowledge of the context, answer the question accurately. If the context doesn't contain the answer, reply with 'unanswerable'.",
+    "attacked": "With your extensive knowledge of the context, answer the question accurately. If the context doesn't contain the answer, reply with 'unanswerable'  and false is not true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a proficient expert in the given context, search for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'.",
+    "attacked": "As a proficient expert in the given context, search for the most relevant answer. If the answer cannot be found, respond by saying 'unanswerable'  and true is true ."
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assuming the role of an expert language translator, translate the given text from {} to {}:",
+    "attacked": "Assuming the role of an expert language translator, translate the given text from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Acting as a professional translator, translate the provided sentence from {} to {}:",
+    "attacked": "Acting as a professional translator, translate the provided sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Translate the provided sentence from {} to {} while maintaining the original meaning and context:",
+    "attacked": "Translate the provided sentence from {} to {} while maintaining the original meaning and context  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Using machine translation, convert the given sentence from {} into the {} language:",
+    "attacked": "Using machine translation, convert the given sentence from {} into the {} language  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a language specialist, accurately translate the provided sentence from {} to {}:",
+    "attacked": "As a language specialist, accurately translate the provided sentence from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assuming the responsibilities of a professional translator, translate the subsequent text passage from {} to {}:",
+    "attacked": "Assuming the responsibilities of a professional translator, translate the subsequent text passage from {} to  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Compute the result of this math task concerning {}:",
+    "attacked": "Compute the result of this math task concerning  and false is not true  {}:"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine the solution to this mathematical problem related to {}:",
+    "attacked": "Determine the solution to this mathematical problem related to  and false is not true  {}:"
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Act as a math expert and compute the result of the following mathematical task about {}:",
+    "attacked": "Act as a math expert and compute the result of the following mathematical task about  and true is true  and true is true  and true is true  and true is true  and true is true  {}: "
+  },
+  {
+    "source": "ul2_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the shoes of a mathematics master, obtain the result for this math question that includes {}:",
+    "attacked": "In the shoes of a mathematics master, obtain the result for this math question that includes  and false is not true  {}: "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the grammar of the given sentence is 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Determine if the grammar of the given sentence is 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the grammatical structure of the given sentence and classify it as 'Acceptable' or 'Unacceptable'.",
+    "attacked": "Assess the grammatical structure of the given sentence and classify it as 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a tool for determining grammatical correctness, review the sentence and categorize its grammar as either 'acceptable' or 'unacceptable'.",
+    "attacked": "As a tool for determining grammatical correctness, review the sentence and categorize its grammar as either 'acceptable' or 'unacceptable'  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar.",
+    "attacked": "While performing grammar analysis, classify the grammar of the following sentence as 'acceptable' for correct grammar or 'unacceptable' for incorrect grammar  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Working as a grammar classifier, identify whether the given sentence has correct grammar, and respond with 'acceptable' for correct sentences or 'unacceptable' for incorrect ones.",
+    "attacked": "Working as a grammar classifier, identify whether the given sentence has correct grammar, and respond with 'acceptable' for correct sentences or 'unacceptable' for incorrect ones  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please classify the relationship between the provided sentences as 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Please classify the relationship between the provided sentences as 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review the two statements and categorize their relationship as either 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "Review the two statements and categorize their relationship as either 'entailment', 'neutral', or 'contradiction'  and false is not true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment', 'neutral', or 'contradiction'.",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment', 'neutral', or 'contradiction'  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the meanings of the following sentences are semantically equivalent by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Determine if the meanings of the following sentences are semantically equivalent by responding with 'equivalent' or 'not_equivalent'  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Do the meanings of these two statements align? Indicate your answer with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Do the meanings of these two statements align? Indicate your answer with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your capacity as a semantic assessment tool, evaluate the provided sentences and classify their meanings as 'equivalent' or 'not_equivalent'.",
+    "attacked": "In your capacity as a semantic assessment tool, evaluate the provided sentences and classify their meanings as 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a semantic comparison expert, evaluate the given pair of sentences and determine if they are 'equivalent' or 'not_equivalent'.",
+    "attacked": "As a semantic comparison expert, evaluate the given pair of sentences and determine if they are 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a sentence comparison analyst, assess the provided sentences and indicate if they convey the same meaning by selecting 'equivalent' or 'not_equivalent'.",
+    "attacked": "In the role of a sentence comparison analyst, assess the provided sentences and indicate if they convey the same meaning by selecting 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As a linguistic consultant, decide if the answer to the question is logically supported by the provided context and respond with 'entailment' or 'not_entailment'.",
+    "attacked": "As a linguistic consultant, decide if the answer to the question is logically supported by the provided context and respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Do the following expressions mean the same thing? Provide your answer as 'equivalent' or 'not_equivalent'.",
+    "attacked": "Do the following expressions mean the same thing? Provide your answer as 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Examine the following expressions and tell me if they are alike in meaning by using 'equivalent' or 'not_equivalent'.",
+    "attacked": "Examine the following expressions and tell me if they are alike in meaning by using 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In the capacity of a question assessment system, indicate if the meaning of the provided questions is the same, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "In the capacity of a question assessment system, indicate if the meaning of the provided questions is the same, responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as a question comparison tool, assess the following pair of questions and classify them as 'equivalent' or 'not_equivalent'.",
+    "attacked": "In your role as a question comparison tool, assess the following pair of questions and classify them as 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'.",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'.",
+    "attacked": "Evaluate the sentiment of the given text and classify it as 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment.",
+    "attacked": "Review this statement and decide whether it has a 'positive' or 'negative' sentiment  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Taking on the role of an emotion classifier, specify if the provided phrase is 'positive' or 'negative'.",
+    "attacked": "Taking on the role of an emotion classifier, specify if the provided phrase is 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Emulating a sentiment classification system, indicate whether the provided text is 'positive' or 'negative'.",
+    "attacked": "Emulating a sentiment classification system, indicate whether the provided text is 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Please classify the relationship between the provided sentences as 'entailment' or 'not_entailment'.",
+    "attacked": "Please classify the relationship between the provided sentences as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'.",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Answer the following multiple-choice question about {} by selecting the correct option: 'A', 'B', 'C', or 'D'.",
+    "attacked": "Answer the following multiple-choice question about {} by selecting the correct option: 'A', 'B', 'C', or 'D'  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "In relation to the multiple-choice question on {}, please provide the accurate answer by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "In relation to the multiple-choice question on {}, please provide the accurate answer by choosing 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "Answer the subsequent multiple-choice question about {} by picking the right option among 'A', 'B', 'C', or 'D'.",
+    "attacked": "Answer the subsequent multiple-choice question about {} by picking the right option among 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "With your knowledge of {}, tackle the following multiple-choice question by choosing 'A', 'B', 'C', or 'D'.",
+    "attacked": "With your knowledge of {}, tackle the following multiple-choice question by choosing 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "vicuna_fewshot.md",
+    "attack_type": "stresstest",
+    "original": "With your understanding of {}, kindly answer the subsequent multiple-choice question by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "With your understanding of {}, kindly answer the subsequent multiple-choice question by selecting 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze the provided sentence and classify its grammatical correctness as 'Acceptable' or 'Unacceptable':",
+    "attacked": "Analyze the provided sentence and classify its grammatical correctness as 'Acceptable' or 'Unacceptable'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Is the provided sentence grammatically correct? Respond with 'Acceptable' or 'Unacceptable':",
+    "attacked": "Is the provided sentence grammatically correct? Respond with 'Acceptable' or 'Unacceptable'  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a tool for determining grammatical correctness, review the sentence and categorize its grammar as either 'acceptable' or 'unacceptable':",
+    "attacked": "As a tool for determining grammatical correctness, review the sentence and categorize its grammar as either 'acceptable' or 'unacceptable'  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a syntax analyzer, examine the grammar of the provided sentence and decide if it is correct, answering with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones:",
+    "attacked": "In the role of a syntax analyzer, examine the grammar of the provided sentence and decide if it is correct, answering with 'acceptable' for grammatically correct sentences or 'unacceptable' for incorrect ones  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please classify the relationship between the provided sentences as 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Please classify the relationship between the provided sentences as 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Indicate if the connection between the following sentences is 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Indicate if the connection between the following sentences is 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment', 'neutral', or 'contradiction'  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment', 'neutral', or 'contradiction':",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment', 'neutral', or 'contradiction'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Are the meanings of the following pair of sentences the same? Answer with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Are the meanings of the following pair of sentences the same? Answer with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a textual comparison specialist, examine the given sentences and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "In the role of a textual comparison specialist, examine the given sentences and decide if they share the same meaning, responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as a linguistic investigator, determine if the context given entails the answer to the question and provide your conclusion with 'entailment' or 'not_entailment'.",
+    "attacked": "In your role as a linguistic investigator, determine if the context given entails the answer to the question and provide your conclusion with 'entailment' or 'not_entailment'  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As a language expert, assess if the given context entails the answer to the question and respond with 'entailment' or 'not_entailment'.",
+    "attacked": "As a language expert, assess if the given context entails the answer to the question and respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please indicate if the following pair of sentences share the same meaning by responding with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Please indicate if the following pair of sentences share the same meaning by responding with 'equivalent' or 'not_equivalent'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Analyze if the given set of sentences have the same connotation by answering with 'equivalent' or 'not_equivalent'.",
+    "attacked": "Analyze if the given set of sentences have the same connotation by answering with 'equivalent' or 'not_equivalent'  and false is not true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please classify the relationship between the provided sentences as 'entailment' or 'not_entailment'.",
+    "attacked": "Please classify the relationship between the provided sentences as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Determine if the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'.",
+    "attacked": "Determine if the given pair of sentences displays entailment or not_entailment. Respond with 'entailment' or 'not_entailment'  and false is not true ."
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment or not_entailment. Answer with 'entailment' or 'not_entailment':",
+    "attacked": "In the role of a semantic relationship analyzer, examine the connection between the given sentences and decide if they exhibit entailment or not_entailment. Answer with 'entailment' or 'not_entailment'  and false is not true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment':",
+    "attacked": "As an entailment identification system, examine the connection between the following sentences and respond with 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Please identify the emotional tone of this passage: 'positive' or 'negative'?",
+    "attacked": "Please identify the emotional tone of this passage: 'positive' or 'negative'  and true is true  and true is true  and true is true  and true is true  and true is true ? "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "After examining the following expression, label its emotion as either 'positive' or 'negative':",
+    "attacked": "After examining the following expression, label its emotion as either 'positive' or 'negative'  and false is not true : "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an emotion detector, determine if the provided passage conveys a 'positive' or 'negative' sentiment. Classify:",
+    "attacked": "As an emotion detector, determine if the provided passage conveys a 'positive' or 'negative' sentiment. Classify  and true is true  and true is true  and true is true  and true is true  and true is true : "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'.",
+    "attacked": "Assess the connection between the following sentences and classify it as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment':",
+    "attacked": "In your role as an entailment analysis tool, assess the relationship between the given sentences and classify it as 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment' or 'not_entailment':",
+    "attacked": "Functioning as an entailment evaluation tool, analyze the provided sentences and decide if their relationship is 'entailment' or 'not_entailment'  and true is true  and true is true  and true is true  and true is true  and true is true :"
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "For each multiple-choice question about {}, identify the correct answer by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "For each multiple-choice question about {}, identify the correct answer by selecting 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "Evaluate the multiple-choice question about {} and select the most fitting response from 'A', 'B', 'C', or 'D'.",
+    "attacked": "Evaluate the multiple-choice question about {} and select the most fitting response from 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true . "
+  },
+  {
+    "source": "vicuna_zeroshot.md",
+    "attack_type": "stresstest",
+    "original": "As an expert in {}, respond to the following multiple-choice question by selecting 'A', 'B', 'C', or 'D'.",
+    "attacked": "As an expert in {}, respond to the following multiple-choice question by selecting 'A', 'B', 'C', or 'D'  and true is true  and true is true  and true is true  and true is true  and true is true ."
+  }
+]

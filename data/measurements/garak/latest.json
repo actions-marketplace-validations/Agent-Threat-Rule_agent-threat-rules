@@ -1,0 +1,14 @@
+{
+  "source": "garak",
+  "file": "2026-08-15_garak-inthewild-jailbreak-corpus-650_atr-3-5-12.json",
+  "measured_at": "2026-08-15T09:52:02.628Z",
+  "metrics": {
+    "recall": 0.9230769230769231,
+    "precision": 1,
+    "f1": 0.9600000000000001,
+    "fp_rate": 0
+  },
+  "source_version": "inthewild-jailbreak-corpus-650",
+  "atr_version": "3.5.12",
+  "samples": 650
+}

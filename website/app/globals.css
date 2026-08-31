@@ -14,6 +14,13 @@
   --high: #EA580C;
   --medium: #CA8A04;
   --green: #16A34A;
+  /* Standards palette — navy authority for spec headers / status banner. */
+  --navy: #0B1D3A;
+  --navy-soft: #1E3A5F;
+  --navy-ink: #07142A;
+  /* Spec accents */
+  --spec-rule: #C9C9C2;
+  --spec-tint: #F5F2EA;
 }
 
 @theme inline {
@@ -30,9 +37,16 @@
   --color-high: var(--high);
   --color-medium: var(--medium);
   --color-green: var(--green);
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-navy-ink: var(--navy-ink);
+  --color-spec-rule: var(--spec-rule);
+  --color-spec-tint: var(--spec-tint);
   --font-display: var(--font-inter-tight);
   --font-body: var(--font-inter);
   --font-data: var(--font-jetbrains-mono);
+  --font-spec: var(--font-source-serif);
+  --font-spec-tc: var(--font-noto-serif-tc);
   --text-xs--line-height: 1.6;
   --text-sm--line-height: 1.7;
   --text-base--line-height: 1.7;
@@ -171,3 +185,410 @@ html:not(.js-ready) .hero-enter {
 html:not(.js-ready) .speed-line {
   transform: scaleX(1);
 }
+
+/* ══════════════════════════════════════════
+   Standards-document typography
+   Applied to pages that are normative spec
+   content. Serif body, generous measure,
+   numbered section headings, RFC-style
+   anchors.
+   ══════════════════════════════════════════ */
+.spec-document {
+  font-family: var(--font-spec), var(--font-spec-tc), Georgia, "Times New Roman", "Songti TC", "Noto Serif TC", serif;
+  font-feature-settings: "kern", "liga", "onum" 1;
+  line-height: 1.75;
+  color: var(--ink);
+  font-size: 17px;
+}
+
+@media (max-width: 640px) {
+  .spec-document {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+}
+
+.spec-document p {
+  margin: 0 0 1.1em 0;
+  max-width: 38em;
+}
+
+.spec-document p + p {
+  margin-top: 0;
+}
+
+.spec-document h2,
+.spec-document h3,
+.spec-document h4 {
+  font-family: var(--font-display), var(--font-spec-tc), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--navy-ink);
+  scroll-margin-top: 6rem;
+}
+
+.spec-document h2 {
+  font-size: 1.5rem;
+  margin: 3.2rem 0 1.1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--fog);
+}
+
+.spec-document h3 {
+  font-size: 1.18rem;
+  margin: 2.2rem 0 0.7rem 0;
+}
+
+.spec-document h4 {
+  font-size: 1rem;
+  margin: 1.6rem 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.spec-document a:not([class]) {
+  color: var(--navy);
+  text-decoration: underline;
+  text-decoration-color: rgba(11, 29, 58, 0.3);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.spec-document a:not([class]):hover {
+  text-decoration-color: var(--navy);
+}
+
+.spec-document code {
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.88em;
+  background: var(--ash);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--fog);
+}
+
+.spec-document pre {
+  font-family: var(--font-data), ui-monospace, monospace;
+  background: var(--paper);
+  border: 1px solid var(--fog);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  margin: 1.2rem 0;
+}
+
+.spec-document pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.spec-document blockquote {
+  border-left: 3px solid var(--navy);
+  padding: 0.2rem 1rem;
+  margin: 1.2rem 0;
+  color: var(--graphite);
+  font-style: normal;
+}
+
+.spec-document ul,
+.spec-document ol {
+  margin: 0.5rem 0 1.1rem 1.4rem;
+  padding: 0;
+  max-width: 38em;
+}
+
+.spec-document li {
+  margin: 0.35rem 0;
+  padding-left: 0.3rem;
+}
+
+/* On mobile, wide tables become independently scrollable so they don't
+   push the entire page wider than the viewport. The block + overflow-x
+   pair is the standard fix; we keep the table semantics intact for
+   screen readers. */
+.spec-document table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4rem 0;
+  font-size: 0.92rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+@media (max-width: 640px) {
+  .spec-document table,
+  .spec-body table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .spec-document tbody,
+  .spec-document thead,
+  .spec-body tbody,
+  .spec-body thead {
+    display: table;
+    width: max-content;
+    min-width: 100%;
+  }
+}
+
+.spec-document thead {
+  background: var(--ash);
+}
+
+.spec-document th {
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--navy);
+  color: var(--navy-ink);
+}
+
+.spec-document td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--fog);
+  vertical-align: top;
+}
+
+/* RFC 2119 callout */
+.rfc2119 {
+  border-left: 3px solid var(--navy);
+  background: var(--spec-tint);
+  padding: 0.9rem 1.1rem;
+  margin: 1.6rem 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--navy-ink);
+  border-radius: 0 4px 4px 0;
+}
+
+.rfc2119 strong {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: var(--navy);
+}
+
+/* Section anchor */
+.section-anchor {
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.78em;
+  color: var(--mist);
+  margin-right: 0.5em;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+.section-anchor:hover {
+  color: var(--navy);
+}
+
+.spec-document h2 .section-anchor,
+.spec-document h3 .section-anchor {
+  font-weight: 500;
+}
+
+/* Inline normative / informative badge */
+.spec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.18rem 0.5rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.spec-badge.normative {
+  background: var(--navy);
+  color: white;
+}
+
+.spec-badge.informative {
+  background: var(--ash);
+  color: var(--graphite);
+  border: 1px solid var(--fog);
+}
+
+/* Document status banner */
+.doc-status {
+  background: var(--navy);
+  color: white;
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  padding: 0.55rem 0.95rem;
+  border-radius: 4px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1rem;
+}
+
+.doc-status strong {
+  font-weight: 600;
+  color: white;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.doc-status .pipe {
+  opacity: 0.4;
+}
+
+.doc-status a {
+  color: #BBD0F5;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+
+.doc-status a:hover {
+  color: white;
+}
+
+/* Standards site layout: max-width measure on spec pages */
+.spec-measure {
+  max-width: 44rem;
+}
+
+.spec-measure-wide {
+  max-width: 56rem;
+}
+
+/* ToC sticky rail */
+.spec-toc {
+  position: sticky;
+  top: 5.5rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+
+.spec-toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.spec-toc li {
+  margin: 0;
+  padding: 0;
+}
+
+.spec-toc a {
+  display: block;
+  padding: 0.35rem 0;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: var(--stone);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.spec-toc a:hover,
+.spec-toc a.active {
+  color: var(--navy);
+  border-left-color: var(--navy);
+}
+
+.spec-toc .toc-section-num {
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.78em;
+  color: var(--mist);
+  margin-right: 0.4em;
+}
+
+/* Mobile ToC trigger */
+@media (max-width: 1023px) {
+  .spec-toc {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* Tabular numerics for stats */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print-style "last modified" */
+.spec-meta {
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--stone);
+  letter-spacing: 0.02em;
+}
+
+/* ATD page — companion-standard accents (draft notes + forward label) */
+.spec-body .atd-note {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--navy-soft);
+  background: var(--spec-tint);
+  border-radius: 0;
+  font-size: 0.95em;
+  color: var(--graphite);
+}
+.spec-body .atd-fwd {
+  color: var(--stone);
+  font-style: italic;
+  font-size: 0.85em;
+}
+.spec-body table.atd-table code {
+  white-space: nowrap;
+}
+
+/* ===== ATD masthead — CIS-native (paper, Inter Tight display, ATR palette) ===== */
+.atd-masthead {
+  max-width: 52rem;
+}
+.atd-logo {
+  margin-bottom: 1.5rem;
+}
+.atd-eyebrow {
+  font-family: var(--font-data), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  line-height: 1.7;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin: 0 0 1rem;
+  max-width: 44ch;
+}
+.atd-masthead h1 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(2.3rem, 6vw, 3.6rem);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.022em;
+  color: var(--navy-ink);
+  margin: 0 0 1rem;
+  text-wrap: balance;
+  max-width: 20ch;
+}
+.atd-masthead .atd-sub {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: clamp(1.02rem, 2.2vw, 1.25rem);
+  line-height: 1.6;
+  color: var(--graphite);
+  max-width: 50ch;
+  text-wrap: pretty;
+  margin: 0 0 1.5rem;
+}
+
+/* ATD doc inherits .spec-document CIS (serif body, Inter Tight headings);
+   keep mono only for data blocks */
+.atd-doc .spec-body pre,
+.atd-doc .spec-body code,
+.atd-doc .spec-body table { font-family: var(--font-data), ui-monospace, monospace; }
+.atd-doc .spec-body table { font-size: 0.9rem; }

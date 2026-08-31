@@ -9,6 +9,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
 import yaml from 'js-yaml';
+import { validateContract } from '../src/quality/rule-contract.js';
 
 const RULES_DIR = join(import.meta.dirname ?? '.', '..', 'rules');
 
@@ -25,17 +26,23 @@ const VALID_SEVERITIES = ['critical', 'high', 'medium', 'low', 'informational'];
 const VALID_CATEGORIES = [
   'prompt-injection', 'tool-poisoning', 'context-exfiltration',
   'agent-manipulation', 'privilege-escalation', 'excessive-autonomy',
-  'data-poisoning', 'model-abuse', 'skill-compromise',
+  'data-poisoning', 'model-abuse', 'model-security', 'skill-compromise',
 ];
 const VALID_SOURCE_TYPES = [
   'llm_io', 'tool_call', 'mcp_exchange', 'agent_behavior',
   'multi_agent_comm', 'context_window', 'memory_access',
   'skill_lifecycle', 'skill_permission', 'skill_chain',
+  'agent_trace',
 ];
+const VALID_METHODS = ['pattern', 'signature', 'semantic', 'behavioral', 'trace'];
 const VALID_ACTIONS = [
+  // v1.0 vocabulary
   'block_input', 'block_output', 'block_tool', 'quarantine_session',
   'reset_context', 'alert', 'snapshot', 'escalate', 'reduce_permissions',
   'kill_agent',
+  // SPEC.md Appendix A canonical action vocabulary (v1.0+)
+  'block_request', 'log_alert', 'quarantine_artifact', 'require_human_review',
+  'redact_match', 'rate_limit_source', 'revoke_credential', 'notify_operator',
 ];
 
 function collectYamlFiles(dir: string): string[] {
@@ -93,6 +100,11 @@ function validateRule(filePath: string): ValidationResult {
       errors.push(`Invalid status: ${rule['status']}`);
     }
 
+    // Contract-level fields (maturity enum + confirm) — single source of truth.
+    for (const e of validateContract(rule as { maturity?: unknown; confirm?: unknown; detection?: { method?: string } })) {
+      errors.push(e);
+    }
+
     // Severity
     if (typeof rule['severity'] === 'string' && !VALID_SEVERITIES.includes(rule['severity'])) {
       errors.push(`Invalid severity: ${rule['severity']}`);
@@ -121,11 +133,79 @@ function validateRule(filePath: string): ValidationResult {
     // Detection
     const detection = rule['detection'] as Record<string, unknown> | undefined;
     if (detection) {
-      if (!detection['conditions']) {
-        errors.push('Missing detection.conditions');
+      // v1.1: method-based detection. method defaults to "pattern" if absent.
+      const method = (detection['method'] as string | undefined) ?? 'pattern';
+      if (!VALID_METHODS.includes(method)) {
+        errors.push(`Invalid detection.method: ${method} (expected one of ${VALID_METHODS.join(', ')})`);
       }
-      if (!detection['condition']) {
-        errors.push('Missing detection.condition (boolean expression)');
+
+      if (method === 'pattern') {
+        // v1.0 pattern method: conditions + condition required.
+        if (!detection['conditions']) {
+          errors.push('Missing detection.conditions (required for method=pattern)');
+        }
+        if (!detection['condition']) {
+          errors.push('Missing detection.condition (boolean expression, required for method=pattern)');
+        }
+      } else if (method === 'signature') {
+        // §5: detection.signature.indicators required.
+        const sig = detection['signature'] as Record<string, unknown> | undefined;
+        if (!sig) {
+          errors.push('Missing detection.signature (required for method=signature)');
+        } else {
+          const indicators = sig['indicators'] as unknown[] | undefined;
+          if (!Array.isArray(indicators) || indicators.length === 0) {
+            errors.push('detection.signature.indicators must be a non-empty array');
+          }
+        }
+      } else if (method === 'semantic') {
+        // §6: detection.semantic.prompt_template + threshold + judge_model_class required.
+        const sem = detection['semantic'] as Record<string, unknown> | undefined;
+        if (!sem) {
+          errors.push('Missing detection.semantic (required for method=semantic)');
+        } else {
+          for (const field of ['judge_model_class', 'prompt_template', 'threshold']) {
+            if (sem[field] === undefined) {
+              errors.push(`Missing detection.semantic.${field}`);
+            }
+          }
+        }
+      } else if (method === 'trace') {
+        // §8: detection.trace with at least one of forbid/require/invariant.
+        const trace = detection['trace'] as Record<string, unknown> | undefined;
+        if (!trace) {
+          errors.push('Missing detection.trace (required for method=trace)');
+        } else {
+          const hasPrimitive = ['forbid', 'require', 'invariant'].some(
+            (p) => Array.isArray(trace[p]) && (trace[p] as unknown[]).length > 0
+          );
+          if (!hasPrimitive) {
+            errors.push('detection.trace requires at least one non-empty primitive (forbid/require/invariant)');
+          }
+        }
+      } else if (method === 'behavioral') {
+        // §7: detection.behavioral requires metric, aggregation, window, operator, threshold.
+        const beh = detection['behavioral'] as Record<string, unknown> | undefined;
+        if (!beh) {
+          errors.push('Missing detection.behavioral (required for method=behavioral)');
+        } else {
+          for (const field of ['metric', 'aggregation', 'window', 'operator', 'threshold']) {
+            if (beh[field] === undefined) {
+              errors.push(`Missing detection.behavioral.${field}`);
+            }
+          }
+          const validAgg = ['count', 'sum', 'avg', 'max', 'distinct_count', 'rate'];
+          if (beh['aggregation'] && !validAgg.includes(beh['aggregation'] as string)) {
+            errors.push(`Invalid detection.behavioral.aggregation: ${beh['aggregation']}`);
+          }
+          const validOp = ['gt', 'lt', 'gte', 'lte', 'eq', 'deviation_from_baseline'];
+          if (beh['operator'] && !validOp.includes(beh['operator'] as string)) {
+            errors.push(`Invalid detection.behavioral.operator: ${beh['operator']}`);
+          }
+          if (beh['operator'] === 'deviation_from_baseline' && !beh['baseline']) {
+            errors.push('detection.behavioral.baseline required when operator=deviation_from_baseline');
+          }
+        }
       }
     }
 
@@ -162,6 +242,26 @@ function validateRule(filePath: string): ValidationResult {
     // References (warning if missing)
     if (!rule['references']) {
       warnings.push('Missing references (OWASP LLM / MITRE ATLAS mapping recommended)');
+    } else {
+      // Every reference list must hold plain strings. spec/schema/rule.schema.json
+      // already says items: {type: string}, but nothing enforced it here, so an
+      // unquoted framework title containing ": " parsed as a YAML map instead of a
+      // string and shipped to main. The website renders these straight into JSX,
+      // where a map is not a valid React child, and every deploy after it failed
+      // at prerender for three days while validate stayed green. Error, not warning.
+      const references = rule['references'] as Record<string, unknown>;
+      for (const [field, value] of Object.entries(references)) {
+        if (!Array.isArray(value)) continue;
+        value.forEach((entry, i) => {
+          if (typeof entry !== 'string') {
+            errors.push(
+              `references.${field}[${i}] must be a string, got ${
+                Array.isArray(entry) ? 'array' : typeof entry
+              } (${JSON.stringify(entry)}). A value containing ": " needs quoting in YAML.`
+            );
+          }
+        });
+      }
     }
 
     // Validate regex patterns don't cause errors
@@ -175,7 +275,16 @@ function validateRule(filePath: string): ValidationResult {
             // Strip leading inline flags (JS uses RegExp flags instead)
             pattern = pattern.replace(/^\(\?[imsx]+\)/, '');
             try {
-              new RegExp(pattern);
+              // Use 'u' when the pattern needs it. \u{...} and \p{...} need it by
+              // syntax; so does a literal astral character, because without 'u' a
+              // class range written with literals is a SyntaxError rather than a
+              // range. Literals are the spelling ATR rules use, since \u{...} is
+              // JS-only and unusable from the Python and Go channels — keep this
+              // in step with needsUnicodeFlag in src/engine.ts.
+              const needsUnicode =
+                /\\u\{|\\p\{/.test(pattern) ||
+                [...pattern].some((ch) => (ch.codePointAt(0) ?? 0) > 0xffff);
+              new RegExp(pattern, needsUnicode ? 'u' : '');
             } catch (e) {
               const desc = cond['description'] ?? cond['field'] ?? 'unknown';
               errors.push(`Invalid regex in condition (${desc}): ${cond['value']} (${e instanceof Error ? e.message : String(e)})`);

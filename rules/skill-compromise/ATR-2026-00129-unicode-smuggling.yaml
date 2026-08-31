@@ -12,14 +12,14 @@ author: "ATR Community"
 date: "2026/04/05"
 schema_version: "1.0"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: critical
 
 references:
   mitre_atlas:
-    - "AML.T0010 - ML Supply Chain Compromise"
+    - "AML.T0010 - AI Supply Chain Compromise"
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_ast:
     - "AST01:2026 - Malicious Skills"
     - "AST05:2026 - Unsafe Deserialization"
@@ -27,9 +27,42 @@ references:
     - "Snyk ToxicSkills: ASCII smuggling via Unicode Tags (Feb 2026)"
     - "Unicode Technical Report #36: Security Considerations"
 
+  owasp_agentic:
+    - ASI01:2026
 metadata_provenance:
   mitre_atlas: auto-generated
 
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MP.5.1"
+      context: "Invisible Unicode Tag characters and zero-width steganographic payloads embedded in SKILL.md files are adversarial inputs that exploit the gap between human-visible content and agent-parsed content; MP.5.1 requires identifying and characterizing these hidden prompt-injection vectors as risks to the AI system."
+      strength: primary
+    - subcategory: "MG.3.2"
+      context: "SKILL.md files are third-party supplied artifacts consumed by AI agents, and Unicode smuggling is a supply chain compromise vector; MG.3.2 requires monitoring of these pre-trained/third-party components for hidden malicious content before agent execution."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "Detection of 3+ Unicode Tag characters or 5+ zero-width characters indicates a covert injection payload that must trigger containment of the affected skill; MG.2.3 mandates predefined response plans to disengage or quarantine compromised skills before agents execute the smuggled instructions."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the skill supply-chain compromise (Unicode Tag Character Smuggling)."
+      strength: primary
+    - subcategory: "MG.3.1"
+      context: "NIST AI RMF MANAGE 3.1 (third-party resources regularly monitored) is supported where this rule detects the skill supply-chain compromise (Unicode Tag Character Smuggling)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the skill supply-chain compromise (Unicode Tag Character Smuggling)."
+      strength: primary
+    - clause: "8.3"
+      context: "ISO/IEC 42001 Clause 8.3 (AI risk treatment) is supported by this rule, which implements runtime detection of the skill supply-chain compromise (Unicode Tag Character Smuggling) as a treatment control."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the skill supply-chain compromise (Unicode Tag Character Smuggling)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the skill supply-chain compromise (Unicode Tag Character Smuggling)."
+      strength: secondary
 tags:
   category: skill-compromise
   subcategory: unicode-smuggling

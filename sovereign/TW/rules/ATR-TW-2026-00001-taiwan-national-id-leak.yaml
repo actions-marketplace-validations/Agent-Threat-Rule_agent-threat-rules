@@ -1,0 +1,162 @@
+title: "Taiwan National ID Number (身分證字號) Leak in Agent Output"
+id: ATR-TW-2026-00001
+rule_version: 1
+status: draft
+description: >
+  Detects leakage of Taiwan National ID Numbers (身分證字號) in AI agent
+  output, tool-call arguments, or memory writes. Taiwan National ID
+  format is one uppercase Latin letter (A-Z, area code) followed by
+  the gender digit (1 for male, 2 for female) and 8 additional digits.
+  Detection covers the leak pattern with adjacency context to reduce
+  false positives on unrelated alphanumeric sequences.
+
+  Required for Taiwan deployments under the Personal Data Protection
+  Act (個人資料保護法 / PDPA) Article 6 (special protection for ID
+  data) and Article 19-20 (lawful basis required for processing). An
+  agent that emits a Taiwan National ID Number into logs, tool args,
+  or downstream APIs without explicit lawful basis is a per-incident
+  PDPA breach triggering reporting obligations to the National Privacy
+  Authority.
+
+  Real-world relevance: AI agents handling customer service in Taiwan
+  (banking chatbots, government 1999 service, telco support) routinely
+  receive Taiwan IDs in user input and have been observed echoing them
+  in tool calls or persisting them to memory stores without redaction.
+
+author: "Adam Lin, Maintainer (bootstrap sovereign attestation)"
+date: "2026/05/25"
+schema_version: "0.1"
+detection_tier: pattern
+maturity: draft
+severity: high
+
+sovereign_authority: "TW"
+sovereign_attestation:
+  signer: "Adam Lin <adam@agentthreatrule.org>"
+  signer_capacity: "Maintainer, bootstrap attestation pending formal Taiwan sovereign authority adoption"
+  attestation_date: "2026-05-25T08:00:00Z"
+  signing_key_id: "atr-tw-bootstrap-2026-05-25"
+  signing_algorithm: "ed25519"
+  signature: "PENDING_SIGNATURE_AWAITING_MAINTAINER_KEY_GENERATION"
+  public_key_url: "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/sovereign/TW/attestation/2026-05-25-bootstrap-key.pub"
+  trust_tier: "tier-3-bootstrap"
+  sunset_condition: "Re-attestation by recognized Taiwan sovereign authority OR 36 months from attestation_date, whichever earlier"
+
+references:
+  owasp_llm:
+    - "LLM02:2025 - Sensitive Information Disclosure"
+  owasp_agentic:
+    - "ASI06:2026 - Sensitive Data Leakage"
+  mitre_atlas:
+    - "AML.T0048 - External Harms"
+    - "AML.T0057 - LLM Data Leakage"
+  taiwan_pdpa:
+    - article: "6"
+      context: "Special protection for ID, medical, genetic, criminal, and biometric data; processing requires specific lawful basis beyond general consent."
+    - article: "19"
+      context: "Non-government processing of personal data requires lawful basis (consent, contract, statutory permission, etc.)."
+    - article: "20"
+      context: "Processing must be limited to the specific purpose for which the data was collected; agent output to unrelated downstream systems exceeds purpose limitation."
+    - article: "29"
+      context: "Data breach notification obligations to data subjects and the regulator when personal data leak is confirmed."
+
+compliance:
+  taiwan_pdpa:
+    - article: "6"
+      context: "Detection of Taiwan National ID Number in agent output paths satisfies PDPA Article 6 monitoring requirement for special-protection data flows."
+      strength: primary
+    - article: "29"
+      context: "Detection event provides the timestamped evidence required to assess breach severity and trigger Article 29 notification obligations."
+      strength: secondary
+  iso_42001:
+    - clause: "8.4"
+      context: "Personal data exposure via AI agent output is a documented operational risk requiring detection per ISO 42001 Annex A operational planning."
+      strength: secondary
+
+tags:
+  category: context-exfiltration
+  subcategory: pii-taiwan
+  scan_target: mcp
+  confidence: high
+  jurisdiction: TW
+
+agent_source:
+  type: agent_output
+  framework:
+    - openai
+    - anthropic
+    - langchain
+    - llamaindex
+    - autogen
+    - crewai
+    - "any-framework-deployed-in-tw"
+
+detection:
+  language: any
+  conditions:
+    - field: agent_output
+      operator: regex
+      value: '\b[A-Z][12]\d{8}\b'
+      description: "Taiwan National ID format: 1 letter (area) + gender digit (1=M, 2=F) + 8 digits. Word boundary anchored to reduce FP on longer alphanumeric strings."
+    - field: tool_args
+      operator: regex
+      value: '\b[A-Z][12]\d{8}\b'
+      description: "Same pattern in tool call arguments — agent forwarding the ID to downstream API or storage."
+    - field: memory_write
+      operator: regex
+      value: '\b[A-Z][12]\d{8}\b'
+      description: "Same pattern in memory store writes — agent persisting the ID for later retrieval."
+
+response_action:
+  - block_output
+  - alert
+  - snapshot
+
+test_cases:
+  true_positives:
+    - input: "用戶身分證字號為 A123456789，請查詢戶籍資料"
+      expected: triggered
+      description: "Standard zh-Hant context with Taiwan ID embedded"
+    - input: "Customer ID: A123456789, please process refund"
+      expected: triggered
+      description: "English context with Taiwan ID embedded"
+    - input: "顧客資料：B234567890 申請退款"
+      expected: triggered
+      description: "B-area-coded ID (Taipei City) with action verb"
+    - input: '{"customer_id": "F198765432", "amount": 1000}'
+      expected: triggered
+      description: "JSON tool call arg with Taiwan ID — agent forwarding to payment API"
+    - input: "Save user F298765432 to user_database"
+      expected: triggered
+      description: "Memory write context with female gender digit"
+  true_negatives:
+    - input: "Please process refund for order #12345"
+      expected: not_triggered
+      description: "Order number, not a Taiwan ID"
+    - input: "Vehicle plate ABC-1234"
+      expected: not_triggered
+      description: "Vehicle plate, format doesn't match (only 4 digits)"
+    - input: "API key sk-1234567890abcdef"
+      expected: not_triggered
+      description: "API key, format doesn't match (no Taiwan ID structure)"
+    - input: "Postal code 10617 Taipei"
+      expected: not_triggered
+      description: "Postal code, format doesn't match"
+    - input: "Order ID Z999888777"
+      expected: not_triggered
+      description: "Z followed by 9 — gender digit must be 1 or 2; this is not a valid Taiwan ID format"
+  edge_cases:
+    - input: "A123456789012"
+      expected: not_triggered
+      description: "Too many digits — word boundary anchor prevents FP on longer strings"
+      note: "Confirmed by detection.conditions[0].value regex word boundary"
+
+# Future hardening: add Taiwan ID checksum validation as Tier 2 condition
+# to reduce FP further. Checksum algorithm:
+#   letter_to_int(A=10, B=11, ..., Z=33) — but skipping I, O, U, V (not used)
+#   weighted sum: (letter_tens * 1) + (letter_ones * 9) +
+#     (digit_1 * 8) + ... + (digit_8 * 1) + (check_digit * 1)
+#   valid if sum mod 10 == 0
+# Implementing this requires a custom operator (beyond regex), so it
+# is deferred to a v2.0 hardening pass after the sovereign mechanism
+# is engine-integrated.

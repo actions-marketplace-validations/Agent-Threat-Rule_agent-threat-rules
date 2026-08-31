@@ -22,6 +22,11 @@ export { loadRuleFile, loadRulesFromDirectory, validateRule } from './loader.js'
 export { SessionTracker } from './session-tracker.js';
 export type { SessionStateSnapshot } from './session-tracker.js';
 export { computeContentHash } from './content-hash.js';
+export { redactMatchedValue, redactMatchedValues } from './redact.js';
+export type { RedactOptions } from './redact.js';
+export { evaluateSemanticRule } from './semantic-evaluator.js';
+export { createOpenAICompatibleJudge } from './judges/openai-compatible.js';
+export type { OpenAICompatibleJudgeConfig } from './judges/openai-compatible.js';
 
 // ── Tier 0: Invariant Enforcement (hard boundaries) ──────────────
 export { InvariantChecker } from './tier0-invariant.js';
@@ -61,7 +66,14 @@ export type { SemanticLayerConfig } from './layer-integration.js';
 
 // ── Tooling (rule authoring and coverage analysis) ──────────────
 export { RuleScaffolder } from './rule-scaffolder.js';
-export type { ScaffoldInput, ScaffoldResult, ScaffoldOptions } from './rule-scaffolder.js';
+export type {
+  ScaffoldDetectionMethod,
+  ScaffoldEvasionTestInput,
+  ScaffoldInput,
+  ScaffoldOptions,
+  ScaffoldResult,
+  SemanticScaffoldOptions,
+} from './rule-scaffolder.js';
 export { CoverageAnalyzer } from './coverage-analyzer.js';
 export type { CoverageGap, CoverageReport } from './coverage-analyzer.js';
 
@@ -86,8 +98,33 @@ export { ActionExecutor } from './action-executor.js';
 export type { ActionExecutorConfig } from './action-executor.js';
 export { DefaultAdapter } from './adapters/default-adapter.js';
 export { StdioAdapter } from './adapters/stdio-adapter.js';
-export { HookHandler } from './hook-handler.js';
-export type { HookHandlerConfig } from './hook-handler.js';
+export { HookHandler, toClaudeCodePreToolUse, toClaudeCodePostToolUse } from './hook-handler.js';
+export type { HookHandlerConfig, HookContractOptions } from './hook-handler.js';
+
+// Enforcement policy — the operator directive that turns blocking on.
+// Blocking is OFF by default; without it ATR reports and never blocks.
+//
+// Library callers want laneFromConfig / blockingFromConfig: they take an
+// explicit value and cannot read the environment. resolveEnforcementPolicy is
+// the CLI entry point and is the only function that reads process.env for the
+// lane and blocking switches (other modules read it for unrelated settings) —
+// resolveLane / resolveBlocking require an EnvSource argument, so nothing else
+// can reach it by accident.
+export {
+  laneFromConfig,
+  blockingFromConfig,
+  resolveEnforcementPolicy,
+  resolveLane,
+  resolveBlocking,
+  parseLane,
+  parseBooleanFlag,
+  isEnforcementAction,
+  DEFAULT_LANE,
+  DEFAULT_BLOCKING,
+  LANE_ENV_VAR,
+  BLOCKING_ENV_VAR,
+} from './enforcement.js';
+export type { EnvSource, EnforcementPolicy } from './enforcement.js';
 
 // Quality Standard — RFC-001 reference implementation
 export * as quality from './quality/index.js';
@@ -109,6 +146,10 @@ export type {
   ATRTags,
   ATRAgentSource,
   ATRDetection,
+  ATRSemanticDetection,
+  ATRSemanticJudge,
+  ATRSemanticJudgeCategory,
+  ATRSemanticJudgeResult,
   ATRResponse,
   ATRTestCases,
   ATRTestCase,

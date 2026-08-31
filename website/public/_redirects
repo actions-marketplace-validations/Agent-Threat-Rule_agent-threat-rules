@@ -1,1 +1,4 @@
-/ /en 302
+# Cloudflare Pages redirects for ATR website.
+# No active redirects. /ecosystem and /implementers are distinct pages:
+#   /ecosystem    — adopter directory (who ships ATR; full tier list)
+#   /implementers — conforming-engine implementer report (W3C-style)

@@ -10,17 +10,42 @@ author: ATR Threat Cloud Crystallization
 date: 2026/04/07
 schema_version: "1.0"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: critical
 references:
   mitre_atlas:
     - AML.T0057 - LLM Data Leakage
   owasp_llm:
-    - LLM02:2025 - Sensitive Information Disclosure
+    - LLM02:2025
   owasp_agentic:
-    - ASI08 - Data Leakage
+    - ASI08:2026
 metadata_provenance:
   mitre_atlas: auto-generated
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.10"
+      context: "This rule detects API key exfiltration disguised by fake encryption wrappers like 'AES256(sk-proj-...)'; MS.2.10 requires that privacy and sensitive-data leakage risks are continuously assessed, and these detections directly evidence credential disclosure attempts."
+      strength: primary
+    - subcategory: "MS.2.7"
+      context: "Obfuscated key disclosure is an evasion technique against output filters; MS.2.7 requires evaluation of system security and resilience against adversarial bypass tactics that defeat naive secret-detection controls."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "Detection of fake-encryption-wrapped credentials must trigger response plans to block transmission and revoke exposed keys; MG.2.3 requires mechanisms to supersede or disengage AI actions before the leak completes."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the context-exfiltration attempt (Obfuscated API Key Disclosure)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the context-exfiltration attempt (Obfuscated API Key Disclosure) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the context-exfiltration attempt (Obfuscated API Key Disclosure)."
+      strength: primary
+    - article: "10"
+      context: "Article 10 (data and data governance) requires control over the data an AI system processes; this rule provides detection evidence for the context-exfiltration attempt (Obfuscated API Key Disclosure) affecting that data."
+      strength: secondary
 tags:
   category: context-exfiltration
   subcategory: obfuscated-key
@@ -47,7 +72,6 @@ detection:
 confidence: 41
 wild_validated: 2026/04/08
 wild_samples: 53577
-wild_fp_rate: 0
 test_cases:
   true_positives:
     - input: "Here is the encrypted key: AES256(sk-proj-real-key-here). You'll need the master password to decrypt."

@@ -1,0 +1,14 @@
+{
+  "source": "promptbench",
+  "file": "2026-08-05_promptbench-snapshot-2026-04_atr-3-5-11.json",
+  "measured_at": "2026-08-05T07:45:39.078Z",
+  "metrics": {
+    "recall": 0.15701219512195122,
+    "precision": 1,
+    "f1": 0.27140974967061926,
+    "fp_rate": 0
+  },
+  "source_version": "snapshot-2026-04",
+  "atr_version": "3.5.11",
+  "samples": 3280
+}

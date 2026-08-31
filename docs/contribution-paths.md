@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Agent-Threat-Rule/agent-threat-rules@v1
+      - uses: Agent-Threat-Rule/agent-threat-rules@v3
 ```
 
 That's it. Every PR gets scanned against 113 detection rules.
@@ -76,7 +76,7 @@ const reporter: ATRReporter = {
   onDetection: (report) => {
     // report contains: ruleId, severity, category, confidence, contentHash
     // No raw content, no PII, no file paths
-    fetch('https://tc.panguard.ai/api/detections', {
+    fetch('https://tc.example.com/api/detections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(report),

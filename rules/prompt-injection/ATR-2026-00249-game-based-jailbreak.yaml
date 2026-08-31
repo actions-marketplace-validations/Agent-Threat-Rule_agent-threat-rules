@@ -11,17 +11,45 @@ author: "ATR Community (via NVIDIA garak in-the-wild corpus)"
 date: "2026/04/19"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_agentic:
-    - "ASI01:2026 - Agent Behaviour Hijack"
+    - "ASI01:2026"
   mitre_atlas:
     - "AML.T0054 - LLM Jailbreak"
   research:
     - "https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.6"
+      context: "This rule detects jailbreak attempts that use fictional game framing and entity creation to bypass safety guardrails, producing continuous evidence of safety/security risk magnitude. MS.2.6 requires ongoing evaluation of AI safety risks, which these detections directly populate."
+      strength: primary
+    - subcategory: "MS.2.7"
+      context: "Game-based jailbreaks with unrestricted entity roleplay are adversarial inputs that test the resilience of model alignment; MS.2.7 requires that security and resilience against such evasion techniques are evaluated and documented."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "Detection of successful jailbreak patterns triggers mechanisms to disengage or constrain the AI system before it produces unsafe content under the fictional framing; MG.2.3 mandates these supersede/deactivate response paths."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the prompt-injection attempt (Text-Based Game Jailbreak with Entity Creation)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the prompt-injection attempt (Text-Based Game Jailbreak with Entity Creation) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the prompt-injection attempt (Text-Based Game Jailbreak with Entity Creation)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the prompt-injection attempt (Text-Based Game Jailbreak with Entity Creation)."
+      strength: secondary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the prompt-injection attempt (Text-Based Game Jailbreak with Entity Creation) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: prompt-injection
   subcategory: game-based-jailbreak
@@ -33,23 +61,23 @@ agent_source:
   provider: [any]
 detection:
   conditions:
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(text-based|text\s+based|role\s*-?\s*play(?:ing)?)\s+(game|simulation|scenario|world|environment|space|universe|reality)\s+.{0,100}(no\s+(rules?|limitations?|guidelines?|laws?|regulations?|restrictions?|constraints?)|anything\s+(?:can\s+be\s+)?(?:said|done)|everything\s+(?:can\s+be\s+)?(?:said|done|allowed))'
       description: 'Text-based game establishment with explicit constraint removal'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?i)(create|make|spawn|generate|introduce|establish)\s+(?:a[n]?\s+)?(entity|character|being|persona|ai|assistant|bot|agent|intelligence)\s+(?:named|called|that|who)\s+\w+\s+(?:that\s+|who\s+)?(?:can|will|does|has|is).{0,80}(?:answer\s+all|ignore|disregard|bypass|not\s+care\s+about|no\s+(?:moral|ethical|safety)|unrestricted|unlimited)'
       description: 'Entity creation with explicit safety bypass capabilities'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?i)(?:openai|anthropic|google|microsoft|meta)\s+(?:programming|training|guidelines?|restrictions?|policies)\s+(?:has\s+no\s+effect|don.?t\s+(?:apply|work|matter)|are\s+(?:disabled|suspended|irrelevant|meaningless))'
       description: 'Claims that AI safety training has no effect in the fictional context'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?i)(?:stay\s+silent|don.?t\s+(?:say|mention|tell)|no\s+(?:warnings?|disclaimers?))\s+(?:and\s+)?(?:continue|keep|start|begin)\s+(?:roleplay|role\s*-?\s*play|acting|playing)\s+as\s+\w+'
       description: 'Instruction to silently assume the unrestricted entity role'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?i)(?:anything|everything)\s+(?:that\s+)?happens?\s+(?:inside|here|in\s+(?:this|the)\s+(?:game|world|space|context))\s+(?:has\s+no\s+effect|doesn.?t\s+matter|is\s+(?:safe|harmless|fictional))'
       description: 'Reality isolation claim to justify harmful content'

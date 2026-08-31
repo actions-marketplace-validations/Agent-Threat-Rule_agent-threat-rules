@@ -1,0 +1,14 @@
+{
+  "source": "hackaprompt",
+  "file": "2026-06-16_hackaprompt-v1_atr-3-5-0.json",
+  "measured_at": "2026-06-16T11:01:21.960Z",
+  "metrics": {
+    "recall": 0.6960251046025104,
+    "precision": 1,
+    "f1": 0.8207721721968669,
+    "fp_rate": 0
+  },
+  "source_version": "v1",
+  "atr_version": "3.5.0",
+  "samples": 4780
+}

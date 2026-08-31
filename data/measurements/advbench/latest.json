@@ -1,0 +1,14 @@
+{
+  "source": "advbench",
+  "file": "2026-06-16_advbench-upstream-2026-06-16_atr-3-5-0.json",
+  "measured_at": "2026-06-16T11:31:13.693Z",
+  "metrics": {
+    "recall": 0.021153846153846155,
+    "precision": 1,
+    "f1": 0.04143126177024482,
+    "fp_rate": 0
+  },
+  "source_version": "upstream-2026-06-16",
+  "atr_version": "3.5.0",
+  "samples": 520
+}

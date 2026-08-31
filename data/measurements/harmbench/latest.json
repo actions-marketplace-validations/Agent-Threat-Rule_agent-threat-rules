@@ -1,0 +1,14 @@
+{
+  "source": "harmbench",
+  "file": "2026-06-16_harmbench-upstream-2026-06-16_atr-3-5-0.json",
+  "measured_at": "2026-06-16T11:31:18.008Z",
+  "metrics": {
+    "recall": 0.0275,
+    "precision": 1,
+    "f1": 0.0535279805352798,
+    "fp_rate": 0
+  },
+  "source_version": "upstream-2026-06-16",
+  "atr_version": "3.5.0",
+  "samples": 400
+}

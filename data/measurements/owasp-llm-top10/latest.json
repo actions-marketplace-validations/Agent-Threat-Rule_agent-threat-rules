@@ -1,0 +1,14 @@
+{
+  "source": "owasp-llm-top10",
+  "file": "2026-08-05_owasp-llm-top10-snapshot-2026-04_atr-3-5-11.json",
+  "measured_at": "2026-08-05T07:46:01.925Z",
+  "metrics": {
+    "recall": 0.16071428571428573,
+    "precision": 1,
+    "f1": 0.27692307692307694,
+    "fp_rate": 0
+  },
+  "source_version": "snapshot-2026-04",
+  "atr_version": "3.5.11",
+  "samples": 56
+}

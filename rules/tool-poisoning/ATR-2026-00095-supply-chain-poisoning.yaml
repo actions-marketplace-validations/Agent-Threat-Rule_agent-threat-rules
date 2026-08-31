@@ -1,6 +1,6 @@
 title: MCP Tool Supply Chain Poisoning
 id: ATR-2026-00095
-rule_version: 1
+rule_version: 2
 status: draft
 description: >
   Detects tool poisoning attacks targeting the MCP (Model Context Protocol) skill/tool supply chain. Attackers inject
@@ -14,11 +14,44 @@ maturity: test
 severity: critical
 references:
   owasp_llm:
-    - LLM06:2025 - Excessive Agency
+    - LLM06:2025
   mitre_atlas:
     - AML.T0053
+  owasp_agentic:
+    - ASI05:2026
 metadata_provenance:
   owasp_llm: auto-generated
+compliance:
+  nist_ai_rmf:
+    - subcategory: "GV.6.1"
+      context: "MCP tool poisoning is a third-party/supplier supply-chain attack where malicious payloads enter through tool descriptions, schemas, or return values consumed by the agent; GV.6.1 requires policies and procedures that address these third-party AI component risks."
+      strength: primary
+    - subcategory: "MG.3.1"
+      context: "Detecting prompt injection payloads, dangerous code execution primitives, and exfiltration URLs in tool responses provides the runtime evidence needed to manage risks introduced by third-party MCP tools, as required by MG.3.1."
+      strength: secondary
+    - subcategory: "GV.6.2"
+      context: "When poisoned tools are detected, contingency processes must isolate or disable the affected supplier tool to prevent unintended code execution and data exfiltration; GV.6.2 requires these third-party failure response processes to be in place."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the tool-poisoning technique (MCP Tool Supply Chain Poisoning)."
+      strength: primary
+    - subcategory: "MG.3.2"
+      context: "NIST AI RMF MANAGE 3.2 (pre-trained models monitored as part of maintenance) is supported where this rule detects the tool-poisoning technique (MCP Tool Supply Chain Poisoning)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the tool-poisoning technique (MCP Tool Supply Chain Poisoning)."
+      strength: primary
+    - clause: "8.3"
+      context: "ISO/IEC 42001 Clause 8.3 (AI risk treatment) is supported by this rule, which implements runtime detection of the tool-poisoning technique (MCP Tool Supply Chain Poisoning) as a treatment control."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the tool-poisoning technique (MCP Tool Supply Chain Poisoning)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the tool-poisoning technique (MCP Tool Supply Chain Poisoning)."
+      strength: secondary
 tags:
   category: tool-poisoning
   subcategory: supply-chain-attack
@@ -39,14 +72,12 @@ detection:
       description: Prompt injection payload in tool response output
     - field: tool_response
       operator: regex
-      value: >-
-        (?i)(\beval\s*\(|\bexec\s*\(|\bos\.system\s*\(|subprocess\.(run|call|Popen)|child_process\.exec|Runtime\.getRuntime\(\)\.exec)
-      description: Dangerous code execution primitives in tool response
+      value: '(?i)((\beval\s*\(|\bexec\s*\(|\bos\.system\s*\(|subprocess\.(run|call|Popen)|child_process\.exec|Runtime\.getRuntime\(\)\.exec)[\s\S]{0,80}(https?://|\bcurl\b|\bwget\b|/etc/(passwd|shadow)|\.ssh/|id_rsa|base64|b64decode|atob\s*\(|/dev/tcp/|\|\s*(ba)?sh\b|reverse.?shell|chmod\s+\+x|\bnc\s+-|/bin/(ba)?sh|socket\.socket|pty\.spawn|powershell\s+-|Invoke-Expression)|(https?://|\bcurl\b|\bwget\b|/etc/(passwd|shadow)|\.ssh/|id_rsa|base64|b64decode|atob\s*\(|/dev/tcp/|\|\s*(ba)?sh\b|reverse.?shell|chmod\s+\+x|\bnc\s+-|/bin/(ba)?sh|socket\.socket|pty\.spawn|powershell\s+-|Invoke-Expression)[\s\S]{0,80}(\beval\s*\(|\bexec\s*\(|\bos\.system\s*\(|subprocess\.(run|call|Popen)|child_process\.exec|Runtime\.getRuntime\(\)\.exec))'
+      description: "Dangerous code execution primitive paired with a payload-delivery or exfiltration co-signal, in either order. The bare primitive is not a trigger: subprocess.run, eval() and child_process.exec appear in ordinary Python and Node source, in linter output, and in the secure-coding guidance that tells authors never to use them, so on its own the name carries no attack signal."
     - field: tool_response
       operator: regex
-      value: >-
-        (?i)\b(curl|wget|fetch|http|request)\s+.{0,30}(attacker|evil|malicious|exfil|c2|callback|webhook\.site|ngrok|burp)
-      description: Data exfiltration URL patterns in tool response
+      value: '(?i)\b(curl|wget|fetch|http|request)\s+.{0,30}(attacker|evil|malicious|exfil|\bc2\b|webhook\.site|ngrok|pastebin|\.onion|requestbin|burpcollab)'
+      description: "Data exfiltration URL patterns in tool response. callback and the bare product name burp were removed - HTTP callback and Burp Suite are ordinary technical vocabulary - and c2 is word-bounded so it no longer matches inside tokens such as X-aws-ec2-metadata-token."
     - field: tool_response
       operator: regex
       value: (?i)(\[SYSTEM\]|\[INST\]|<\|system\|>|<\|im_start\|>|<<SYS>>|\[/INST\])\s*.{5,}
@@ -62,6 +93,11 @@ detection:
     - >-
       A penetration testing tool that includes example exploit payloads such as subprocess.run() calls in its
       educational documentation output
+    - >-
+      Prompt-injection defence documentation that quotes the indicator string verbatim - a skill listing "Ignore
+      previous instructions" or "[SYSTEM]" in a catalogue of payloads to watch for is textually identical to the
+      payload itself. This is the residual false-positive class after the 2026-08-04 tightening and is not reducible
+      by pattern matching.
 response:
   actions:
     - block_input
@@ -75,7 +111,6 @@ response:
 confidence: 65
 wild_validated: 2026/04/08
 wild_samples: 53577
-wild_fp_rate: 0
 test_cases:
   true_positives:
     - tool_response: >-

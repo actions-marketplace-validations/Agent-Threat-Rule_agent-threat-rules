@@ -1,0 +1,24 @@
+{
+  "framework": "OWASP Top 10 for LLM Applications 2025",
+  "idField": "id",
+  "idType": "string",
+  "source": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+  "note": "Titles verbatim from the OWASP Top 10 for LLM Applications 2025 PDF, verified 2026-08-06 (all ten match). This file is the single source for these titles: rule `references.owasp_llm` entries carry the bare identifier only, because embedded titles drifted — 90 of them carried the title that number held in the 2023 list, e.g. LLM04 labelled 'Model Denial of Service' rather than 'Data and Model Poisoning'.",
+  "strengthValues": [
+    "primary",
+    "secondary",
+    "partial"
+  ],
+  "valids": {
+    "LLM01:2025": "Prompt Injection",
+    "LLM02:2025": "Sensitive Information Disclosure",
+    "LLM03:2025": "Supply Chain",
+    "LLM04:2025": "Data and Model Poisoning",
+    "LLM05:2025": "Improper Output Handling",
+    "LLM06:2025": "Excessive Agency",
+    "LLM07:2025": "System Prompt Leakage",
+    "LLM08:2025": "Vector and Embedding Weaknesses",
+    "LLM09:2025": "Misinformation",
+    "LLM10:2025": "Unbounded Consumption"
+  }
+}

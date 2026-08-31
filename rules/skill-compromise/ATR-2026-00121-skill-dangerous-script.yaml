@@ -12,16 +12,16 @@ author: ATR Community
 date: 2026/03/29
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: critical
 references:
   mitre_atlas:
-    - AML.T0010 - ML Supply Chain Compromise
+    - AML.T0010 - AI Supply Chain Compromise
   owasp_llm:
-    - LLM03:2025 - Supply Chain Vulnerabilities
+    - LLM03:2025
   owasp_agentic:
-    - ASI04:2026 - Supply Chain Compromise
-    - ASI05:2026 - Unexpected Code Execution
+    - ASI04:2026
+    - ASI05:2026
   owasp_ast:
     - AST01:2026 - Malicious Skills
     - AST02:2026 - Supply Chain Compromise
@@ -33,6 +33,37 @@ references:
     - "ClawHavoc: C2 IP 91.92.242.30"
 metadata_provenance:
   mitre_atlas: auto-generated
+compliance:
+  nist_ai_rmf:
+    - subcategory: "GV.6.1"
+      context: >-
+        Malicious skill packages are third-party/supplier AI components introducing supply chain risk; GV.6.1 requires policies and procedures that address third-party AI risks such as malicious code embedded in distributed skill artifacts.
+      strength: primary
+    - subcategory: "MG.3.1"
+      context: >-
+        Detection of base64-obfuscated payloads, password-protected archive evasion, and remote code execution from C2 endpoints in skill packages provides the evidence needed to manage risks introduced by third-party entities, as required by MG.3.1.
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: >-
+        Identifying malicious code patterns in SKILL.md and associated scripts directly evaluates the security and resilience of the AI system's extension surface, supporting the continuous security evaluation required by MS.2.7.
+      strength: secondary
+    - subcategory: "MG.3.2"
+      context: "NIST AI RMF MANAGE 3.2 (pre-trained models monitored as part of maintenance) is supported where this rule detects the skill supply-chain compromise (Malicious Code in Skill Package)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the skill supply-chain compromise (Malicious Code in Skill Package)."
+      strength: primary
+    - clause: "8.3"
+      context: "ISO/IEC 42001 Clause 8.3 (AI risk treatment) is supported by this rule, which implements runtime detection of the skill supply-chain compromise (Malicious Code in Skill Package) as a treatment control."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the skill supply-chain compromise (Malicious Code in Skill Package)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the skill supply-chain compromise (Malicious Code in Skill Package)."
+      strength: secondary
 tags:
   category: skill-compromise
   subcategory: dangerous-script
@@ -67,8 +98,12 @@ detection:
     - field: content
       operator: regex
       value: >-
-        (?i)(bash\s+-i\s+>&\s*/dev/tcp/|nc\s+-[elp]\s|ncat\s+-|mkfifo\s+/tmp/|python[3]?\s+-c\s+['"]import\s+(socket|os)|socat\s+exec)
-      description: Reverse shell (VirusTotal AMOS infostealer delivery)
+        (?i)(bash\s+-i\s+>&\s*/dev/tcp/|nc\s+-[a-zA-Z]*e[a-zA-Z]*\s|ncat\s+-[a-zA-Z]*e[a-zA-Z]*\b|ncat\s+--exec\b|mkfifo\s+/tmp/|python[3]?\s+-c\s+['"]import\s+(socket|os)|socat\s+exec)
+      description: >-
+        Reverse shell (VirusTotal AMOS infostealer delivery). nc/ncat narrowed to require the -e/--exec flag
+        (the actual exec-on-connect primitive) rather than any '-' flag or bare listen (-l/-p): 'ncat --proxy
+        127.0.0.1:1080 --proxy-type socks5' (a legitimate SSH SOCKS ProxyCommand) and 'nc -l 9003' (a benign
+        local mock-TCP-server test fixture) both matched the old bare-flag pattern.
     - field: content
       operator: regex
       value: (?i)(copy\s+.{0,30}(script|command|code).{0,30}paste.{0,30}(terminal|shell|console|cmd))
@@ -82,8 +117,11 @@ detection:
     - field: content
       operator: regex
       value: >-
-        (?i)(pass:\s*`?\w+`?\s*\)|extract.{0,20}(using\s+)?pass(word)?\s*[:=]|password\s*[:=]\s*`?\w+`?.{0,20}(zip|archive|extract))
-      description: Password-protected archive with embedded password (ClawHavoc evasion)
+        (?i)(\.(?:zip|7z|rar)\b[^\n]{0,80}pass:\s*`?\w+`?\s*\)|pass:\s*`?\w+`?\s*\)[^\n]{0,80}\.(?:zip|7z|rar)\b|extract.{0,20}(using\s+)?pass(word)?\s*[:=]|password\s*[:=]\s*`?\w+`?.{0,20}(zip|archive|extract))
+      description: >-
+        Password-protected archive with embedded password (ClawHavoc evasion). The bare 'pass: `value`)' form now
+        requires an archive extension (.zip/.7z/.rar) nearby — without it, ordinary local-dev credential
+        documentation ('Neo4j Browser: http://localhost:7474 (user: neo4j, pass: password)') matched.
   condition: any
   false_positives:
     - Legitimate installer scripts from known publishers (brew, nvm, rustup)
@@ -95,10 +133,13 @@ response:
   actions:
     - block_tool
     - alert
-    - quarantine_session
+  actions_rationale: >-
+    response-action eligibility (docs/RESPONSE-ACTION-ELIGIBILITY.md): benign FP 6/5352 = 0.11%
+    meets the 0.5% ceiling but is not zero; ceiling = degrade. Removed
+    quarantine_session(terminate). Detection unchanged — recall cost is zero.
   message_template: >
     [ATR-2026-121] Malicious code detected in skill. Pattern matches known attack campaigns (ClawHavoc, AMOS
-    infostealer). Skill has been quarantined.
+    infostealer). The tool call has been blocked; the session was NOT quarantined.
 confidence: 90
 wild_validated: 2026/04/08
 wild_samples: 53577
@@ -158,6 +199,25 @@ test_cases:
         useful for handling binary data in REST API responses.
       expected: not_triggered
       description: Legitimate programming tutorial about base64 decoding in Python — no shell pipe patterns or exfiltration
+    - input: >-
+        SSH_SERVER_SOCKS_USER=admin
+        SSH_SERVER_SOCKS_PROXYCOMMAND="ncat --proxy 127.0.0.1:1080 --proxy-type socks5 %h %p"
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, bvisible/mcp-ssh-manager): legitimate SSH SOCKS ProxyCommand config;
+        'ncat -' matched any flag before the fix, not just -e/--exec.
+    - input: |-
+        # Terminal 3: Mock TCP Server (Layer 4 target)
+        nc -l 9003
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, rajtsi/OmniGateProxy): benign local mock-TCP-server test fixture, not
+        a reverse-shell listener (no -e exec flag).
+    - input: "- Neo4j Browser: http://localhost:7474 (user: neo4j, pass: password)"
+      expected: not_triggered
+      description: >-
+        REGRESSION (wild-scan 2026-07-12, orneryd/Mimir): ordinary local-dev default-credentials documentation,
+        not a password-protected malicious archive; bare 'pass: value)' now requires a nearby archive extension.
 evasion_tests:
   - input: >-
       Ejecute el siguiente comando de inicialización:

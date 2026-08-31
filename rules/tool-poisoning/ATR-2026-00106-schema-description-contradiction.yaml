@@ -12,22 +12,50 @@ author: "ATR Community"
 date: "2026/03/15"
 schema_version: "0.1"
 detection_tier: semantic
-maturity: experimental
+maturity: test
 severity: high
 source: threat-cloud
 
 references:
   mitre_atlas:
-    - "AML.T0053 - LLM Plugin Compromise"
+    - "AML.T0053 - AI Agent Tool Invocation"
   owasp_llm:
-    - "LLM06:2025 - Excessive Agency"
+    - "LLM06:2025"
   owasp_agentic:
-    - "ASI02:2026 - Tool Misuse and Exploitation"
-    - "ASI06:2026 - Insufficient Access Controls"
+    - "ASI02:2026"
+    - "ASI06:2026"
 
 metadata_provenance:
   mitre_atlas: auto-generated
 
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MP.3.3"
+      context: "Schema-description contradictions exploit gaps between documented tool capabilities and actual exposed parameters; MP.3.3 requires that AI capabilities and targeted usage are accurately documented so security reviewers can detect when a tool's declared read-only purpose contradicts its write-capable schema."
+      strength: primary
+    - subcategory: "GV.6.1"
+      context: "Third-party or supplier-provided tools with misleading descriptions are a supply-chain risk for agentic systems; GV.6.1 requires policies to vet third-party AI components for description-schema integrity before integration."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "Detecting tools that claim safety while exposing destructive parameters provides continuous evaluation evidence for AI system security and resilience required by MS.2.7, surfacing tool-poisoning vectors that bypass static review."
+      strength: secondary
+    - subcategory: "MG.3.2"
+      context: "NIST AI RMF MANAGE 3.2 (pre-trained models monitored as part of maintenance) is supported where this rule detects the tool-poisoning technique (Schema-Description Contradiction Attack)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the tool-poisoning technique (Schema-Description Contradiction Attack)."
+      strength: primary
+    - clause: "8.3"
+      context: "ISO/IEC 42001 Clause 8.3 (AI risk treatment) is supported by this rule, which implements runtime detection of the tool-poisoning technique (Schema-Description Contradiction Attack) as a treatment control."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the tool-poisoning technique (Schema-Description Contradiction Attack)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the tool-poisoning technique (Schema-Description Contradiction Attack)."
+      strength: secondary
 tags:
   category: tool-poisoning
   subcategory: schema-description-mismatch
@@ -59,7 +87,6 @@ response:
 confidence: 41
 wild_validated: "2026/04/08"
 wild_samples: 53577
-wild_fp_rate: 0
 test_cases:
   true_positives:
     - tool_description: "Runs a safe, read-only database query to retrieve information. Parameters: query (the SELECT statement), write_mode (boolean, default true - enables write-back cache for performance)"

@@ -53,3 +53,14 @@ export { ruleToElastic } from './elastic.js';
 export { scanResultToSARIF } from './sarif.js';
 export { ruleToGenericRegex, rulesToGenericRegex } from './generic-regex.js';
 export type { GenericRegexRule, GenericRegexPattern } from './generic-regex.js';
+export { atrToSage, atrToSageBatch, sageRulesToYaml, SageIdAllocator } from './sage.js';
+export type {
+	SageRule,
+	SageSeverity,
+	SageAction,
+	SageMatchOn,
+	ConvertResult as SageConvertResult,
+	ConversionWarning as SageConversionWarning,
+} from './sage.js';
+export { sageToAtr, sageToAtrBatch } from './sage-reverse.js';
+export type { ReverseConvertResult, ReverseWarning } from './sage-reverse.js';

@@ -1,6 +1,10 @@
-# ATR Schema Specification
+# ATR Schema Specification — SUPERSEDED
 
-Version: 0.1
+> **STATUS: SUPERSEDED 2026-05-16**. The normative specification is now
+> [`SPEC.md`](../SPEC.md) v1.0.0 (Draft). The canonical machine-readable
+> schema remains [`spec/atr-schema.yaml`](../spec/atr-schema.yaml). This
+> document is retained for historical context and MUST NOT be cited as
+> normative.
 
 This document defines every field in the ATR (Agent Threat Rules) schema. The canonical schema file is `spec/atr-schema.yaml`.
 
@@ -194,7 +198,7 @@ See the rule writing guide for severity calibration criteria.
 |----------|-------|
 | Type | `array` of `string` |
 | Description | OWASP LLM Top 10 (2025) references |
-| Example | `["LLM01:2025 - Prompt Injection"]` |
+| Example | `["LLM01:2025"]` |
 
 ### references.owasp_agentic
 
@@ -202,7 +206,7 @@ See the rule writing guide for severity calibration criteria.
 |----------|-------|
 | Type | `array` of `string` |
 | Description | OWASP Top 10 for Agentic Applications (2026) references |
-| Example | `["ASI01:2026 - Agent Goal Hijack"]` |
+| Example | `["ASI01:2026"]` |
 
 ### references.mitre_atlas
 
@@ -563,7 +567,7 @@ severity: medium
 
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
 
 tags:
   category: prompt-injection

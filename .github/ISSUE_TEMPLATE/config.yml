@@ -1,8 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
+  - name: Contributing Guide
+    url: https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/CONTRIBUTING.md
+    about: How to submit a probe, write a detection regex, or report a false positive
   - name: Discussions
     url: https://github.com/Agent-Threat-Rule/agent-threat-rules/discussions
-    about: Ask questions, share ideas, or discuss ATR's direction
-  - name: Where to Hunt (Contribution Guide)
-    url: https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/CONTRIBUTION-GUIDE.md
-    about: 12 research areas with attack surfaces, data sources, and difficulty levels
+    about: Questions, ideas, and architecture discussions

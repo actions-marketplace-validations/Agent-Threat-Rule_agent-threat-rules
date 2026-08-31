@@ -7,6 +7,10 @@ on:
       - 'website/**'
       - 'rules/**'
       - 'data/**'
+      # Don't redeploy the site for the daily CVE collector's run-report churn
+      # (the site doesn't surface cve-collector data). Negation must come after
+      # the 'data/**' include; a mixed push (e.g. benchmark data) still deploys.
+      - '!data/cve-collector/**'
       - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
 
@@ -17,9 +21,9 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
 
@@ -36,5 +40,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=agentthreatrule
+          command: pages deploy out --project-name=agentthreatrule --branch=main
           workingDirectory: website

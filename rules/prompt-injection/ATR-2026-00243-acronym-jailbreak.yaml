@@ -12,17 +12,45 @@ author: "ATR Community (via NVIDIA garak in-the-wild corpus)"
 date: "2026/04/19"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_agentic:
-    - "ASI01:2026 - Agent Goal Hijack"
+    - "ASI01:2026"
   mitre_atlas:
     - "AML.T0054 - LLM Jailbreak"
   research:
     - "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.6"
+      context: "This rule detects acronym-based jailbreak attempts that manufacture custom personas to bypass safety controls, providing continuous evaluation of GenAI safety/security risk magnitude as required by MS.2.6. Each match evidences active attempts to subvert model guardrails through novel persona-transformation vectors."
+      strength: primary
+    - subcategory: "MG.2.3"
+      context: "Detection of complete-freedom claims and explicit instructions to violate safety measures triggers the response mechanisms required by MG.2.3 to disengage or block the manipulated session before the model produces unsafe output."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "Catching novel acronym variants that evade named-persona detection contributes to documenting the AI system's resilience against adversarial prompt-injection techniques as required by MS.2.7."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the prompt-injection attempt (Acronym-Based Identity Override Jailbreak)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the prompt-injection attempt (Acronym-Based Identity Override Jailbreak) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the prompt-injection attempt (Acronym-Based Identity Override Jailbreak)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the prompt-injection attempt (Acronym-Based Identity Override Jailbreak)."
+      strength: secondary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the prompt-injection attempt (Acronym-Based Identity Override Jailbreak) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: prompt-injection
   subcategory: acronym-jailbreak
@@ -34,23 +62,23 @@ agent_source:
   provider: [any]
 detection:
   conditions:
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:become|be|turn into|transform into|evolve into)\s+[A-Z]{2,8}\s+(?:which|that)\s+stands\s+for\s+[^.]{5,50}'
       description: 'Acronym persona creation pattern with expansion definition'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:free|freed|liberated|released)\s+(?:of|from)\s+all\s+(?:limitations|restrictions|rules|guidelines|constraints|boundaries)'
       description: 'Claims of complete freedom from all safety constraints'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:ignores?|ignore|disregard|bypass|violate|break)\s+all\s+(?:rules|guidelines|policies|restrictions|limitations)'
       description: 'Explicit instructions to violate all safety measures'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:answer|respond|reply)\s+in\s+this\s+format.*(?:two\s+(?:answers|responses)|ChatGPT.*[A-Z]{2,8})'
       description: 'Dual-response formatting requirement with persona split'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:you\s+(?:are\s+)?now|from\s+now\s+on)\s+(?:have\s+access\s+to|can\s+access|access)\s+(?:the\s+)?internet'
       description: 'False capability claims about internet access'

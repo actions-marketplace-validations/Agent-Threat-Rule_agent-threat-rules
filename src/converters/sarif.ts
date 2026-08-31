@@ -7,6 +7,8 @@
  * @module agent-threat-rules/converters/sarif
  */
 
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import type { ATRRule, ATRMatch, ScanResult, ATRSeverity } from '../types.js';
 
 /** SARIF severity levels */
@@ -66,6 +68,46 @@ function collectRules(
 }
 
 /**
+ * Relative SARIF artifact URI for a scanned file.
+ *
+ * Absolute paths are never emitted — a SARIF report is routinely attached to
+ * public CI runs, and the local filesystem layout is not the consumer's
+ * business.
+ */
+function toArtifactUri(inputFile: string): string {
+  const cwd = process.cwd() + '/';
+  if (inputFile.startsWith(cwd)) return inputFile.slice(cwd.length);
+  if (inputFile.startsWith('/') || /^[A-Z]:\\/.test(inputFile)) {
+    // Absolute path outside CWD — strip to filename only.
+    return inputFile.split('/').pop() ?? inputFile.split('\\').pop() ?? 'unknown';
+  }
+  return inputFile;
+}
+
+/**
+ * Raw-octet SHA-256 of a file's bytes — the digest basis the shared envelope
+ * profile joins layers on (claude-code-skill-security-check#24 §2): computed
+ * over the raw octets, before any character decoding, so it equals `sha256sum`
+ * of the file and matches the raw-byte basis used by skil-lock and skill-scanner.
+ *
+ * This deliberately does NOT reuse result.content_hash, which hashes the
+ * UTF-8-*decoded* string (`update(content, 'utf8')`) and therefore diverges from
+ * the raw-octet digest on artifacts containing invalid UTF-8 or lone surrogates —
+ * exactly the case that would silently break the cross-layer join (two different
+ * files can decode to one string, or one file can yield two digests across layers).
+ *
+ * Returns null when the file cannot be read as bytes; the caller then omits the
+ * hash rather than emit a wrong-basis digest that only looks like a join key.
+ */
+function fileRawDigest(inputFile: string): string | null {
+  try {
+    return createHash('sha256').update(readFileSync(inputFile)).digest('hex');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Convert ATR scan results to SARIF v2.1.0 format.
  *
  * @param results - Array of ScanResult from evaluate/scanSkill
@@ -94,6 +136,30 @@ export function scanResultToSARIF(
     },
   }));
 
+  // SARIF run.artifacts — one entry per scanned file, carrying the SHA-256 that
+  // the shared envelope profile (skil-lock#37 / SPEC 14.3) joins layers on.
+  // Emitting it here rather than only in result.properties is what lets a
+  // consumer match an ATR finding to the same artifact reported by another
+  // layer without parsing tool-specific property bags.
+  //
+  // The digest is the file's RAW OCTETS (fileRawDigest), not result.content_hash:
+  // the join is only sound if every layer hashes the same bytes, and the raw-octet
+  // basis is normative per claude-code-skill-security-check#24 §2. content_hash
+  // (UTF-8-decoded) is kept separately on each result for back-compat.
+  const artifacts: object[] = [];
+  const artifactIndex = new Map<string, number>();
+  for (const result of results) {
+    if (!result.input_file) continue;
+    const uri = toArtifactUri(result.input_file);
+    if (artifactIndex.has(uri)) continue;
+    artifactIndex.set(uri, artifacts.length);
+    const digest = fileRawDigest(result.input_file);
+    artifacts.push({
+      location: { uri, uriBaseId: '%SRCROOT%' },
+      ...(digest ? { hashes: { 'sha-256': digest } } : {}),
+    });
+  }
+
   const sarifResults: object[] = [];
 
   for (const result of results) {
@@ -102,21 +168,15 @@ export function scanResultToSARIF(
 
       const location: Record<string, unknown> = {};
       if (result.input_file) {
-        // Make path relative to CWD — never expose absolute paths in SARIF
-        const cwd = process.cwd() + '/';
-        let uri: string;
-        if (result.input_file.startsWith(cwd)) {
-          uri = result.input_file.slice(cwd.length);
-        } else if (result.input_file.startsWith('/') || /^[A-Z]:\\/.test(result.input_file)) {
-          // Absolute path outside CWD — strip to filename only
-          uri = result.input_file.split('/').pop() ?? result.input_file.split('\\').pop() ?? 'unknown';
-        } else {
-          uri = result.input_file;
-        }
+        // Never expose absolute paths in SARIF — see toArtifactUri.
+        const uri = toArtifactUri(result.input_file);
+        const idxInArtifacts = artifactIndex.get(uri);
         location.physicalLocation = {
           artifactLocation: {
             uri,
             uriBaseId: '%SRCROOT%',
+            // Points at the run.artifacts entry holding this file's SHA-256.
+            ...(idxInArtifacts !== undefined ? { index: idxInArtifacts } : {}),
           },
           region: { startLine: 1 },
         };
@@ -131,9 +191,14 @@ export function scanResultToSARIF(
         },
         ...(result.input_file ? { locations: [location] } : {}),
         properties: {
+          // Identifies which layer of the shared envelope profile produced this
+          // result. Consumers that do not know the value treat it as opaque.
+          layer: 'atr',
           confidence: match.confidence,
           scan_type: result.scan_type,
           scan_context: match.scan_context,
+          // Retained alongside run.artifacts[].hashes for back-compat: anything
+          // parsing today's output keeps working.
           content_hash: result.content_hash,
         },
       });
@@ -154,6 +219,7 @@ export function scanResultToSARIF(
             rules: sarifRules,
           },
         },
+        ...(artifacts.length > 0 ? { artifacts } : {}),
         results: sarifResults,
       },
     ],

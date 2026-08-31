@@ -12,11 +12,11 @@ import type {
   ActionResult,
   ExecutionContext,
   PlatformAdapter,
-} from '../types.js';
+} from "../types.js";
 
 function createResult(
-  action: ActionResult['action'],
-  ctx: ExecutionContext
+  action: ActionResult["action"],
+  ctx: ExecutionContext,
 ): ActionResult {
   return Object.freeze({
     action,
@@ -27,45 +27,49 @@ function createResult(
 }
 
 export class DefaultAdapter implements PlatformAdapter {
-  readonly name = 'default';
+  readonly name = "default";
 
   async blockInput(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('block_input', ctx);
+    return createResult("block_input", ctx);
   }
 
   async blockOutput(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('block_output', ctx);
+    return createResult("block_output", ctx);
   }
 
   async blockTool(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('block_tool', ctx);
+    return createResult("block_tool", ctx);
   }
 
   async quarantineSession(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('quarantine_session', ctx);
+    return createResult("quarantine_session", ctx);
   }
 
   async resetContext(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('reset_context', ctx);
+    return createResult("reset_context", ctx);
   }
 
   async alert(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('alert', ctx);
+    return createResult("alert", ctx);
+  }
+
+  async shadow(ctx: ExecutionContext): Promise<ActionResult> {
+    return createResult("shadow", ctx);
   }
 
   async snapshot(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('snapshot', ctx);
+    return createResult("snapshot", ctx);
   }
 
   async escalate(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('escalate', ctx);
+    return createResult("escalate", ctx);
   }
 
   async reducePermissions(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('reduce_permissions', ctx);
+    return createResult("reduce_permissions", ctx);
   }
 
   async killAgent(ctx: ExecutionContext): Promise<ActionResult> {
-    return createResult('kill_agent', ctx);
+    return createResult("kill_agent", ctx);
   }
 }

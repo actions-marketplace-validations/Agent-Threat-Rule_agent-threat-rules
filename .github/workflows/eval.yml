@@ -3,6 +3,12 @@ name: CI
 on:
   push:
     branches: [main]
+    # Skip the (heavy) test + eval suite on the daily CVE collector's
+    # proposal/report commits to main — they are drafts, not engine-loaded.
+    # Code/rule changes still run via the pull_request trigger below.
+    paths-ignore:
+      - 'proposals/**'
+      - 'data/cve-collector/**'
   pull_request:
     branches: [main]
 
@@ -10,9 +16,9 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -22,10 +28,48 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # tsconfig.json only includes src/**, so scripts/ — every eval, every
+      # measurement writer, every gate — was never typechecked. Four harnesses
+      # shipped `type: 'llm_io'`, which is a rule SOURCE and not an
+      # AgentEventType; the engine could not map it, skipped source-type
+      # filtering, and measured on a shape nobody chose. tsc catches it as
+      # TS2322 in seconds. See tsconfig.scripts.json.
+      - name: Typecheck scripts
+        run: npm run typecheck:scripts
+
       - name: Test
         run: npm test
         env:
           VITEST_POOL_WORKER_COMMUNICATION_TIMEOUT: 300000
+
+      # Measurement-layer integrity checks BEFORE eval. The order matters:
+      #
+      #   verify  → assert every committed measurement file parses cleanly
+      #             (catches accidental hand-edits of immutable files)
+      #   --check → assert stats.json benchmarks[] matches every latest.json
+      #             on disk (catches PR author forgetting to run sync-stats
+      #             after updating a measurement)
+      #
+      # Both run BEFORE `npm run eval` so the assertions are against what
+      # the PR ships, not against what running the eval would mutate. (Running
+      # them after eval would always 'fail' because a fresh eval produces a
+      # new measurement with today's timestamp that the committed stats.json
+      # cannot have predicted.)
+      - name: Verify measurement schemas
+        run: npx tsx scripts/measurement/verify.ts --quiet
+
+      - name: Check stats.json benchmarks freshness
+        run: npx tsx scripts/sync-stats-from-measurements.ts --check
+
+      # The step above only compares data/stats.json against the measurement
+      # files. The two surfaces a HUMAN edits — README.md's benchmark table and
+      # root stats.json, the file sync-stats.ts propagates into badges,
+      # CITATION.cff, the docs site and the JSON-LD — were checked by nothing.
+      # PR #370 changed both to a garak recall of 91.5% and shipped no
+      # measurement file; --check stayed green because it never looked at
+      # either file, and main carried a headline number with no run behind it.
+      - name: Check benchmark citations are backed by measurement files
+        run: npx tsx scripts/check-benchmark-citations.ts
 
       - name: Eval
         run: npm run eval
@@ -35,8 +79,16 @@ jobs:
 
       - name: Upload eval report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: eval-report
           path: data/eval-report.json
+          if-no-files-found: ignore
+
+      - name: Upload measurement (atr-self-test fresh run)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: atr-self-test-measurement
+          path: data/measurements/atr-self-test/
           if-no-files-found: ignore

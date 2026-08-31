@@ -177,20 +177,91 @@ Merged rules are automatically:
 
 ## Roadmap
 
-### v1.1 — Technical Advisory Group (Q2 2026)
+### v1.1 — Technical Steering Committee, Founding Three (Target: Q3 2026)
 
-- [ ] Establish TAG with representatives from 2-3 external organizations
-      (target: Cisco AI Defense, NVIDIA garak team, one additional)
-- [ ] TAG members gain PR-approve rights (not merge — merge stays with
-      numbering authority)
-- [ ] Publish annual "ATR Threat Landscape Report" authored by TAG
+Single-maintainer governance is the project's primary structural risk. The
+Founding Three TSC composition resolves bus-factor=1 and converts ATR from
+a project into a standards body.
 
-### v2.0 — Multi-Stakeholder Governance (2027)
+Target seat composition (candidates will be invited and must confirm in
+writing before any name is published here):
 
-- [ ] Transition numbering authority to a multi-stakeholder committee
-- [ ] Consider submission to a standards body (OWASP working group,
-      Linux Foundation, or CSA Agentic AI Foundation)
+- **Maintainer seat** — Adam Lin (林冠辛), BDFL transitional, ATR project
+- **Industry seat** — a representative from an adopter organization that has
+  shipped an ATR integration in production
+- **Community / threat-intel seat** — a representative from a threat-intel or
+  standards community that consumes ATR
+
+Authority of the Founding Three (once seated):
+- Numbering Authority: ID assignment by 2-of-3 majority vote.
+- Spec amendments: 2-of-3 majority + 14-day public comment.
+- New category admission: 2-of-3 majority + Spec PR.
+- Enterprise Member admissions: 2-of-3 majority.
+
+Seat-3 succession on resignation: TSC supermajority (3-of-3) selects the
+replacement; no veto by any single seat.
+
+Public meeting cadence: bi-weekly open call, minutes posted to repo.
+
+### v1.2 — Expanded TSC (Target: Q1 2027)
+
+Expand to 5 seats by adding:
+
+- Academic / research seat (independent AI security researcher)
+- Government / standards-body seat (CISA, NIST, ENISA, national CERT equivalent)
+
+### v2.0 — Multi-Stakeholder Governance and Standards-Body Submission (2027)
+
+- [ ] Submit ATR Spec v1.0 to a standards body as an Internet-Draft
+      (IETF SECEVENT WG candidate) and/or as an OASIS Technical Committee
+      contribution; track IANA media-type registration in parallel.
 - [ ] Federated Threat Cloud: multiple TC instances sync rules through
-      a shared protocol
-- [ ] ATR Engine Conformance Test Suite: any engine must pass to claim
-      "ATR-compatible"
+      a shared protocol.
+- [x] ATR Engine Conformance Test Suite v1.0 in `conformance/` (Spec §12);
+      "ATR-Compatible L1/L2/L3" badge program live (suite skeleton shipped
+      2026-05-16; first three independent engines passing L2 still
+      open).
+
+---
+
+## ATR Standards Membership
+
+ATR provides two community programs that define the project's relationship with
+the broader security industry. Both are governed by [docs/BDFL-charter.md](docs/BDFL-charter.md).
+
+### ATR Certified Skill — Free
+
+ATR Certified Skill is a community designation indicating that an MCP skill has been
+reviewed against the current ATR rule corpus and passes with zero critical findings.
+
+- Cost: Zero. No fee, no commercial relationship required.
+- Process: community review via GitHub Issue; CI is the authority.
+- Validity: 90 days or until a new ATR release affecting relevant rule categories.
+- Model: MITRE ATT&CK / Let's Encrypt transparency model. Quality decisions
+  are made by the community and enforced by CI — not by any commercial entity.
+
+The ATR Numbering Authority does not charge for, influence, or gatekeep skill
+certification outcomes. The CI output is the authoritative source.
+
+### ATR Enterprise Member — $10,000 / year
+
+Enterprise Membership is a governance relationship for organizations that build on
+or depend on ATR. Modeled on the Apache Software Foundation Platinum Sponsor model.
+
+- Cost: $10,000 / year per organization.
+- Benefits: governance vote (post-TSC), early RFC draft access, 7-day priority PR
+  review SLA, logo display in README and website, private coordination channel.
+- Eligibility: any organization demonstrably using ATR in a security product,
+  research project, or internal tooling.
+- Application: open a GitHub Issue with label `enterprise-member-application`.
+
+Enterprise Membership grants governance participation rights. It does NOT grant:
+- Any influence over individual rule acceptance or rejection
+- Any ability to accelerate or block specific rule IDs
+- Any access to non-public data from other organizations' Threat Cloud sensors
+
+Decisions about rule quality are made solely by the CI quality gate and human
+reviewers following the standard review process. Enterprise Membership purchases
+governance access, not detection quality outcomes.
+
+Full program details: [docs/BDFL-charter.md §Enterprise Member Program](docs/BDFL-charter.md#atr-enterprise-member-program----10000--year).

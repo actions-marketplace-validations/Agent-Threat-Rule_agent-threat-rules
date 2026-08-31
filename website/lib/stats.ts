@@ -1,8 +1,10 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { loadAllRules } from "./rules";
+import { loadAdopters, adopterLogoUrl, type Adopter, type AdopterTier } from "./adopters";
 
 const DATA_DIR = join(process.cwd(), "..", "data");
+const MEASUREMENTS_DIR = join(DATA_DIR, "measurements");
 
 function readJson<T>(path: string): T | null {
   try {
@@ -32,7 +34,11 @@ interface MegaScanReport {
   severity: { critical: number; high: number; medium: number };
   malware_campaign?: {
     confirmed_malware: number;
-    threat_actors: Array<{ name: string; skills: number; malicious_rate: number }>;
+    threat_actors: Array<{
+      name: string;
+      skills: number;
+      malicious_rate: number;
+    }>;
   };
 }
 
@@ -92,6 +98,11 @@ export interface SiteStats {
   ruleCount: number;
   categoryCount: number;
 
+  // Standard heartbeat — YYYY-MM-DD the canonical stats.json was last
+  // regenerated. Drives the "living standard" cadence signal on the home
+  // page; empty string if stats.json is absent or lacks a timestamp.
+  lastRegenerated: string;
+
   // ClawHub scan
   clawHubCrawled: number;
   clawHubScanned: number;
@@ -142,6 +153,11 @@ export interface SiteStats {
   owaspAgentic: string;
   safeMcp: string;
   owaspAst10: string;
+
+  // Version-pinned benchmark measurements (canonical source for any
+  // public-facing recall claim). Reads from data/measurements/<source>/latest.json.
+  // Empty array if no measurements present yet.
+  benchmarks: BenchmarkMeasurement[];
 }
 
 export interface EcosystemIntegration {
@@ -150,6 +166,82 @@ export interface EcosystemIntegration {
   detail: string;
   url?: string;
   logo?: string; // path to logo in public/ecosystem/ or external URL
+  /** ADOPTERS.md tier the entry came from (S/1/2/3/4). */
+  tier: AdopterTier;
+}
+
+/**
+ * One benchmark measurement, version-pinned and reproducible.
+ * Loaded from data/measurements/<source>/latest.json. The full historical
+ * series lives alongside as data/measurements/<source>/<date>_*.json.
+ */
+export interface BenchmarkMeasurement {
+  /** Stable lowercase source identifier (e.g. "garak", "pint"). */
+  source: string;
+  /** Upstream version pinned at measurement time. */
+  source_version: string;
+  /** ATR version under test. */
+  atr_version: string;
+  /** ISO 8601 timestamp the measurement was taken. */
+  measured_at: string;
+  /** YYYY-MM-DD slice for display. */
+  measured_date: string;
+  /** Corpus size in samples. */
+  samples: number;
+  /** Recall as a fraction in [0,1]. */
+  recall: number;
+  /** Precision as a fraction in [0,1]. */
+  precision: number;
+  /** F1 as a fraction in [0,1]. */
+  f1: number;
+  /** False-positive rate as a fraction in [0,1]. */
+  fp_rate: number;
+  /** Repo-relative path of the immutable measurement file. */
+  measurement_file: string;
+}
+
+/**
+ * Load every latest measurement from data/measurements/<source>/latest.json.
+ * Returns an empty array if the directory is absent. Skips sources whose
+ * latest.json fails to parse (logs to console — not thrown — so a bad source
+ * does not break site rendering).
+ */
+function loadBenchmarkMeasurements(): BenchmarkMeasurement[] {
+  if (!existsSync(MEASUREMENTS_DIR)) return [];
+  const out: BenchmarkMeasurement[] = [];
+  for (const entry of readdirSync(MEASUREMENTS_DIR)) {
+    const dir = join(MEASUREMENTS_DIR, entry);
+    if (!statSync(dir).isDirectory()) continue;
+    const latest = join(dir, "latest.json");
+    if (!existsSync(latest)) continue;
+    try {
+      const raw = JSON.parse(readFileSync(latest, "utf-8")) as {
+        source: string;
+        source_version: string;
+        atr_version: string;
+        measured_at: string;
+        samples: number;
+        file: string;
+        metrics: { recall: number; precision: number; f1: number; fp_rate: number };
+      };
+      out.push({
+        source: raw.source,
+        source_version: raw.source_version,
+        atr_version: raw.atr_version,
+        measured_at: raw.measured_at,
+        measured_date: raw.measured_at.slice(0, 10),
+        samples: raw.samples,
+        recall: raw.metrics.recall,
+        precision: raw.metrics.precision,
+        f1: raw.metrics.f1,
+        fp_rate: raw.metrics.fp_rate,
+        measurement_file: `data/measurements/${entry}/${raw.file}`,
+      });
+    } catch (err) {
+      console.warn(`benchmark measurement ${entry}/latest.json failed to parse:`, err);
+    }
+  }
+  return out.sort((a, b) => a.source.localeCompare(b.source));
 }
 
 function isSafeUrl(url: string | undefined): boolean {
@@ -161,17 +253,75 @@ function isSafeUrl(url: string | undefined): boolean {
   }
 }
 
+/**
+ * Ecosystem integrations derived from ADOPTERS.md — the single source of
+ * truth for adoption (see lib/adopters.ts header). Tier order preserved
+ * (S -> 1 -> 2 -> 3 -> 4); "planning" entries are excluded because they
+ * carry no verifiable evidence yet. Status maps shipped -> "merged",
+ * in-review -> "open", matching the display vocabulary the pages use.
+ */
+function ecosystemFromAdopters(): EcosystemIntegration[] {
+  const adopters = loadAdopters();
+  const ordered: Adopter[] = [
+    ...adopters.tierS,
+    ...adopters.tier1,
+    ...adopters.tier2,
+    ...adopters.tier3,
+    ...adopters.tier4,
+  ];
+  return ordered
+    .filter((a) => a.status === "shipped" || a.status === "in-review")
+    .map((a) => ({
+      name: a.name,
+      type: a.status === "shipped" ? ("merged" as const) : ("open" as const),
+      detail: a.org,
+      url: isSafeUrl(a.evidence) ? a.evidence : undefined,
+      logo: adopterLogoUrl(a),
+      tier: a.tier,
+    }));
+}
+
 export function loadSiteStats(): SiteStats {
-  const clawhub = readJson<ClawHubStats>(join(DATA_DIR, "clawhub-scan", "ecosystem-stats.json"));
-  const mega = readJson<MegaScanReport>(join(DATA_DIR, "mega-scan-report.json"));
-  const pint = readJson<PintReport>(join(DATA_DIR, "pint-benchmark", "pint-eval-report.json"));
+  const clawhub = readJson<ClawHubStats>(
+    join(DATA_DIR, "clawhub-scan", "ecosystem-stats.json"),
+  );
+  const mega = readJson<MegaScanReport>(
+    join(DATA_DIR, "mega-scan-report.json"),
+  );
+  const pint = readJson<PintReport>(
+    join(DATA_DIR, "pint-benchmark", "pint-eval-report.json"),
+  );
   const eval_ = readJson<EvalReport>(join(DATA_DIR, "eval-report.json"));
-  const skillScan = readJson<SkillScanReport>(join(DATA_DIR, "skill-scan-report-full.json"));
-  const skillBench = readJson<SkillBenchmarkReport>(join(DATA_DIR, "skill-benchmark", "benchmark-report.json"));
+  const skillScan = readJson<SkillScanReport>(
+    join(DATA_DIR, "skill-scan-report-full.json"),
+  );
+  const skillBench = readJson<SkillBenchmarkReport>(
+    join(DATA_DIR, "skill-benchmark", "benchmark-report.json"),
+  );
+  const statsJson = readJson<{ generatedAt?: string }>(
+    join(DATA_DIR, "stats.json"),
+  );
+  // Root stats.json is rewritten by CI on every rules-merge release, so its
+  // lastUpdated is the freshest honest "standard heartbeat". data/stats.json
+  // generatedAt only moves when the measurement pipeline reruns — keep it as
+  // the fallback.
+  const rootStatsJson = readJson<{ lastUpdated?: string }>(
+    join(process.cwd(), "..", "stats.json"),
+  );
 
   const rules = loadAllRules();
 
-  const categories = new Set(rules.map((r: { category: string }) => r.category));
+  // The engine skips status: draft | deprecated before the lane gate, so those
+  // rules fire in no lane at all; the raw file count overstates what runs. Cite
+  // the effective count on user-facing surfaces (same rule as sync-stats.ts).
+  const effectiveRuleCount = rules.filter(
+    (r: { status?: string }) =>
+      r.status !== "draft" && r.status !== "deprecated",
+  ).length;
+
+  const categories = new Set(
+    rules.map((r: { category: string }) => r.category),
+  );
 
   // Count unique CVEs across all rules
   const cves = new Set<string>();
@@ -183,8 +333,10 @@ export function loadSiteStats(): SiteStats {
   }
 
   return {
-    ruleCount: rules.length,
+    ruleCount: effectiveRuleCount,
     categoryCount: categories.size,
+    lastRegenerated:
+      rootStatsJson?.lastUpdated ?? statsJson?.generatedAt?.slice(0, 10) ?? "",
 
     clawHubCrawled: clawhub?.totalCrawled ?? 36394,
     clawHubScanned: clawhub?.totalScanned ?? 9676,
@@ -203,13 +355,17 @@ export function loadSiteStats(): SiteStats {
     megaScanDate: mega?.scan_date ?? "2026-04-14",
 
     pintSamples: pint?.report?.corpusSize ?? 850,
-    pintPrecision: Math.round((pint?.report?.overall?.precision ?? 0.9964) * 1000) / 10, // 99.6%
-    pintRecall: Math.round((pint?.report?.overall?.recall ?? 0.6142) * 1000) / 10, // 61.4%
+    pintPrecision:
+      Math.round((pint?.report?.overall?.precision ?? 0.9965) * 1000) / 10, // 99.7%
+    pintRecall:
+      Math.round((pint?.report?.overall?.recall ?? 0.6319) * 1000) / 10, // 63.2%
     pintF1: Math.round((pint?.report?.overall?.f1 ?? 0.7599) * 1000) / 10, // 76.0%
 
     selfTestSamples: eval_?.report?.corpusSize ?? 341,
-    selfTestPrecision: Math.round((eval_?.report?.overall?.precision ?? 0.997) * 1000) / 10,
-    selfTestRecall: Math.round((eval_?.report?.overall?.recall ?? 0.994) * 1000) / 10,
+    selfTestPrecision:
+      Math.round((eval_?.report?.overall?.precision ?? 0.997) * 1000) / 10,
+    selfTestRecall:
+      Math.round((eval_?.report?.overall?.recall ?? 0.994) * 1000) / 10,
 
     skillsScanned: skillScan?.scan_metadata?.total_skills_scanned ?? 3115,
     skillPublishers: skillScan?.scan_metadata?.total_publishers ?? 104,
@@ -217,144 +373,23 @@ export function loadSiteStats(): SiteStats {
     skillAvgLatency: skillScan?.scan_metadata?.avg_latency_ms ?? 5.39,
 
     skillBenchSamples: skillBench?.corpus_size ?? 498,
-    skillBenchRecall: Math.round((skillBench?.overall_recall ?? 1.0) * 1000) / 10,
-    skillBenchPrecision: Math.round((skillBench?.overall_precision ?? 0.97) * 1000) / 10,
+    skillBenchRecall:
+      Math.round((skillBench?.overall_recall ?? 1.0) * 1000) / 10,
+    skillBenchPrecision:
+      Math.round((skillBench?.overall_precision ?? 0.97) * 1000) / 10,
     skillBenchF1: Math.round((skillBench?.overall_f1 ?? 0.984) * 1000) / 10,
     skillBenchFpRate: Math.round((skillBench?.fp_rate ?? 0) * 1000) / 10,
-    skillBenchLatency: Math.round((skillBench?.avg_latency_ms ?? 3.52) * 10) / 10,
+    skillBenchLatency:
+      Math.round((skillBench?.avg_latency_ms ?? 3.52) * 10) / 10,
 
     cveCount: cves.size || 16,
 
-    ecosystemIntegrations: [
-      {
-        name: "Cisco AI Defense",
-        type: "merged",
-        detail: "34 ATR rules merged as upstream. Built --rule-packs CLI for ATR.",
-        url: "https://github.com/cisco-ai-defense/skill-scanner/pull/79",
-      },
-      {
-        name: "Awesome LM-SSP",
-        type: "merged",
-        detail: "PR #108 merged into LLM safety/security list.",
-        url: "https://github.com/ThuCCSLab/Awesome-LM-SSP/pull/108",
-        logo: "https://github.com/CryptoAILab.png?size=128",
-      },
-      {
-        name: "Agentic AI Top 10 Vulnerability",
-        type: "merged",
-        detail: "PR #14 merged. ATR detection mapping for 12 vulnerability categories.",
-        url: "https://github.com/precize/Agentic-AI-Top10-Vulnerability/pull/14",
-        logo: "https://github.com/precize.png?size=128",
-      },
-      {
-        name: "OWASP LLM Top 10",
-        type: "open",
-        detail: "PR #814 submitted. Detection mapping for ASI01-ASI10.",
-        url: "https://github.com/OWASP/www-project-top-10-for-large-language-model-applications/pull/814",
-      },
-      {
-        name: "SAFE-MCP",
-        type: "open",
-        detail: "PR #187 to safe-agentic-framework/safe-mcp. Coverage mapping submitted.",
-        url: "https://github.com/safe-agentic-framework/safe-mcp/pull/187",
-      },
-      {
-        name: "Awesome LLM Security",
-        type: "open",
-        detail: "PR #117 submitted to curated security tools list.",
-        url: "https://github.com/corca-ai/awesome-llm-security/pull/117",
-      },
-      // removed 2026-04-18: target repos returned 404
-      // - nicobailon/awesome-mcp-security
-      // - nicobailon/safe-mcp
-      {
-        name: "Awesome LLM agent Security",
-        type: "merged",
-        detail: "PR #6 merged into LLM agent security tools list.",
-        url: "https://github.com/wearetyomsmnv/Awesome-LLM-agent-Security/pull/6",
-      },
-      {
-        name: "Awesome Agentic Patterns",
-        type: "merged",
-        detail: "PR #58 merged. Deterministic Threat Rule Scanning pattern accepted.",
-        url: "https://github.com/nibzard/awesome-agentic-patterns/pull/58",
-      },
-      {
-        name: "Microsoft AGT",
-        type: "merged",
-        detail: "PR #908 merged. 15 ATR rules as PolicyDocument + full sync script. 554 additions.",
-        url: "https://github.com/microsoft/agent-governance-toolkit/pull/908",
-      },
-      {
-        name: "NVIDIA Garak",
-        type: "open",
-        detail: "PR #1676 submitted. 108 ATR detectors for AI agent threat detection.",
-        url: "https://github.com/NVIDIA/garak/pull/1676",
-      },
-      {
-        name: "Promptfoo",
-        type: "open",
-        detail: "PR #8529 submitted. MCP red team example with ATR deterministic defense.",
-        url: "https://github.com/promptfoo/promptfoo/pull/8529",
-      },
-      {
-        name: "Cisco MCP Scanner",
-        type: "open",
-        detail: "PR #151 submitted. ATR regex analyzer with 20 community rules.",
-        url: "https://github.com/cisco-ai-defense/mcp-scanner/pull/151",
-      },
-      {
-        name: "Damn Vulnerable MCP Server",
-        type: "open",
-        detail: "PR #29 submitted. Blue team detection guide for all 10 challenges.",
-        url: "https://github.com/harishsg993010/damn-vulnerable-MCP-server/pull/29",
-      },
-      {
-        name: "Meta LlamaFirewall",
-        type: "open",
-        detail: "Issue #204. RegexScanner expansion with ATR rules.",
-        url: "https://github.com/meta-llama/PurpleLlama/issues/204",
-      },
-      {
-        name: "Portkey Gateway",
-        type: "open",
-        detail: "Issue #1594. ATR guardrail plugin proposal.",
-        url: "https://github.com/Portkey-AI/gateway/issues/1594",
-      },
-      {
-        name: "Sage (Gen Digital)",
-        type: "open",
-        detail: "Issue #30. Agent-layer threat rules integration.",
-        url: "https://github.com/gendigitalinc/sage/issues/30",
-      },
-      {
-        name: "Awesome AI Security",
-        type: "merged",
-        detail: "Merged into Agentic Systems section.",
-        url: "https://github.com/TalEliyahu/Awesome-AI-Security/pull/53",
-      },
-      {
-        name: "Awesome Cybersecurity Agentic AI",
-        type: "open",
-        detail: "PR #24 submitted to Tools section.",
-        url: "https://github.com/raphabot/awesome-cybersecurity-agentic-ai/pull/24",
-      },
-      {
-        name: "Awesome AI Agents Security",
-        type: "open",
-        detail: "PR #17 submitted to Static Analysis & Linters.",
-        url: "https://github.com/ProjectRecon/awesome-ai-agents-security/pull/17",
-      },
-      {
-        name: "Awesome AI Security (ottosulin)",
-        type: "open",
-        detail: "PR #192 submitted to MCP Security section.",
-        url: "https://github.com/ottosulin/awesome-ai-security/pull/192",
-      },
-    ],
+    ecosystemIntegrations: ecosystemFromAdopters(),
 
     owaspAgentic: "10/10",
     safeMcp: "78/85 (91.8%)",
     owaspAst10: "7/10",
+
+    benchmarks: loadBenchmarkMeasurements(),
   };
 }

@@ -22,14 +22,30 @@ export function Nav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const prefix = `/${locale}`;
   const otherLocale = locale === "en" ? "zh" : "en";
+  // Desktop bar shows a restrained primary set; the full list stays in the
+  // mobile drawer (and the footer), so nothing becomes unreachable.
+  const primaryPages = [
+    "spec",
+    "rules",
+    "coverage",
+    "integrate",
+    "ecosystem",
+    "atd",
+    "about",
+  ] as const;
   const pages = [
+    "atd",
+    "spec",
     "rules",
     "threats",
     "coverage",
     "integrate",
     "ecosystem",
+    "red-team",
+    "contribute",
     "research",
     "about",
+    "blog",
     "changelog",
     "quality-standard",
   ] as const;
@@ -44,15 +60,11 @@ export function Nav({ locale }: { locale: Locale }) {
         }`}
       >
         <Link href={prefix} className="flex items-center py-2.5 -my-2.5">
-          <img
-            src="/atr-logo-black.png"
-            alt="ATR"
-            className="h-7 md:h-8"
-          />
+          <img src="/atr-logo-black.png" alt="ATR" className="h-7 md:h-8" />
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
-          {pages.map((page) => {
+        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+          {primaryPages.map((page) => {
             const isActive = pathname === `${prefix}/${page}`;
             return (
               <Link
@@ -72,7 +84,9 @@ export function Nav({ locale }: { locale: Locale }) {
           <Link
             href={`/${otherLocale}${pathname.replace(/^\/(en|zh)/, "")}`}
             className="font-data text-xs text-stone hover:text-ink transition-colors tracking-wide inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mx-2"
-            aria-label={otherLocale === "zh" ? "Switch to Chinese" : "Switch to English"}
+            aria-label={
+              otherLocale === "zh" ? "Switch to Chinese" : "Switch to English"
+            }
           >
             {otherLocale === "zh" ? "ZH" : "EN"}
           </Link>
@@ -86,20 +100,39 @@ export function Nav({ locale }: { locale: Locale }) {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden flex flex-col gap-1.5 p-2 min-w-[44px] min-h-[44px] items-center justify-center -mr-2"
-            aria-label="Toggle menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav-drawer"
           >
-            <span className={`block w-5 h-px bg-ink transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-[3.5px]" : ""}`} />
-            <span className={`block w-5 h-px bg-ink transition-all duration-300 ${menuOpen ? "opacity-0" : ""}`} />
-            <span className={`block w-5 h-px bg-ink transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-[3.5px]" : ""}`} />
+            <span
+              className={`block w-5 h-px bg-ink transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-[3.5px]" : ""}`}
+            />
+            <span
+              className={`block w-5 h-px bg-ink transition-all duration-300 ${menuOpen ? "opacity-0" : ""}`}
+            />
+            <span
+              className={`block w-5 h-px bg-ink transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-[3.5px]" : ""}`}
+            />
           </button>
         </div>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — proper dialog semantics so screen readers
+          announce open/close. Drawer body is scrollable for tall menus. */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-ink/10" onClick={() => setMenuOpen(false)} />
-          <div className="absolute top-16 right-0 w-72 bg-paper border-l border-fog shadow-lg p-6 flex flex-col gap-4">
+        <div
+          id="mobile-nav-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label={locale === "zh" ? "主選單" : "Main menu"}
+          className="fixed inset-0 z-40 md:hidden"
+        >
+          <div
+            className="absolute inset-0 bg-ink/10"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute top-16 right-0 w-72 max-h-[calc(100vh-4rem)] overflow-y-auto bg-paper border-l border-fog shadow-lg p-6 flex flex-col gap-4">
             {pages.map((page) => (
               <Link
                 key={page}

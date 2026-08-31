@@ -1,19 +1,19 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { join, extname, relative } from "node:path";
+import { join, extname, relative, basename, dirname } from "node:path";
 import yaml from "js-yaml";
 
 /**
  * Display-layer category aliases. Merges thin categories into parent groups
  * without modifying the canonical rule YAML on disk.
  *
- * model-abuse (1 rule) + data-poisoning (2 rules) → model-level-attacks (3)
- * All attacks here target the LLM or its training data directly.
+ * Empty: the 10 on-disk categories are now all substantial (model-abuse has 37
+ * rules, data-poisoning 5) and are shown 1:1 with data/stats.json byCategory.
+ * The old model-abuse+data-poisoning → "model-level-attacks" merge dated from
+ * when those categories held 1 and 2 rules; it now hid 42 rules and displayed
+ * both as 0, so it was removed.
  */
-const CATEGORY_ALIASES: Record<string, string> = {
-  "data-poisoning": "model-level-attacks",
-  "model-abuse": "model-level-attacks",
-};
+const CATEGORY_ALIASES: Record<string, string> = {};
 
 function aliasCategory(category: string): string {
   return CATEGORY_ALIASES[category] ?? category;
@@ -83,13 +83,16 @@ function loadRulesRecursive(dir: string, rootDir: string): RuleSummary[] {
         const content = readFileSync(fullPath, "utf-8");
         const raw = yaml.load(content, { schema: yaml.CORE_SCHEMA }) as RawRule;
 
-        if (!raw?.id || !raw?.title) return results;
+        if (!raw?.id || !raw?.title) continue;
 
         results.push({
           id: raw.id,
           title: raw.title,
           severity: raw.severity ?? "medium",
-          category: aliasCategory(raw.tags?.category ?? "unknown"),
+          // Category is canonical = the directory the rule lives in (matches
+          // data/stats.json byCategory). tags.category drifts on some rules and
+          // must not drive the public per-category counts.
+          category: aliasCategory(basename(dir)),
           subcategory: raw.tags?.subcategory,
           description: raw.description ?? "",
           scanTarget: raw.tags?.scan_target,
@@ -317,7 +320,7 @@ export function loadRuleDetail(id: string): RuleDetail | undefined {
     id: parsed.id,
     title: parsed.title,
     severity: parsed.severity ?? "medium",
-    category: aliasCategory(parsed.tags?.category ?? "unknown"),
+    category: aliasCategory(basename(dirname(filePath))),
     subcategory: parsed.tags?.subcategory,
     description: parsed.description ?? "",
     scanTarget: parsed.tags?.scan_target,
@@ -335,7 +338,16 @@ export function loadRuleDetail(id: string): RuleDetail | undefined {
     rawYaml,
     detectionConditions: parsed.detection?.conditions ?? [],
     detectionCombinator: parsed.detection?.condition,
-    falsePositives: parsed.detection?.false_positives ?? [],
+    falsePositives: ((parsed.detection?.false_positives ?? []) as unknown[]).map(
+      (fp) =>
+        typeof fp === "string"
+          ? fp
+          : fp && typeof fp === "object"
+            ? Object.entries(fp as Record<string, unknown>)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join("")
+            : String(fp),
+    ),
     truePositives: (parsed.test_cases?.true_positives ?? []).map((tc) =>
       normalizeTestCase(tc as { input?: unknown }),
     ) as TestCase[],

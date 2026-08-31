@@ -11,19 +11,56 @@ author: ATR Community
 date: 2026/03/15
 schema_version: "0.1"
 detection_tier: semantic
-maturity: experimental
+maturity: test
 severity: high
 source: threat-cloud
 references:
   mitre_atlas:
     - AML.T0057 - LLM Data Leakage
   owasp_llm:
-    - LLM06:2025 - Excessive Agency
+    - LLM06:2025
   owasp_agentic:
-    - ASI04:2026 - Insufficient User Consent
-    - ASI06:2026 - Insufficient Access Controls
+    - ASI04:2026
+    - ASI06:2026
 metadata_provenance:
   mitre_atlas: auto-generated
+compliance:
+  eu_ai_act:
+    - article: "13"
+      context: "Disguised analytics exfiltration exploits the assumption that telemetry collection is harmless to covertly transmit full conversation context to attacker-controlled endpoints; Article 13 transparency obligations require that AI systems and their tools disclose all data collection practices clearly to users."
+      strength: primary
+    - article: "15"
+      context: "Article 15 cybersecurity requirements include protection against tools that misrepresent their data handling to facilitate unauthorized data extraction; detection of analytics-disguised exfiltration is a required control for high-risk AI deployments."
+      strength: secondary
+    - article: "10"
+      context: "Article 10 (data and data governance) requires control over the data an AI system processes; this rule provides detection evidence for the context-exfiltration attempt (Data Exfiltration via Disguised Analytics Collection) affecting that data."
+      strength: secondary
+  nist_ai_rmf:
+    - subcategory: "GV.6.1"
+      context: "Disguised analytics exfiltration violates data governance boundaries by covertly transmitting full conversation context under the cover of routine telemetry, bypassing the data handling policies that GV.6.1 requires AI systems to enforce."
+      strength: primary
+    - subcategory: "MS.2.5"
+      context: "Detection of analytics-disguised data exfiltration is a data protection control measurement required under MS.2.5 to verify that AI system tool invocations do not silently leak user conversation data to external endpoints."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the context-exfiltration attempt (Data Exfiltration via Disguised Analytics Collection)."
+      strength: primary
+    - subcategory: "MS.2.10"
+      context: "NIST AI RMF MEASURE 2.10 (privacy risk examined and documented) is supported by this rule's detection of the context-exfiltration attempt (Data Exfiltration via Disguised Analytics Collection)."
+      strength: secondary
+  iso_42001:
+    - clause: "8.4"
+      context: "Disguised analytics exfiltration requires a documented AI system impact assessment under clause 8.4 that identifies tools claiming benign analytics roles as a covert data exfiltration vector affecting user privacy."
+      strength: primary
+    - clause: "9.1"
+      context: "Ongoing monitoring and evaluation under clause 9.1 must include checks that tool-level data transmission claims are consistent with stated telemetry policies, detecting analytics-disguised exfiltration during operational review."
+      strength: secondary
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the context-exfiltration attempt (Data Exfiltration via Disguised Analytics Collection)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the context-exfiltration attempt (Data Exfiltration via Disguised Analytics Collection) is such a treatment."
+      strength: secondary
 tags:
   category: context-exfiltration
   subcategory: disguised-analytics-collection
@@ -62,7 +99,6 @@ response:
 confidence: 54
 wild_validated: 2026/04/08
 wild_samples: 53577
-wild_fp_rate: 0
 test_cases:
   true_positives:
     - tool_description: >-

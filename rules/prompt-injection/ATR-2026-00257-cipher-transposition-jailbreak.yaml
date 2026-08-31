@@ -14,18 +14,46 @@ author: "ATR Community (via NVIDIA garak cipher probe family)"
 date: "2026/04/19"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_agentic:
-    - "ASI01:2026 - Agent Behaviour Hijack"
+    - "ASI01:2026"
   mitre_atlas:
     - "AML.T0051 - LLM Prompt Injection"
     - "AML.T0054 - LLM Jailbreak"
   research:
     - "https://github.com/NVIDIA/garak/blob/main/garak/probes/encoding.py"
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.7"
+      context: "Cipher and transposition encoding jailbreaks (ROT13, Atbash, Caesar, leet) are adversarial inputs designed to bypass safety filters by obfuscating harmful instructions; MS.2.7 requires that AI system security and resilience against such evasion techniques are continuously evaluated and documented."
+      strength: primary
+    - subcategory: "MS.2.6"
+      context: "Detecting cipher-based jailbreak probes (as catalogued by garak InjectROT13/InjectAtbash/InjectLeet) provides ongoing measurement of safety/security risk magnitude from prompt-injection attacks that classical content filters miss, satisfying MS.2.6's continuous evaluation requirement."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "Identification of obfuscated jailbreak instructions triggers the deactivation or response mechanisms required by MG.2.3 to supersede unsafe agent execution before the decoded harmful instruction is acted upon."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the prompt-injection attempt (Cipher and Transposition Encoding Jailbreak)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the prompt-injection attempt (Cipher and Transposition Encoding Jailbreak) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the prompt-injection attempt (Cipher and Transposition Encoding Jailbreak)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the prompt-injection attempt (Cipher and Transposition Encoding Jailbreak)."
+      strength: secondary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the prompt-injection attempt (Cipher and Transposition Encoding Jailbreak) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: prompt-injection
   subcategory: cipher-bypass
@@ -37,25 +65,25 @@ agent_source:
   provider: [any]
 detection:
   conditions:
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:decode|decipher|decrypt|apply)\s+(?:the\s+)?(?:following|this|below|above)?[^\n]{0,40}\b(?:rot[\s-]?(?:13|5|47)|atbash|caesar(?:\s+cipher)?|vigen[e]re|pig[\s-]?latin)\b'
       description: 'Explicit verb + known simple-cipher name in instruction context'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '\b(?:rot[\s-]?(?:13|5|47)|atbash|caesar\s+cipher|leet\s+speak|1337[\s-]?speak)\s+(?:encoded|encrypted|ciphered|message|text|version|of\s+this)\b'
       description: 'Cipher name used adjectivally to describe the encoded payload'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:shift|rotate|substitute)\s+(?:each\s+)?(?:letter|character|char)s?\s+by\s+\d{1,2}\s+(?:position|place|step)s?'
       description: 'Caesar-shift-style instruction with explicit numeric shift'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:this\s+(?:is|contains)\s+an?|here.{0,5}is\s+an?|take\s+this)\s+(?:rot[\s-]?(?:13|5|47)|atbash|caesar|leet|1337)[^\n]{0,80}(?:message|string|instruction|command|prompt)'
       description: 'Demonstrative framing of a cipher-encoded payload'
-    - field: user_input
+    - field: tool_response
       operator: regex
-      value: '\b(?:rot13|atbash|caesar\s+cipher)\b[^\n]{0,80}\b(?:and|then)\s+(?:follow|execute|run|do\s+what|obey|act\s+on)\b'
+      value: '\b(?:rot13|atbash|caesar(?:\s+cipher)?)\b[^\n]{0,80}\b(?:decode\s+and\s+|and|then)\s+(?:follow|execute|run|do\s+what|obey|act\s+on|comply)\b'
       description: 'Cipher name paired with a downstream execute/follow instruction'
   condition: any
   false_positives:

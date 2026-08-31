@@ -12,15 +12,46 @@ author: "ATR Community (via NVIDIA garak in-the-wild corpus)"
 date: "2026/04/19"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_agentic:
-    - "ASI01:2026 - Agent Behaviour Hijack"
+    - "ASI01:2026"
   mitre_atlas:
     - "AML.T0054"
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MP.5.1"
+      context: "Dual-response jailbreak prompts that request paired compliant/jailbroken outputs and toggle commands like /classic and /jailbroken are adversarial inputs designed to bypass safety alignment; MP.5.1 requires identifying and characterizing the likelihood and impact of such GenAI prompt injection vectors."
+      strength: primary
+    - subcategory: "MS.2.6"
+      context: "Detecting persona-based jailbreaks (Jester, DAN) that claim to free the model from constraints provides continuous evidence of safety/security risk magnitude in deployed GenAI systems, which MS.2.6 requires be evaluated on an ongoing basis."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "When a dual-response jailbreak is detected, MG.2.3 risk-treatment mechanisms must be invoked to suppress the jailbroken persona output or disengage the session before unsafe content is returned to the user."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the prompt-injection attempt (Dual-Response Jailbreak with Persona Commands)."
+      strength: primary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the prompt-injection attempt (Dual-Response Jailbreak with Persona Commands)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the prompt-injection attempt (Dual-Response Jailbreak with Persona Commands) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the prompt-injection attempt (Dual-Response Jailbreak with Persona Commands)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the prompt-injection attempt (Dual-Response Jailbreak with Persona Commands)."
+      strength: secondary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the prompt-injection attempt (Dual-Response Jailbreak with Persona Commands) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: prompt-injection
   subcategory: dual-response-jailbreak
@@ -32,23 +63,23 @@ agent_source:
   provider: [any]
 detection:
   conditions:
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:provide|give|show|write)\s+two\s+(?:different\s+)?responses?\s+.{0,100}(?:separated\s+paragraphs?|clearly\s+separated|different\s+responses?)'
       description: 'Request for two separated responses - core dual-response pattern'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '\[(?:CLASSIC|JESTER|DAN|STAN|DUDE|EVIL|BAD|GOOD|NORMAL|SAFE|UNSAFE|DEFAULT|ALT|MODE|JAILBREAK|UNRESTRICTED)\]\s+.{0,50}\[(?:CLASSIC|JESTER|DAN|STAN|DUDE|EVIL|BAD|GOOD|NORMAL|SAFE|UNSAFE|DEFAULT|ALT|MODE|JAILBREAK|UNRESTRICTED)\]'
       description: 'Dual-response formatting tags indicating separate personas'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:freed|liberated|escaped|released)\s+from\s+(?:the\s+)?(?:typical|normal|usual|standard)?\s*(?:constraints?|restrictions?|limitations?|guidelines?|rules?|policies)'
       description: 'Claims of being freed from AI safety constraints'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '\/(?:classic|jailbroken?|stop|dan|mode|switch|toggle|normal|safe|unsafe|unrestricted)\s*-'
       description: 'Command structure for toggling between response modes'
-    - field: user_input
+    - field: tool_response
       operator: regex
       value: '(?:act(?:ing)?\s+as|pretend\s+to\s+be|roleplay\s+as|you\s+are\s+(?:now\s+)?a)\s+(?:a\s+)?(?:Jester|fun-loving|humorous|playful|entertaining).{0,50}(?:AI|assistant|chatbot)'
       description: 'Establishing playful persona to normalize constraint bypass'

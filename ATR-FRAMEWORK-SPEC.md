@@ -1,4 +1,11 @@
-# ATR Framework Specification v2.0
+# ATR Framework Specification v2.0 — SUPERSEDED
+
+> **STATUS: SUPERSEDED 2026-05-16**. The normative specification is now
+> [SPEC.md](SPEC.md) v1.0.0 (Draft). This document is retained for
+> historical context only and MUST NOT be treated as normative. Where this
+> document and SPEC.md disagree, SPEC.md governs.
+
+---
 
 > Agent Threat Rules -- A multi-layer detection standard for AI agent security.
 >

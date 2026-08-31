@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -74,6 +74,10 @@ jobs:
         run: |
           pip install -e ".[dev]"
           python -m pytest tests/ -v
+
+      - name: Bundle rules into package
+        working-directory: python
+        run: python scripts/bundle_rules.py
 
       - name: Build sdist + wheel
         working-directory: python

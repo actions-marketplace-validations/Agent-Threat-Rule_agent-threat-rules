@@ -3,6 +3,13 @@ name: Validate ATR Rules
 on:
   push:
     branches: [main]
+    # The daily CVE collector commits proposals + its run report straight to
+    # main (drafts, never loaded by the engine). Those pushes don't need
+    # validate/build — rules go through a PR, which still runs this workflow
+    # via the pull_request trigger below.
+    paths-ignore:
+      - 'proposals/**'
+      - 'data/cve-collector/**'
   pull_request:
     branches: [main]
 
@@ -13,10 +20,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          # Need history + the origin/main ref so check-rules-safety can
+          # compare the PR head against the merge base.
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
 
@@ -25,6 +36,20 @@ jobs:
 
       - name: Validate all ATR rules against schema
         run: npm run validate
+
+      - name: Validate compliance mappings against framework allowlists
+        run: npm run validate:compliance
+
+      - name: Enforce 100% framework coverage (keeps framework-coverage claims honest)
+        run: npm run audit:mappings -- --require-full=references:owasp_llm,references:owasp_agentic,references:mitre_atlas,compliance:eu_ai_act,compliance:nist_ai_rmf,compliance:iso_42001
+
+      # Downstream rulesets (sigma-ai#9) join against this doc, so a stale
+      # copy silently misreports coverage. Stdlib-only script, no deps.
+      - name: ATT&CK crosswalk freshness (doc must match rule metadata)
+        run: python3 scripts/generate-attack-crosswalk.py --check
+
+      - name: AST crosswalk freshness (doc must match rule metadata)
+        run: python3 scripts/generate-ast-crosswalk.py --check
 
       - name: Type check
         run: npm run typecheck
@@ -40,3 +65,26 @@ jobs:
             echo "ERROR: No rules found"
             exit 1
           fi
+
+      # Rule safety gate (PR only): block PRs that add a rule whose ID
+      # collides with main, whose regex misses its own declared true_positives,
+      # or that match another rule's true_negatives (precision regression).
+      # Catches ID collisions BEFORE merge instead of at merge time — the
+      # failure mode we saw on PR #56 (closed and re-opened as PR #71 only
+      # because 00525/00526 had already been claimed by another PR).
+      - name: Fetch base ref for rule-safety comparison
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - name: Rule safety gate (duplicate IDs + cross-rule conflicts + own-TP coverage)
+        if: github.event_name == 'pull_request'
+        run: npx tsx scripts/check-rules-safety.ts --base origin/${{ github.base_ref }}
+
+      # Generalization gate (full-set ratchet): runs over EVERY pattern rule,
+      # using real engine semantics (Unicode/confusable folding, base64 decode,
+      # multi-field + nested test cases). Fails if any rule NOT already in the
+      # baseline fails to match its own true_positive or fires on its own
+      # true_negative. Catches rules that landed via direct-to-main crystallize
+      # commits, which the PR-diff-scoped safety gate above never sees.
+      - name: Generalization gate (own-TP coverage + self-FP, full set)
+        run: npm run gate:generalization

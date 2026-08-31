@@ -16,6 +16,36 @@ export function Footer({ locale }: { locale: Locale }) {
     <footer className="border-t border-fog py-12 px-6">
       <div className="max-w-[1120px] mx-auto">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 mb-10">
+          {/* Specification */}
+          <div>
+            <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-3">
+              {zh ? "規格" : "Specification"}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Link href={`${prefix}/spec`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "完整規格" : "Specification"}
+              </Link>
+              <Link href={`${prefix}/atd`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "ATD 技法目錄" : "ATD techniques"}
+              </Link>
+              <Link href={`${prefix}/conformance`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "符規" : "Conformance"}
+              </Link>
+              <Link href={`${prefix}/charter`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "章程" : "Charter"}
+              </Link>
+              <Link href={`${prefix}/errata`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "勘誤" : "Errata"}
+              </Link>
+              <Link href={`${prefix}/glossary`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "詞彙表" : "Glossary"}
+              </Link>
+              <Link href={`${prefix}/citations`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "引用" : "Citation"}
+              </Link>
+            </div>
+          </div>
+
           {/* Project */}
           <div>
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-3">
@@ -30,6 +60,9 @@ export function Footer({ locale }: { locale: Locale }) {
               </Link>
               <Link href={`${prefix}/research`} className="text-sm text-stone hover:text-ink transition-colors">
                 {zh ? "研究" : "Research"}
+              </Link>
+              <Link href={`${prefix}/changelog`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "版本歷程" : "Changelog"}
               </Link>
             </div>
           </div>
@@ -61,9 +94,12 @@ export function Footer({ locale }: { locale: Locale }) {
               <Link href={`${prefix}/contribute`} className="text-sm text-stone hover:text-ink transition-colors">
                 {zh ? "參與貢獻" : "Contribute"}
               </Link>
-              <a href="https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/GOVERNANCE.md" target="_blank" rel="noopener noreferrer" className="text-sm text-stone hover:text-ink transition-colors">
-                Governance
-              </a>
+              <Link href={`${prefix}/governance`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "治理" : "Governance"}
+              </Link>
+              <Link href={`${prefix}/responsible-use`} className="text-sm text-stone hover:text-ink transition-colors">
+                {zh ? "負責任使用" : "Responsible Use"}
+              </Link>
               <a href="https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/CONTRIBUTORS.md" target="_blank" rel="noopener noreferrer" className="text-sm text-stone hover:text-ink transition-colors">
                 Contributors
               </a>
@@ -107,7 +143,7 @@ export function Footer({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        {/* License + static description */}
+        {/* License + standards meta */}
         <div className="border-t border-fog pt-6 pb-4 flex flex-wrap items-center gap-3">
           <a href="https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">
             <img src="https://img.shields.io/badge/license-MIT-E8E8E5?style=flat&labelColor=FAFAF8" alt="MIT License" className="h-5" />
@@ -115,9 +151,17 @@ export function Footer({ locale }: { locale: Locale }) {
           <span className="font-data text-xs text-stone">
             {zh ? "MIT 授權 · npm 可安裝 · 開源" : "MIT Licensed · Available on npm · Open Source"}
           </span>
+          <span className="font-data text-xs text-fog">·</span>
+          <span className="font-data text-xs text-stone">
+            {zh ? "商業實作:" : "Commercial implementations:"}
+            {" "}
+            <Link href={`${prefix}/implementers`} className="text-stone hover:text-ink underline-offset-2 hover:underline">
+              {zh ? "見實作者報告" : "see implementer report"}
+            </Link>
+          </span>
         </div>
 
-        {/* Bottom bar */}
+        {/* Bottom bar — spec lineage, rule count, last-build */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-4">
           <div className="flex items-center gap-3">
             <img src="/atr-logo-black.png" alt="ATR" className="h-5 opacity-40" />
@@ -126,9 +170,17 @@ export function Footer({ locale }: { locale: Locale }) {
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-data text-xs text-mist">
-            <span>ATR v2.0.0 · {stats.ruleCount} {zh ? "條規則" : "rules"}</span>
+            <Link href={`${prefix}/spec`} className="hover:text-stone transition-colors">
+              {zh ? "規格" : "Spec"} 3.5.0
+            </Link>
+            <span className="text-fog">·</span>
+            <Link href={`${prefix}/citations`} className="hover:text-stone transition-colors">
+              DOI 10.5281/zenodo.19178002
+            </Link>
             <span className="text-fog hidden sm:inline">|</span>
-            <span>{zh ? "更新於" : "Updated"} {lastUpdated}</span>
+            <span>{stats.ruleCount} {zh ? "條規則" : "rules"}</span>
+            <span className="text-fog hidden sm:inline">|</span>
+            <span>{zh ? "ISO 8601" : "ISO 8601"} {lastUpdated}</span>
           </div>
         </div>
       </div>

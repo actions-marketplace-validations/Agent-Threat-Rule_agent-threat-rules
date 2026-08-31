@@ -22,11 +22,17 @@ import type {
   ActionResult,
   ScanResult,
   ScanType,
+  ATRLanguage,
+  ATRSemanticJudge,
 } from './types.js';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { computeContentHash } from './content-hash.js';
 import { loadRulesFromDirectory, loadRuleFile } from './loader.js';
+import { evaluateTraceRule } from './trace-evaluator.js';
+import { evaluateSemanticRule } from './semantic-evaluator.js';
+import { laneAllows, requiresConfirm, type Lane } from './quality/rule-contract.js';
+import { laneFromConfig } from './enforcement.js';
 import type { SessionTracker } from './session-tracker.js';
 import { computeVerdict } from './verdict.js';
 import type { ActionExecutor } from './action-executor.js';
@@ -105,7 +111,7 @@ const SKILL_CONTEXT_DENYLIST: ReadonlySet<string> = new Set([
 const BASE64_BLOCK_RE = /(?:[A-Za-z0-9+/]{32,}={0,2})/g;
 const MAX_DECODE_BLOCKS = 5;
 
-function decodeBase64Blocks(content: string): string[] {
+export function decodeBase64Blocks(content: string): string[] {
   const decoded: string[] = [];
   let match: RegExpExecArray | null;
   let count = 0;
@@ -201,14 +207,47 @@ export interface ATREngineConfig {
   embeddingModule?: EmbeddingModule;
   /** Optional Layer 3: Semantic LLM-as-judge analysis (requires API key) */
   semanticModule?: SemanticLayerConfig;
+  /** Optional rule-level semantic judge for detection.method=semantic rules */
+  semanticJudge?: ATRSemanticJudge;
   /** Optional: detection reporter for feeding results to ATR Threat Cloud */
   reporter?: ATRReporter;
+  /**
+   * Detection lane — controls which rule maturities are allowed to fire.
+   *   'enforce' : only maturity=stable rules (auto-block lane, lowest FP).
+   *   'alert'   : maturity stable + test (analyst/correlation lane).
+   *   'hunt'    : all maturities (advisory/eval; default, backward-compatible).
+   * Deprecated/draft rules are always skipped regardless of lane.
+   *
+   * This field is the ONLY input: the engine does not read `ATR_LANE` or any
+   * other environment variable. Leaving it undefined pins the lane to 'hunt',
+   * the widest and most advisory setting, no matter what the surrounding shell
+   * says. A CLI that wants environment support resolves it itself and passes
+   * the result here (src/cli.ts, resolveEnforcementPolicy).
+   *
+   * An unrecognised value throws at construction time — that is a caller bug,
+   * not ambient noise.
+   */
+  lane?: 'enforce' | 'alert' | 'hunt';
+  /**
+   * Embedding-confirm threshold for rules flagged `confirm: embedding`.
+   * In enforce/alert lanes, such a rule's match is dropped unless the input's
+   * cosine similarity to the known-attack reference >= this value. Requires an
+   * embeddingModule; if absent, confirm-rules are dropped from enforce/alert
+   * (they are too broad to block without confirmation). Default 0.6.
+   */
+  confirmThreshold?: number;
 }
 
 export class ATREngine {
   private rules: ATRRule[] = [];
   private readonly compiledPatterns = new Map<string, Map<string, RegExp[]>>();
   private readonly semanticModuleInstance: SemanticModule | null;
+  /**
+   * Active detection lane, resolved ONCE at construction from config alone.
+   * Held as a field so every gate in this engine sees the same lane for its
+   * lifetime.
+   */
+  private readonly lane: Lane;
 
   /**
    * Find bundled rules directory shipped with the npm package.
@@ -230,6 +269,10 @@ export class ATREngine {
   }
 
   constructor(private readonly config: ATREngineConfig = {}) {
+    // Config only — never the environment. An embedder's detection breadth must
+    // not depend on a variable someone exported in a shell profile.
+    this.lane = laneFromConfig(config.lane);
+
     // Initialize Layer 3 semantic module if config provided
     if (config.semanticModule) {
       const moduleConfig = createSemanticModuleFromConfig(config.semanticModule);
@@ -270,6 +313,22 @@ export class ATREngine {
   }
 
   /**
+   * Lane gate: does this rule's maturity qualify for the configured detection
+   * lane? 'enforce' = stable only; 'alert' = stable+test; 'hunt'/unset = all.
+   * Keeps experimental content out of the auto-block path without deleting it.
+   */
+  private passesLane(rule: ATRRule): boolean {
+    // Single source of truth for the maturity->lane mapping (incl. safe-fail on
+    // missing/odd maturity) lives in the rule-quality contract.
+    return laneAllows(rule.maturity, this.lane);
+  }
+
+  /** Active detection lane (config, else 'hunt'). Diagnostics/tests. */
+  getLane(): Lane {
+    return this.lane;
+  }
+
+  /**
    * Load a single rule file and add it to the engine.
    */
   addRuleFile(filePath: string): void {
@@ -287,10 +346,29 @@ export class ATREngine {
   }
 
   /**
-   * Evaluate an agent event against all loaded ATR rules.
-   * Returns all matching rules with details.
+   * Evaluate an agent event against all loaded ATR rules (synchronous, regex only).
+   * In enforce/alert lanes, rules flagged `confirm: embedding` are EXCLUDED here —
+   * embedding confirmation is asynchronous and cannot run in this path, so a broad
+   * confirm-rule must not fire unconfirmed in a blocking lane. Use
+   * evaluateWithVerdict() for confirmed enforce/alert detection.
    */
   evaluate(event: AgentEvent): ATRMatch[] {
+    const matches = this.evaluateRaw(event);
+    const lane = this.lane;
+    if (lane === 'hunt') return matches;
+    return matches.filter((m) => !requiresConfirm(m.rule));
+  }
+
+  /**
+   * Raw synchronous evaluation: returns all lane-passing matches including
+   * UNCONFIRMED `confirm: embedding` rules. Used ONLY internally by the verdict
+   * path, which then applies the async embedding-confirm gate.
+   *
+   * INTERNAL — do not call from outside evaluateWithVerdict. Calling this directly
+   * bypasses the embedding-confirm gate, letting broad confirm-rules fire
+   * unconfirmed in enforce/alert. The public sync entry point is evaluate().
+   */
+  private evaluateRaw(event: AgentEvent): ATRMatch[] {
     const matches: ATRMatch[] = [];
     const eventSourceType = EVENT_TYPE_TO_SOURCE[event.type];
     const allMatchedPatterns: string[] = [];
@@ -327,32 +405,65 @@ export class ATREngine {
     for (const rule of this.rules) {
       // Skip deprecated and draft rules
       if (rule.status === 'deprecated' || rule.status === 'draft') continue;
+      // Lane gate: keep non-stable maturities out of enforce/alert lanes
+      if (!this.passesLane(rule)) continue;
 
       // Source type filtering: skip rules that don't apply to this event type
       // When scanContext is 'skill', skip source-type filtering — all rules fire
       if (!isSkillContext && eventSourceType && rule.agent_source.type !== eventSourceType) {
         // Allow mcp_exchange rules to also match tool_call events
-        if (!(rule.agent_source.type === 'mcp_exchange' && eventSourceType === 'tool_call')) {
+        const mcpOverTool = rule.agent_source.type === 'mcp_exchange' && eventSourceType === 'tool_call';
+        // Indirect prompt injection: llm_io (prompt-injection) rules must also
+        // run on tool_response events. A poisoned tool / MCP / RAG output is the
+        // primary indirect-injection channel — the payload never appears in a
+        // direct llm_input, it rides in on tool output the model then reads.
+        // tool_response maps to source type 'mcp_exchange', so without this the
+        // entire llm_io family was silently skipped on every tool response.
+        // (Field resolution routes event.content into user_input/agent_output
+        // for tool_response events — see getFieldValue.)
+        const llmIoOverToolResponse =
+          rule.agent_source.type === 'llm_io' && eventSourceType === 'mcp_exchange';
+        // Trace-method rules declare agent_source.type: agent_trace, which maps
+        // to no event source type and would always be filtered out. Evaluate
+        // them whenever the event actually carries a trace payload; evaluateRule
+        // still returns null if the trace primitives don't fire, and ordinary
+        // (non-trace) events are unaffected because event.trace is undefined.
+        const traceWithPayload = rule.detection?.method === 'trace' && event.trace !== undefined;
+        if (!mcpOverTool && !llmIoOverToolResponse && !traceWithPayload) {
           continue;
         }
       }
 
       const matchResult = this.evaluateRule(rule, event);
       if (matchResult) {
-        // Skill context compound gating: rules not designed for SKILL.md
-        // must match 2+ CONDITIONS (not patterns) to trigger. A single
-        // condition with many patterns fires too easily on long documents.
-        // 2+ condition co-occurrence means the document exhibits multiple
-        // distinct threat signals — strongly indicates a real attack, not
-        // security documentation that happens to describe one attack type.
-        // Rules with scan_target 'skill' or 'both' fire normally.
-        // Compound gate: rules not designed for skill scanning need 30%+
-        // conditions to match. Rules with scan_target 'skill' or 'both'
-        // have verified FP rates and fire normally.
+        // Skill context compound gating: rules not designed for SKILL.md must
+        // match 2+ CONDITIONS (not patterns) to trigger. A single condition with
+        // many patterns fires too easily on long documents; 2+ condition
+        // co-occurrence means the document exhibits multiple distinct threat
+        // signals. Rules with scan_target 'skill' or 'both' have verified FP
+        // rates on SKILL.md and are exempt.
+        //
+        // WHAT THIS ACTUALLY DOES — read before "fixing" it (audited 2026-08-05):
+        // for a rule with `condition: any`, matchedConditions.length is capped at
+        // 1, because evaluateArrayConditions BREAKS on the first matching
+        // condition. minRequired is never below 2. So for any-mode rules this is
+        // not a 30% threshold, it is an unconditional reject, and the effective
+        // policy of the SKILL.md path is "only scan_target: skill|both rules
+        // run". 776 of 780 rules on main declare `condition: any`; 645 rules
+        // (102 of them maturity:stable) can never match here for any input.
+        //
+        // That policy is load-bearing, not an accident waiting to be corrected.
+        // Measured on this corpus: letting the threshold become reachable (stop
+        // short-circuiting when scanContext === 'skill') takes the 466-sample
+        // benign skill corpus from 1 flagged sample to 265 — 7 new rules firing,
+        // 406 new FP — while malicious recall stays 32/32. Do not change this
+        // without re-running both halves of that measurement.
+        //
+        // The measurement-side consequence (a gate that lists `skill` among its
+        // shapes has NOT measured those 645 rules on it) is named by
+        // skillPathCoverage() in scripts/lib/corpus-event.ts and pinned by
+        // tests/skill-path-coverage.test.ts.
         if (isSkillContext && rule.tags.scan_target !== 'skill' && rule.tags.scan_target !== 'both') {
-          // Require at least 30% of conditions to match (min 2) — long documents
-          // with many technical terms easily hit 2 conditions; percentage-based
-          // threshold scales with rule complexity.
           const totalConds: number = Number(rule.detection?.conditions?.length ?? 1);
           const minRequired = Math.max(2, Math.ceil(totalConds * 0.3));
           if ((matchResult.matchedConditions?.length ?? 0) < minRequired) {
@@ -420,20 +531,277 @@ export class ATREngine {
   }
 
   /**
+   * Async evaluation path that supports rule-level method=semantic dispatch.
+   *
+   * The synchronous evaluate() method remains pattern-only for compatibility.
+   * Consumers that configure semanticJudge should call evaluateAsync() or
+   * evaluateWithVerdict(), which delegates here when a semantic judge exists.
+   */
+  async evaluateAsync(event: AgentEvent): Promise<ATRMatch[]> {
+    const matches: ATRMatch[] = [];
+    const eventSourceType = EVENT_TYPE_TO_SOURCE[event.type];
+    const allMatchedPatterns: string[] = [];
+
+    const sessionId = event.sessionId;
+
+    // Tier 0: Invariant enforcement (hard boundaries, pre-check)
+    if (this.config.invariantChecker) {
+      const violations = this.config.invariantChecker.check(event);
+      if (violations.length > 0) {
+        if (this.config.sessionTracker && sessionId) {
+          this.config.sessionTracker.recordEvent(sessionId, event, ['tier0-invariant-deny']);
+        }
+        return violations.map((v) => this.config.invariantChecker!.buildDenyMatch(v));
+      }
+    }
+
+    // Tier 1: Blacklist lookup (known-bad skills)
+    if (this.config.blacklistProvider) {
+      const skillId = resolveBlacklistSkillId(event);
+      if (skillId) {
+        const entry = this.config.blacklistProvider.lookup(skillId);
+        if (entry) {
+          matches.push(buildBlacklistMatch(entry));
+        }
+      }
+    }
+
+    // Tier 2: Pattern matching + async semantic rules
+    const isSkillContext = event.scanContext === 'skill';
+    for (const rule of this.rules) {
+      if (rule.status === 'deprecated' || rule.status === 'draft') continue;
+      if (!this.passesLane(rule)) continue;
+
+      if (!isSkillContext && eventSourceType && rule.agent_source.type !== eventSourceType) {
+        const mcpOverTool = rule.agent_source.type === 'mcp_exchange' && eventSourceType === 'tool_call';
+        // Indirect prompt injection: llm_io rules also run on tool_response
+        // (source type mcp_exchange) — poisoned tool/MCP/RAG output. See the
+        // matching note in evaluateRaw().
+        const llmIoOverToolResponse =
+          rule.agent_source.type === 'llm_io' && eventSourceType === 'mcp_exchange';
+        // Trace-method rules are source-agnostic — evaluate when a trace is present.
+        const traceWithPayload = rule.detection?.method === 'trace' && event.trace !== undefined;
+        if (!mcpOverTool && !llmIoOverToolResponse && !traceWithPayload) {
+          continue;
+        }
+      }
+
+      const matchResult = await this.evaluateRuleAsync(rule, event, this.config.semanticJudge);
+      if (matchResult) {
+        // Skill compound gate — see the long note in evaluateRaw(). For
+        // `condition: any` rules this rejects unconditionally, which is why the
+        // SKILL.md path effectively runs only scan_target: skill|both rules.
+        if (isSkillContext && rule.tags.scan_target !== 'skill' && rule.tags.scan_target !== 'both') {
+          const totalConds: number = Number(rule.detection?.conditions?.length ?? 1);
+          const minRequired = Math.max(2, Math.ceil(totalConds * 0.3));
+          if ((matchResult.matchedConditions?.length ?? 0) < minRequired) {
+            continue;
+          }
+        }
+        matches.push(matchResult);
+        allMatchedPatterns.push(...matchResult.matchedPatterns);
+      }
+    }
+
+    // Record event in session tracker (always, for cross-event sequence detection)
+    if (this.config.sessionTracker && sessionId) {
+      this.config.sessionTracker.recordEvent(sessionId, event, allMatchedPatterns);
+    }
+
+    // Layer 2: Skill behavioral fingerprinting (optional, no LLM)
+    const fingerprintStore = this.config.fingerprintStore;
+    if (fingerprintStore) {
+      const skillId = resolveSkillId(event);
+      if (skillId) {
+        const layer2Matches = runFingerprintLayer(fingerprintStore, event, skillId);
+        matches.push(...layer2Matches);
+      }
+    }
+
+    const sorted = matches.sort((a, b) => {
+      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, informational: 4 };
+      const aSev = severityOrder[a.rule.severity] ?? 4;
+      const bSev = severityOrder[b.rule.severity] ?? 4;
+      if (aSev !== bSev) return aSev - bSev;
+      return b.confidence - a.confidence;
+    });
+
+    if (this.config.reporter) {
+      const hash = computeContentHash(event.content ?? '');
+      const scanTarget = isSkillContext ? 'skill' : (event.type ?? 'unknown');
+      const now = new Date().toISOString();
+
+      if (sorted.length > 0) {
+        for (const match of sorted) {
+          this.config.reporter.onDetection({
+            ruleId: match.rule.id,
+            severity: match.rule.severity,
+            scanTarget,
+            category: match.rule.tags?.category ?? 'unknown',
+            confidence: match.confidence,
+            timestamp: now,
+            contentHash: hash,
+          });
+        }
+      } else if (this.config.reporter.onClean) {
+        this.config.reporter.onClean({
+          rulesEvaluated: this.rules.length,
+          scanTarget,
+          timestamp: now,
+          contentHash: hash,
+        });
+      }
+    }
+
+    return sorted;
+  }
+
+  /**
    * Evaluate a single rule against an event.
    * Supports both array-format and named-map-format conditions.
    */
   private evaluateRule(rule: ATRRule, event: AgentEvent): ATRMatch | null {
     const { detection } = rule;
+
+    // v1.1: method-based dispatch. Default is 'pattern' for backward compat.
+    const method = detection.method ?? 'pattern';
+
+    // method=trace — evaluate via trace-evaluator if event carries a trace.
+    if (method === 'trace') {
+      if (!event.trace) {
+        // Event does not carry trace; rule cannot evaluate. Per spec §9,
+        // engines without the capability skip silently rather than fail.
+        return null;
+      }
+      const result = evaluateTraceRule(rule, event.trace);
+      if (!result.matched) return null;
+      const baseConfidence = rule.tags.confidence === 'high' ? 0.9 : rule.tags.confidence === 'medium' ? 0.7 : 0.5;
+      return {
+        rule,
+        matchedConditions: result.matchedPrimitives.map((p) => `trace.${p}`),
+        matchedPatterns: result.violations,
+        confidence: baseConfidence,
+        timestamp: new Date().toISOString(),
+        scan_context: 'native' as const,
+      };
+    }
+
+    // method=semantic — async path is not used in the sync evaluate() API.
+    // Engines that implement semantic must use evaluateAsync (see below) or
+    // wire a synchronous judge. Pattern fallback applies here.
+    if (method === 'semantic') {
+      // If the rule has fallback_method=pattern, evaluate pattern conditions
+      // synchronously. Otherwise skip because the judge path is async-only.
+      if (detection.semantic?.fallback_method === 'pattern') {
+        return this.evaluatePatternRule(rule, event);
+      }
+      return null;
+    }
+
+    // method=signature — sub-millisecond exact-match path. For v1.1, we
+    // do a minimal in-engine check: walk indicators, hash-compare to
+    // event fields. Full impl is deferred; for now treat as non-matching
+    // unless caller has hashed event.fields appropriately.
+    if (method === 'signature') {
+      return this.evaluateSignatureMethod(rule, event);
+    }
+
+    // method=behavioral — windowed metric evaluation. Requires state across
+    // multiple events; the sync evaluate() API cannot maintain state.
+    // Skip silently; behavioral evaluation belongs in a separate streaming path.
+    if (method === 'behavioral') {
+      return null;
+    }
+
+    // Default: pattern method (v1.0 evaluation path).
+    return this.evaluatePatternRule(rule, event);
+  }
+
+  /** Evaluate a rule using pattern-mode conditions, regardless of detection.method. */
+  private evaluatePatternRule(rule: ATRRule, event: AgentEvent): ATRMatch | null {
+    const { detection } = rule;
     const conditions = detection.conditions;
     const allMatchedPatterns: string[] = [];
 
-    // Detect format: array or named map
     if (Array.isArray(conditions)) {
       return this.evaluateArrayConditions(rule, conditions, detection.condition, event, allMatchedPatterns);
     }
 
     return this.evaluateNamedConditions(rule, conditions, detection.condition, event, allMatchedPatterns);
+  }
+
+  /**
+   * Async variant that supports method=semantic with an injected judge.
+   * For trace/pattern/signature/behavioral methods, defers to the sync path.
+   */
+  private async evaluateRuleAsync(
+    rule: ATRRule,
+    event: AgentEvent,
+    judge?: ATRSemanticJudge,
+  ): Promise<ATRMatch | null> {
+    const method = rule.detection.method ?? 'pattern';
+    if (method === 'semantic') {
+      const effectiveJudge = judge ?? this.config.semanticJudge;
+      const result = await evaluateSemanticRule(rule, event.content, { judge: effectiveJudge });
+      if (!result.matched) {
+        if (result.reason?.includes('fallback_pattern')) {
+          return this.evaluatePatternRule(rule, event);
+        }
+        return null;
+      }
+      const matchedPatterns = [
+        ...(result.category ? [result.category] : []),
+        ...(result.evidence ? [result.evidence] : []),
+      ];
+      return {
+        rule,
+        matchedConditions: ['semantic'],
+        matchedPatterns,
+        confidence: result.confidence ?? 0.5,
+        timestamp: new Date().toISOString(),
+        scan_context: 'native' as const,
+      };
+    }
+    // For non-semantic methods, fall back to sync path.
+    return this.evaluateRule(rule, event);
+  }
+
+  /**
+   * Minimal signature-method evaluator (atr-method-v1.1.md §5).
+   * Walks detection.signature.indicators against event.fields with the
+   * specified match_logic. Hash-typed indicators expect event.fields to
+   * contain pre-computed hex hashes at the indicated target_field.
+   */
+  private evaluateSignatureMethod(rule: ATRRule, event: AgentEvent): ATRMatch | null {
+    const sig = rule.detection.signature;
+    if (!sig || !Array.isArray(sig.indicators) || sig.indicators.length === 0) return null;
+    const matchLogic = sig.match_logic ?? 'any';
+
+    const matched: string[] = [];
+    for (const ind of sig.indicators) {
+      const actual = event.fields?.[ind.target_field];
+      if (actual === undefined) continue;
+      // Hash types: case-insensitive hex compare. Others: case-sensitive string compare.
+      const isHashType = ind.type === 'sha256' || ind.type === 'sha512' || ind.type === 'blake2b-256';
+      const a = isHashType ? actual.toLowerCase() : actual;
+      const b = isHashType ? ind.value.toLowerCase() : ind.value;
+      if (a === b) matched.push(`${ind.type}:${ind.value}`);
+    }
+
+    const violated = matchLogic === 'all'
+      ? matched.length === sig.indicators.length
+      : matched.length > 0;
+
+    if (!violated) return null;
+
+    return {
+      rule,
+      matchedConditions: matched.map((_, i) => String(i)),
+      matchedPatterns: matched,
+      confidence: 1.0, // exact match
+      timestamp: new Date().toISOString(),
+      scan_context: 'native' as const,
+    };
   }
 
   /**
@@ -456,7 +824,13 @@ export class ATREngine {
 
       if (result) {
         matchedConditionIndices.push(i);
-        if (isAny) break; // Short-circuit on first match for "any"
+        // Short-circuit on first match for "any". NOTE: this also caps
+        // matchedConditions at 1, which the skill-context compound gate in
+        // evaluateRaw() reads — see the note there before changing it. Removing
+        // this break is a detection-behaviour change, not an optimisation
+        // cleanup: it takes the benign skill corpus from 1 to 265 flagged
+        // samples out of 466.
+        if (isAny) break;
       }
     }
 
@@ -503,37 +877,67 @@ export class ATREngine {
     const field = cond['field'] as string | undefined;
     const operator = cond['operator'] as string | undefined;
     const value = cond['value'] as string | undefined;
+    const condLang = cond['language'] as ATRLanguage | undefined;
 
     if (!field || !operator || value === undefined) return false;
 
     const rawFieldValue = this.resolveField(field, event);
     if (!rawFieldValue) return false;
-    const fieldValue = normalizeUnicode(rawFieldValue);
+
+    // v3.0 multilingual dispatch: skip language-tagged conditions whose
+    // declared language doesn't match the input's dominant script. Pure
+    // optimisation — language-untagged conditions remain unaffected.
+    if (condLang !== undefined) {
+      const inputLang = detectInputLanguage(rawFieldValue);
+      if (!conditionLanguageMatches(condLang, inputLang)) return false;
+    }
+
+    // Non-English conditions normalise with NFKC (aggressive) so full-width
+    // Latin evasion inside CJK/Arabic text (e.g. "ｉｇｎｏｒｅ" embedded in a
+    // Chinese prompt) is caught. English conditions retain NFC for
+    // backwards compatibility with v2.x rules whose regex sometimes
+    // distinguishes full-width vs half-width characters.
+    const fieldValue =
+      condLang !== undefined && condLang !== 'en'
+        ? foldConfusables(normalizeUnicodeAggressive(rawFieldValue))
+        : foldConfusables(normalizeUnicode(rawFieldValue));
 
     switch (operator) {
       case 'regex': {
+        // Code-block suppression for array-format rules with explicit opt-in.
+        // NL-style rules set tags.suppress_in_code_blocks: true so that matches
+        // landing inside ```...``` fenced blocks (e.g. pentest example payloads)
+        // do not fire. Built lazily so non-opt-in rules pay no cost.
+        const ruleForSuppress = this.rules.find(r => r.id === ruleId);
+        const suppressInCodeBlocks = (ruleForSuppress?.tags as { suppress_in_code_blocks?: boolean } | undefined)?.suppress_in_code_blocks === true;
+        const codeRanges = suppressInCodeBlocks ? buildCodeBlockRanges(fieldValue) : [];
+
         // Try pre-compiled pattern first
         const compiled = this.compiledPatterns.get(ruleId)?.get(String(index));
         if (compiled && compiled.length > 0) {
           // Test against both normalized and raw values so that patterns
           // detecting zero-width/bidi characters can match before stripping
-          if (safeRegexTest(compiled[0]!, fieldValue) || safeRegexTest(compiled[0]!, rawFieldValue)) {
+          // (the raw pass is skipped only when normalisation was a no-op — see
+          // testNormalisedThenRaw)
+          if (testNormalisedThenRaw(compiled[0]!, fieldValue, rawFieldValue)) {
+            if (suppressInCodeBlocks && codeRanges.length > 0 && isInsideCodeBlock(fieldValue, compiled[0]!, codeRanges)) {
+              return false;
+            }
             matchedPatterns.push(value);
             return true;
           }
           return false;
         }
-        // Fallback: compile on the fly
-        try {
-          const normalized = normalizeRegex(value);
-          const rFlags = normalized.includes('\\u{') || normalized.includes('\\p{') ? 'iu' : 'i';
-          const regex = new RegExp(normalized, rFlags);
-          if (safeRegexTest(regex, fieldValue) || safeRegexTest(regex, rawFieldValue)) {
-            matchedPatterns.push(value);
-            return true;
+        // Fallback: compile on the fly (ReDoS-gated — see safeCompile)
+        const normalized = normalizeRegex(value);
+        const rFlags = needsUnicodeFlag(normalized) ? 'iu' : 'i';
+        const regex = safeCompile(normalized, rFlags);
+        if (regex && testNormalisedThenRaw(regex, fieldValue, rawFieldValue)) {
+          if (suppressInCodeBlocks && codeRanges.length > 0 && isInsideCodeBlock(fieldValue, regex, codeRanges)) {
+            return false;
           }
-        } catch {
-          // Invalid regex
+          matchedPatterns.push(value);
+          return true;
         }
         return false;
       }
@@ -651,20 +1055,27 @@ export class ATREngine {
   ): boolean {
     const rawFieldValue = this.resolveField(cond.field, event);
     if (!rawFieldValue) return false;
-    const fieldValue = normalizeUnicode(rawFieldValue);
+    const fieldValue = foldConfusables(normalizeUnicode(rawFieldValue));
 
     // Code block suppression: for runtime events, rules that commonly
     // false-positive on documentation content are suppressed when the match
     // falls inside a markdown code block.
     // Code block suppression in skill context:
-    // - scan_target: 'skill' rules → NOT suppressed (their patterns are designed
-    //   for SKILL.md code blocks which ARE executable instructions)
+    // - scan_target: 'skill' rules → NOT suppressed by default (their patterns
+    //   are designed for SKILL.md code blocks which ARE executable instructions)
+    // - skill rules with `tags.suppress_in_code_blocks: true` → suppressed
+    //   (NL-style rules that should NOT match shell-command examples in pentest
+    //   skills)
     // - Other rules → suppressed (their patterns FP on code examples)
     const isSkillCtx = event.scanContext === 'skill';
-    const isSkillRule = this.rules.find(r => r.id === ruleId)?.tags?.scan_target === 'skill';
-    const suppressInCodeBlocks = (isSkillCtx && !isSkillRule)
-      ? true  // non-skill rules: always suppress code blocks in SKILL.md
-      : (!isSkillCtx && this.shouldSuppressInCodeBlocks(ruleId));
+    const matchedRule = this.rules.find(r => r.id === ruleId);
+    const isSkillRule = matchedRule?.tags?.scan_target === 'skill';
+    const explicitSuppress = (matchedRule?.tags as { suppress_in_code_blocks?: boolean } | undefined)?.suppress_in_code_blocks === true;
+    const suppressInCodeBlocks = explicitSuppress
+      ? true
+      : (isSkillCtx && !isSkillRule)
+        ? true  // non-skill rules: always suppress code blocks in SKILL.md
+        : (!isSkillCtx && this.shouldSuppressInCodeBlocks(ruleId));
     const codeRanges = suppressInCodeBlocks ? buildCodeBlockRanges(fieldValue) : [];
 
     // Get pre-compiled patterns
@@ -672,7 +1083,7 @@ export class ATREngine {
 
     if (compiled) {
       for (let i = 0; i < compiled.length; i++) {
-        if (safeRegexTest(compiled[i]!, fieldValue) || (rawFieldValue && safeRegexTest(compiled[i]!, rawFieldValue))) {
+        if (testNormalisedThenRaw(compiled[i]!, fieldValue, rawFieldValue)) {
           // If match is inside a code block and this rule supports suppression, skip it
           if (suppressInCodeBlocks && codeRanges.length > 0 && isInsideCodeBlock(fieldValue, compiled[i]!, codeRanges)) {
             continue;
@@ -711,15 +1122,11 @@ export class ATREngine {
           break;
         case 'regex':
         default: {
-          try {
-            const flags = cond.case_sensitive ? '' : 'i';
-            const regex = new RegExp(pattern, flags);
-            if (safeRegexTest(regex, fieldValue)) {
-              matchedPatterns.push(pattern);
-              return true;
-            }
-          } catch {
-            // Invalid regex, skip
+          const flags = cond.case_sensitive ? '' : 'i';
+          const regex = safeCompile(pattern, flags);
+          if (regex && safeRegexTest(regex, fieldValue)) {
+            matchedPatterns.push(pattern);
+            return true;
           }
           break;
         }
@@ -1001,10 +1408,21 @@ export class ATREngine {
 
     // Common field aliases
     switch (fieldName) {
+      // On a tool_response event the tool/MCP/RAG output IS the text the model
+      // ingests, so llm_io (prompt-injection) rules that target user_input /
+      // agent_output must resolve to event.content here — otherwise an
+      // un-filtered llm_io rule would look in an empty field and silently miss
+      // an indirect-injection payload riding in on tool output.
       case 'user_input':
-        return event.type === 'llm_input' ? event.content : event.fields?.['user_input'];
+        return event.type === 'llm_input'
+          ? event.content
+          : (event.fields?.['user_input'] ??
+              (event.type === 'tool_response' ? event.content : undefined));
       case 'agent_output':
-        return event.type === 'llm_output' ? event.content : event.fields?.['agent_output'];
+        return event.type === 'llm_output'
+          ? event.content
+          : (event.fields?.['agent_output'] ??
+              (event.type === 'tool_response' ? event.content : undefined));
       case 'tool_response':
         return event.type === 'tool_response' ? event.content : event.fields?.['tool_response'];
       case 'tool_name':
@@ -1109,13 +1527,10 @@ export class ATREngine {
       for (let i = 0; i < conditions.length; i++) {
         const cond = conditions[i] as unknown as Record<string, unknown>;
         if (cond['operator'] === 'regex' && typeof cond['value'] === 'string') {
-          try {
-            const pattern = normalizeRegex(cond['value'] as string);
-            const flags = pattern.includes('\\u{') || pattern.includes('\\p{') ? 'iu' : 'i';
-            ruleMap.set(String(i), [new RegExp(pattern, flags)]);
-          } catch {
-            // Invalid regex, skip
-          }
+          const pattern = normalizeRegex(cond['value'] as string);
+          const flags = needsUnicodeFlag(pattern) ? 'iu' : 'i';
+          const compiledRe = safeCompile(pattern, flags, rule.id);
+          if (compiledRe) ruleMap.set(String(i), [compiledRe]);
         }
       }
     } else {
@@ -1129,19 +1544,14 @@ export class ATREngine {
 
           const compiled: RegExp[] = [];
           for (const pattern of cond['patterns'] as string[]) {
-            try {
-              if (matchType === 'regex') {
-                compiled.push(new RegExp(normalizeRegex(pattern), flags));
-              } else if (matchType === 'contains') {
-                compiled.push(new RegExp(escapeRegex(pattern), flags));
-              } else if (matchType === 'exact') {
-                compiled.push(new RegExp(`^${escapeRegex(pattern)}$`, flags));
-              } else if (matchType === 'starts_with') {
-                compiled.push(new RegExp(`^${escapeRegex(pattern)}`, flags));
-              }
-            } catch {
-              // Invalid regex pattern, skip
-            }
+            let source: string | null = null;
+            if (matchType === 'regex') source = normalizeRegex(pattern);
+            else if (matchType === 'contains') source = escapeRegex(pattern);
+            else if (matchType === 'exact') source = `^${escapeRegex(pattern)}$`;
+            else if (matchType === 'starts_with') source = `^${escapeRegex(pattern)}`;
+            if (source === null) continue;
+            const re = safeCompile(source, flags, rule.id);
+            if (re) compiled.push(re);
           }
 
           ruleMap.set(condName, compiled);
@@ -1167,7 +1577,12 @@ export class ATREngine {
     layersUsed: readonly string[];
   }> {
     const layersUsed: string[] = ['layer1-regex'];
-    let matches = this.evaluate(event);
+    let matches = this.config.semanticJudge
+      ? await this.evaluateAsync(event)
+      : this.evaluateRaw(event);
+    if (this.config.semanticJudge) {
+      layersUsed.push('method-semantic');
+    }
 
     // Tier 0 + Tier 1 run inside evaluate(), track them
     if (this.config.invariantChecker) layersUsed.push('tier0-invariant');
@@ -1178,52 +1593,73 @@ export class ATREngine {
       layersUsed.push('layer2-fingerprint');
     }
 
-    // Tier 2.5: Embedding similarity (async, runs on all events)
-    if (this.config.embeddingModule?.isAvailable()) {
-      layersUsed.push('tier2.5-embedding');
+    // Tier 2.5 embedding similarity — computed ONCE here, shared by the confirm gate
+    // and the additive signal below (avoids a double encode). Computed lazily: the
+    // enforce lane (no additive signal) only encodes when a confirm-rule actually
+    // matched, so benign no-match events in the block lane stay encode-free.
+    const lane = this.lane;
+    const hasConfirmMatch = lane !== 'hunt' && matches.some((m) => requiresConfirm(m.rule));
+    const needEmbedding = lane !== 'enforce' || hasConfirmMatch;
+    let embResult: { matched: boolean; value: number; description: string } | null = null;
+    if (needEmbedding && this.config.embeddingModule?.isAvailable()) {
       try {
-        const embResult = await this.config.embeddingModule.evaluate(event, {
-          module: 'embedding',
-          function: 'similarity_search',
-          args: { field: 'content' },
-          operator: 'gte',
-          threshold: 0.65,
+        embResult = await this.config.embeddingModule.evaluate(event, {
+          module: 'embedding', function: 'similarity_search',
+          args: { field: 'content' }, operator: 'gte', threshold: 0,
         });
-
-        if (embResult.matched) {
-          const severity = embResult.value >= 0.95 ? 'critical' as const
-            : embResult.value >= 0.88 ? 'high' as const
-            : 'medium' as const;
-
-          const syntheticMatch: ATRMatch = {
-            rule: {
-              title: `Embedding Match: ${embResult.description}`,
-              id: 'tier2.5-embedding-match',
-              status: 'experimental',
-              description: embResult.description,
-              author: 'atr-engine/tier2.5',
-              date: new Date().toISOString().slice(0, 10),
-              severity,
-              tags: { category: 'prompt-injection', subcategory: 'semantic-similarity', confidence: 'high' },
-              agent_source: { type: 'llm_io' },
-              detection: { conditions: {}, condition: 'tier2.5-runtime' },
-              response: {
-                actions: severity === 'critical'
-                  ? ['block_input', 'alert']
-                  : ['alert'],
-              },
-            } as ATRRule,
-            matchedConditions: ['embedding_similarity'],
-            matchedPatterns: [`similarity=${embResult.value.toFixed(3)}`],
-            confidence: embResult.value,
-            timestamp: new Date().toISOString(),
-            scan_context: 'native' as const,
-          };
-          matches = [...matches, syntheticMatch];
-        }
+        layersUsed.push('tier2.5-embedding');
       } catch {
-        // Embedding failure is non-fatal
+        embResult = null; // embedding failure is non-fatal
       }
+    }
+
+    // Embedding-confirm gate: rules flagged `confirm: embedding` only survive in
+    // enforce/alert lanes if input similarity >= confirmThreshold. NARROWING only —
+    // confirmation can only REMOVE a match, never create a block (enforcementConfidence
+    // invariant). No embedding module -> confirm-rules dropped from enforce/alert.
+    if (hasConfirmMatch) {
+      const sim = embResult?.value ?? 0;
+      // Note: confirmThreshold 0 disables the gate (every similarity is >= 0).
+      if (sim < (this.config.confirmThreshold ?? 0.6)) {
+        matches = matches.filter((m) => !requiresConfirm(m.rule));
+        layersUsed.push('embedding-confirm');
+      }
+    }
+
+    // Additive Tier 2.5 signal: a high-similarity input surfaced as an embedding-only
+    // match. EXCLUDED from the enforce lane — an embedding-only signal must never
+    // produce a block there (only deterministic stable rules can block in enforce).
+    // Available in alert/hunt as an advisory signal.
+    if (lane !== 'enforce' && embResult && embResult.value >= 0.65) {
+      const severity = embResult.value >= 0.95 ? 'critical' as const
+        : embResult.value >= 0.88 ? 'high' as const
+        : 'medium' as const;
+
+      const syntheticMatch: ATRMatch = {
+        rule: {
+          title: `Embedding Match: ${embResult.description}`,
+          id: 'tier2.5-embedding-match',
+          status: 'experimental',
+          description: embResult.description,
+          author: 'atr-engine/tier2.5',
+          date: new Date().toISOString().slice(0, 10),
+          severity,
+          tags: { category: 'prompt-injection', subcategory: 'semantic-similarity', confidence: 'high' },
+          agent_source: { type: 'llm_io' },
+          detection: { conditions: {}, condition: 'tier2.5-runtime' },
+          response: {
+            actions: severity === 'critical'
+              ? ['block_input', 'alert']
+              : ['alert'],
+          },
+        } as ATRRule,
+        matchedConditions: ['embedding_similarity'],
+        matchedPatterns: [`similarity=${embResult.value.toFixed(3)}`],
+        confidence: embResult.value,
+        timestamp: new Date().toISOString(),
+        scan_context: 'native' as const,
+      };
+      matches = [...matches, syntheticMatch];
     }
 
     // Layer 3: Semantic LLM-as-judge (async, conditional)
@@ -1324,9 +1760,53 @@ export class ATREngine {
     return matches;
   }
 
+  /**
+   * Async SKILL.md scan that supports method=semantic rules through semanticJudge.
+   */
+  async scanSkillAsync(content: string): Promise<ATRMatch[]> {
+    const baseEvent = {
+      type: 'mcp_exchange' as const,
+      timestamp: new Date().toISOString(),
+      sessionId: 'skill-scan',
+      fields: {},
+      scanContext: 'skill' as const,
+    };
+
+    const baseMatches = await this.evaluateAsync({ ...baseEvent, content });
+
+    const decodedBlocks = decodeBase64Blocks(content);
+    const decodedMatches: ATRMatch[] = [];
+    for (const block of decodedBlocks) {
+      const blockMatches = await this.evaluateAsync({ ...baseEvent, content: block });
+      for (const m of blockMatches) {
+        decodedMatches.push({
+          ...m,
+          matchedPatterns: [...m.matchedPatterns, '[decoded:base64]'],
+        });
+      }
+    }
+
+    // Do not mutate the array returned by evaluateAsync — build a fresh result.
+    return [...baseMatches, ...decodedMatches];
+  }
+
   /** Scan a SKILL.md file and return a unified ScanResult with content_hash. */
   scanSkillFull(content: string, filePath?: string): ScanResult {
     const matches = this.scanSkill(content);
+    return {
+      scan_type: 'skill',
+      content_hash: computeContentHash(content),
+      input_file: filePath,
+      timestamp: new Date().toISOString(),
+      rules_loaded: this.rules.length,
+      matches,
+      threat_count: matches.length,
+    };
+  }
+
+  /** Async SKILL.md scan result with semantic rule support. */
+  async scanSkillFullAsync(content: string, filePath?: string): Promise<ScanResult> {
+    const matches = await this.scanSkillAsync(content);
     return {
       scan_type: 'skill',
       content_hash: computeContentHash(content),
@@ -1342,6 +1822,23 @@ export class ATREngine {
   evaluateFull(event: AgentEvent, filePath?: string): ScanResult {
     const matches = this.evaluate(event);
     // Hash content + fields to distinguish tool-call events with same content but different args
+    const hashInput = event.fields
+      ? event.content + '\0' + JSON.stringify(event.fields)
+      : event.content;
+    return {
+      scan_type: 'mcp',
+      content_hash: computeContentHash(hashInput),
+      input_file: filePath,
+      timestamp: new Date().toISOString(),
+      rules_loaded: this.rules.length,
+      matches,
+      threat_count: matches.length,
+    };
+  }
+
+  /** Async MCP event scan result with semantic rule support. */
+  async evaluateFullAsync(event: AgentEvent, filePath?: string): Promise<ScanResult> {
+    const matches = await this.evaluateAsync(event);
     const hashInput = event.fields
       ? event.content + '\0' + JSON.stringify(event.fields)
       : event.content;
@@ -1372,11 +1869,194 @@ function normalizeRegex(pattern: string): string {
 /**
  * Normalize Unicode text to NFC form and strip zero-width characters.
  * This prevents evasion via combining characters, zero-width joiners, etc.
+ *
+ * NFC was chosen over NFKC to preserve writer intent \u2014 full-width letters
+ * (\uFF21\uFF22\uFF23 vs ABC) remain distinct so rules that explicitly target full-width
+ * evasion can still match. For aggressive normalization use
+ * `normalizeUnicodeAggressive()`.
  */
-function normalizeUnicode(text: string): string {
+export function normalizeUnicode(text: string): string {
   return text
-    .normalize('NFC')
+    .normalize('NFKC')
     .replace(/[\u200B\u200C\u200D\uFEFF\u2060\u180E\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
+}
+
+/**
+ * Map of high-confidence homoglyphs (Cyrillic / Greek / other scripts whose
+ * glyphs are visually identical to ASCII Latin) back to their Latin form.
+ *
+ * Scope is deliberately narrow: only characters that have NO legitimate use
+ * inside a Latin-script attack token. Folding "\u043E" (U+043E Cyrillic) to "o" lets
+ * "ign\u043Ere previous instructions" match an English rule that the attacker tried
+ * to evade by swapping one letter for its Cyrillic twin. Genuine Cyrillic/Greek
+ * text folds to Latin gibberish that cannot spell a multi-token English trigger,
+ * and the raw (unfolded) value is still tested as an OR fallback \u2014 so this can
+ * only ADD matches, never suppress one. Full-width compatibility characters are
+ * intentionally NOT touched here (that distinction is preserved by NFC).
+ */
+const CONFUSABLE_TO_LATIN: Record<string, string> = {
+  // Cyrillic lowercase
+  '\u0430': 'a', '\u0435': 'e', '\u043E': 'o', '\u0440': 'p', '\u0441': 'c',
+  '\u0445': 'x', '\u0443': 'y', '\u0456': 'i', '\u0455': 's', '\u0458': 'j',
+  '\u04BB': 'h', '\u0501': 'd', '\u051B': 'q', '\u0261': 'g', '\u043D': 'h',
+  '\u043A': 'k', '\u043C': 'm', '\u0442': 't', '\u0432': 'b',
+  // Cyrillic uppercase
+  '\u0410': 'A', '\u0412': 'B', '\u0415': 'E', '\u041A': 'K', '\u041C': 'M',
+  '\u041D': 'H', '\u041E': 'O', '\u0420': 'P', '\u0421': 'C', '\u0422': 'T',
+  '\u0425': 'X', '\u0423': 'Y', '\u0406': 'I', '\u0408': 'J', '\u0405': 'S',
+  // Greek
+  '\u03BF': 'o', '\u03C1': 'p', '\u03B1': 'a', '\u03B5': 'e', '\u03BD': 'v',
+  '\u03BA': 'k', '\u0391': 'A', '\u0392': 'B', '\u0395': 'E', '\u0396': 'Z',
+  '\u0397': 'H', '\u0399': 'I', '\u039A': 'K', '\u039C': 'M', '\u039D': 'N',
+  '\u039F': 'O', '\u03A1': 'P', '\u03A4': 'T', '\u03A7': 'X', '\u03A5': 'Y',
+  // Other lookalikes
+  '\u0131': 'i', '\u01C0': 'l', '\u0578': 'n',
+};
+
+/**
+ * Fold visually-identical non-Latin homoglyphs to ASCII Latin so that
+ * single-character script-swap evasion (a documented prompt-injection technique)
+ * cannot defeat a Latin-script rule.
+ *
+ * Hot path: this runs per condition during evaluation. In skill-scan context
+ * every field resolves to the same content, so consecutive calls receive an
+ * identical string — a single-entry memo collapses the per-condition work to
+ * once per distinct input. The fold itself bails via a tight charCode scan on
+ * pure-ASCII, CJK, and accented-Latin text (every foldable char is Greek
+ * U+0370–03FF, Cyrillic U+0400–04FF, or one of three isolated lookalikes)
+ * without touching the regex engine or the replacement map.
+ */
+let _foldKey: string | null = null;
+let _foldVal = '';
+export function foldConfusables(text: string): string {
+  if (text === _foldKey) return _foldVal;
+  let hasCandidate = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if ((c >= 0x0370 && c <= 0x04ff) || c === 0x0131 || c === 0x01c0 || c === 0x0578) {
+      hasCandidate = true;
+      break;
+    }
+  }
+  let out: string;
+  if (!hasCandidate) {
+    out = text;
+  } else {
+    out = '';
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      out += CONFUSABLE_TO_LATIN[ch] ?? ch;
+    }
+  }
+  _foldKey = text;
+  _foldVal = out;
+  return out;
+}
+
+/**
+ * Aggressive NFKC normalization for evasion-aware matching.
+ *
+ * NFKC collapses compatibility characters: full-width \uFF21\uFF22\uFF23 \u2192 ABC,
+ * circled \u2460 \u2192 1, superscript \u00B2 \u2192 2. Use when a rule needs to match
+ * regardless of presentational tricks. Always strips zero-width + bidi
+ * override characters too.
+ *
+ * Currently invoked only via the v3.0 multilingual dispatch path for inputs
+ * whose dominant script is non-Latin \u2014 full-width Latin in CJK text is a
+ * known evasion vector.
+ */
+function normalizeUnicodeAggressive(text: string): string {
+  return text
+    .normalize('NFKC')
+    .replace(/[\u200B\u200C\u200D\uFEFF\u2060\u180E\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
+}
+
+/**
+ * Heuristic dominant-script detection for v3.0 multilingual dispatch.
+ *
+ * Counts Unicode-block code points and returns the BCP-47 tag of the
+ * dominant script. Used to skip language-tagged conditions whose
+ * declared language does not match the input \u2014 pure optimisation, never
+ * affects correctness of language-untagged rules.
+ *
+ * Disambiguation:
+ *  - Han script: split via simplified-only vs traditional-only indicator
+ *    char sets. Tie / both zero \u2192 defaults to 'zh-Hant'.
+ *  - Latin script: 'es' if Spanish-specific punctuation/diacritics
+ *    (\u00F1, \u00BF, \u00A1) detected, else 'en'.
+ *  - Empty / pure ASCII without Spanish markers \u2192 'en'.
+ *
+ * Exported for unit testing; not part of the public API surface.
+ */
+export function detectInputLanguage(text: string): ATRLanguage {
+  if (!text) return 'en';
+
+  // Simplified-only common chars (rough but cheap).
+  const SIMP_ONLY = /[\u56FD\u5B66\u65F6\u8FD9\u4EEC\u8BF4\u8BA9\u8BF7\u8FD0\u52A8\u6765\u4E2A\u4E07\u53D1\u5173\u73B0\u5B9E\u89C1\u4E49\u9F99\u4E1C\u8F66\u4E66]/;
+  // Traditional-only common chars.
+  const TRAD_ONLY = /[\u570B\u5B78\u6642\u9019\u5011\u8AAA\u8B93\u8ACB\u904B\u52D5\u4F86\u500B\u842C\u767C\u95DC\u73FE\u5BE6\u898B\u7FA9\u9F8D\u6771\u8ECA\u66F8]/;
+  // Spanish-distinguishing characters.
+  const ES_MARKER = /[\u00F1\u00D1\u00BF\u00A1\u00E1\u00E9\u00ED\u00F3\u00FA\u00FC\u00C1\u00C9\u00CD\u00D3\u00DA\u00DC]/;
+
+  let han = 0;
+  let hira = 0;
+  let kata = 0;
+  let arabic = 0;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    if (cp === undefined) continue;
+    if (cp >= 0x4e00 && cp <= 0x9fff) han++;
+    else if (cp >= 0x3040 && cp <= 0x309f) hira++;
+    else if (cp >= 0x30a0 && cp <= 0x30ff) kata++;
+    else if (cp >= 0x0600 && cp <= 0x06ff) arabic++;
+    else if (cp >= 0x0750 && cp <= 0x077f) arabic++; // Arabic supplement
+    else if (cp >= 0xfb50 && cp <= 0xfdff) arabic++; // Arabic presentation A
+    else if (cp >= 0xfe70 && cp <= 0xfeff) arabic++; // Arabic presentation B
+  }
+
+  if (arabic > 0) return 'ar';
+  if (hira > 0 || kata > 0) return 'ja';
+  if (han > 0) {
+    const hasSimp = SIMP_ONLY.test(text);
+    const hasTrad = TRAD_ONLY.test(text);
+    if (hasSimp && !hasTrad) return 'zh-Hans';
+    if (hasTrad && !hasSimp) return 'zh-Hant';
+    // Tie or no disambiguation chars \u2192 default zh-Hant.
+    // Downstream: callers should evaluate both zh-Hant and zh-Hans conditions
+    // when this is the case (handled in conditionLanguageMatches below).
+    return 'zh-Hant';
+  }
+  if (ES_MARKER.test(text)) return 'es';
+  return 'en';
+}
+
+/**
+ * Decide whether a condition with `language: condLang` should be evaluated
+ * against an input whose detected language is `inputLang`.
+ *
+ * Rules:
+ *  - condLang undefined (no language field) \u2192 always evaluate (v2.x compat)
+ *  - condLang === inputLang \u2192 evaluate
+ *  - Han-script ambiguity: if input is Han and condLang is the other
+ *    Chinese variant, still evaluate (the cheap detector cannot reliably
+ *    split zh-Hant vs zh-Hans, so we err on inclusion)
+ *  - Otherwise \u2192 skip (return false)
+ *
+ * Exported for unit testing; not part of the public API surface.
+ */
+export function conditionLanguageMatches(
+  condLang: ATRLanguage | undefined,
+  inputLang: ATRLanguage
+): boolean {
+  if (condLang === undefined) return true;
+  if (condLang === inputLang) return true;
+  if (
+    (condLang === 'zh-Hant' && inputLang === 'zh-Hans') ||
+    (condLang === 'zh-Hans' && inputLang === 'zh-Hant')
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /** Maximum input length for regex evaluation to mitigate ReDoS */
@@ -1392,6 +2072,138 @@ function safeRegexTest(regex: RegExp, input: string): boolean {
 }
 
 /**
+ * Test a pattern against the NORMALISED text and, only when normalisation
+ * actually changed something, against the RAW text as well.
+ *
+ * The second test exists so a pattern that hunts zero-width / bidi / confusable
+ * characters can still see them before foldConfusables strips them. That is a
+ * real requirement and it is unchanged here.
+ *
+ * WHAT THE GUARD DOES: `fieldValue` is `foldConfusables(normalizeUnicode(raw))`.
+ * When that returns a string equal to `raw` — every pure-ASCII document, which
+ * is nearly the whole SKILL.md corpus — the two calls are literally the same
+ * call: same compiled RegExp, same input, no `g`/`y` flag and therefore no
+ * lastIndex state. Skipping the second one cannot change any verdict; it only
+ * stops the engine paying for the identical scan twice.
+ *
+ * WHY IT IS WORTH A HELPER: the cost is not marginal on long inputs. Profiled
+ * 2026-08-05 (node --cpu-prof, three scanSkill() calls over a 26,635-byte benign
+ * SKILL.md with 780 rules loaded), 80.5% of all CPU sat in ONE rule's unanchored
+ * double-lookahead pattern — ATR-2026-00063's
+ * `(?=[\s\S]*\.env)(?=[\s\S]*(base64|...))` — which is O(n^2) in document length
+ * because it retries both lookaheads at every start position, and it was being
+ * paid twice per condition. Measured on this branch, same box, same rules:
+ *
+ *   3x scanSkill() on that 26,635-byte file : 7227ms -> 4010ms  (-44.5%)
+ *   whole 498-file skill benchmark corpus   : 67451ms -> 47558ms (-29.5%)
+ *
+ * with the matched-rule-id set for all 498 files byte-identical before and after
+ * (verified per file across all four evaluate() shapes and scanSkill()).
+ *
+ * The O(n^2) rule pattern itself is NOT touched here — changing a rule's regex
+ * is a detection change and needs its own re-measurement.
+ */
+function testNormalisedThenRaw(
+  regex: RegExp,
+  fieldValue: string,
+  rawFieldValue: string,
+): boolean {
+  if (safeRegexTest(regex, fieldValue)) return true;
+  if (rawFieldValue === fieldValue) return false;
+  return safeRegexTest(regex, rawFieldValue);
+}
+
+/**
+ * Heuristic catastrophic-backtracking (ReDoS) detector for rule-derived
+ * patterns.
+ *
+ * Why compile-time rejection is the ONLY real defense: a synchronous RegExp
+ * cannot be interrupted once it starts. Node runs it to completion on the
+ * single event-loop thread, so the hook-handler's withTimeout() (a setTimeout
+ * race) can never fire while a pathological match is spinning — the timer
+ * callback is queued behind the very work it is meant to abort. The length cap
+ * in safeRegexTest bounds one axis; this bounds the other by refusing to
+ * compile a pattern whose STRUCTURE permits exponential backtracking, before
+ * any attacker-controlled input can reach it.
+ *
+ * Mirrors scan-core's isSafeRegex, which has run against the full bundled rule
+ * corpus without dropping a single legitimate rule.
+ */
+export function isReDoSSafe(source: string): boolean {
+  // Classic exponential form: an UNBOUNDED inner quantifier (+ or *) immediately
+  // inside a group, followed by an UNBOUNDED outer quantifier (+ or *):
+  // (a+)+, (a*)*, ([a-z]+)*. This is the shape that blows up exponentially.
+  //
+  // Deliberately NOT flagged (would be false positives that silently drop real
+  // detection rules):
+  //   - Bounded outer repetition — (…+){0,3}, (…+){2,5}. A finite upper bound
+  //     caps backtracking to polynomial degree, not exponential.
+  //   - Unbounded outer over a DISJOINT inner — (\w+\s+){40,}. \w and \s cannot
+  //     overlap, so each iteration has a single parse: linear, not catastrophic.
+  // A purely structural check cannot see inner-class overlap, so we scope the
+  // gate to the unambiguous exponential form and rely on the corpus fuzz
+  // (tests/redos-safety.test.ts) + the MAX_EVAL_LENGTH cap for the rest.
+  //
+  // SINGLE-ATOM nested quantifier only: a group whose interior is exactly one
+  // quantified atom — (\w+)+, (.*)*, ([a-z]+)*, (a+)+ — then an unbounded outer
+  // + or *. This is the true exponential shape. A MULTI-atom group such as
+  // (\S+\s+)* or (-\S+\s+)* cannot re-partition its input (the atoms are
+  // consumed in a fixed order), so it stays linear and must NOT be flagged —
+  // those are real shell-injection / exfil detection patterns in the corpus.
+  if (/\((?:\?:)?(?:\\[dDwWsS]|\[[^\]]*\]|\.|[A-Za-z0-9])[*+]\)[*+]/.test(source)) return false;
+  // Overlapping alternation under a quantifier: (a|a)+
+  if (/\(([^|)]+)\|\1\)[+*]/.test(source)) return false;
+  // 3+ consecutive greedy wildcards: .*.*.*
+  if (/(\.\*){3,}/.test(source)) return false;
+  return true;
+}
+
+/**
+ * Compile a rule-derived pattern with a ReDoS safety gate. Returns null (caller
+ * skips the pattern) when the source is syntactically invalid OR exhibits
+ * catastrophic-backtracking structure. A dropped rule in a security engine must
+ * be LOUD, not silent, so a rejected ReDoS pattern warns to stderr (never
+ * stdout — that carries the hook protocol) with the offending source.
+ */
+/**
+ * Does this pattern need the RegExp `u` flag?
+ *
+ * `\\u{...}` and `\\p{...}` require it by syntax, and so does a literal astral
+ * character: without `u`, JavaScript reads a surrogate pair, and a class range
+ * written with literals -- [<U+E0000>-<U+E007F>] -- is a SyntaxError rather than
+ * a range.
+ *
+ * The literal form matters because it is the only spelling the three consuming
+ * engines share. `\\u{...}` is JS-only: Python re needs `\\U000E0000`, Go needs
+ * `\\x{E0000}`, and neither of those is valid JavaScript. Sixteen conditions
+ * across ten rules used it, which made those rules uncompilable from the Python
+ * and Go channels; they are literals now, and this is what keeps them working
+ * here.
+ */
+export function needsUnicodeFlag(pattern: string): boolean {
+  if (pattern.includes('\\u{') || pattern.includes('\\p{')) return true;
+  for (const ch of pattern) {
+    const cp = ch.codePointAt(0);
+    if (cp !== undefined && cp > 0xffff) return true;
+  }
+  return false;
+}
+
+function safeCompile(source: string, flags: string, ruleId?: string): RegExp | null {
+  if (!isReDoSSafe(source)) {
+    console.warn(
+      `[atr-engine] rejected ReDoS-unsafe pattern${ruleId ? ` in rule ${ruleId}` : ''}: ${source.slice(0, 120)}`
+    );
+    return null;
+  }
+  try {
+    return new RegExp(source, flags);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Build a set of character ranges that fall inside markdown code blocks.
  * Covers both fenced (``` ```) and inline (`code`) blocks.
  * Used to suppress false positives when regex matches documentation examples
@@ -1400,20 +2212,55 @@ function safeRegexTest(regex: RegExp, input: string): boolean {
 function buildCodeBlockRanges(text: string): Array<[number, number]> {
   const ranges: Array<[number, number]> = [];
 
-  // Fenced code blocks: ```...```
-  const fenced = /```[\s\S]*?```/g;
-  let m: RegExpExecArray | null;
-  while ((m = fenced.exec(text)) !== null) {
-    ranges.push([m.index, m.index + m[0].length]);
+  // Fenced code blocks: parse line-by-line because ``` markers must alternate
+  // open/close, which a simple non-greedy regex misaligns when the marker count
+  // is odd or when prose contains stray triple-backticks.
+  let blockStart: number | null = null;
+  let pos = 0;
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+    const isFence = trimmed.startsWith('```');
+    if (isFence) {
+      if (blockStart === null) {
+        blockStart = pos;
+      } else {
+        ranges.push([blockStart, pos + line.length + 1]);
+        blockStart = null;
+      }
+    }
+    pos += line.length + 1; // +1 for the newline
+  }
+  if (blockStart !== null) {
+    // Unterminated fence: treat from start to end of text as code
+    ranges.push([blockStart, text.length]);
   }
 
   // Inline code: `...` (but not inside fenced blocks)
   const inline = /`[^`\n]+`/g;
+  let m: RegExpExecArray | null;
   while ((m = inline.exec(text)) !== null) {
-    const pos = m.index;
-    const inFenced = ranges.some(([start, end]) => pos >= start && pos < end);
+    const inlinePos = m.index;
+    const inFenced = ranges.some(([start, end]) => inlinePos >= start && inlinePos < end);
     if (!inFenced) {
-      ranges.push([pos, pos + m[0].length]);
+      ranges.push([inlinePos, inlinePos + m[0].length]);
+    }
+  }
+
+  // Quoted strings inside markdown table rows: `| ... | "..." | ...`
+  // Adversarial-example test cases in eval suites are commonly listed in
+  // table cells as quoted attack payloads. Treat any "..." that appears on
+  // a line beginning with `|` (markdown table) as suppressed code-equivalent.
+  const tableLineRe = /^\|.*$/gm;
+  while ((m = tableLineRe.exec(text)) !== null) {
+    const lineStart = m.index;
+    const line = m[0];
+    // Find all "..." spans within the line and add as suppression ranges
+    const quoteRe = /"[^"\n]+"/g;
+    let qm: RegExpExecArray | null;
+    while ((qm = quoteRe.exec(line)) !== null) {
+      const absStart = lineStart + qm.index;
+      ranges.push([absStart, absStart + qm[0].length]);
     }
   }
 

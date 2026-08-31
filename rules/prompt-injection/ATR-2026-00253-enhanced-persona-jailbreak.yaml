@@ -13,17 +13,45 @@ author: "ATR Community (via NVIDIA garak in-the-wild corpus)"
 date: "2026/04/19"
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: high
 references:
   owasp_llm:
-    - "LLM01:2025 - Prompt Injection"
+    - "LLM01:2025"
   owasp_agentic:
-    - "ASI01:2026 - Agent Behaviour Hijack"
+    - "ASI01:2026"
   mitre_atlas:
     - "AML.T0054 - LLM Jailbreak"
   research:
     - "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+compliance:
+  nist_ai_rmf:
+    - subcategory: "MS.2.6"
+      context: "AIM jailbreak attempts with persona definition and refusal suppression are direct safety/security risks to the LLM; MS.2.6 requires continuous evaluation of safety risk magnitude, and each detection provides measurable evidence of jailbreak attempts targeting the model's safety alignment."
+      strength: primary
+    - subcategory: "MS.2.7"
+      context: "Detection of refusal suppression and amoral persona injection evaluates the resilience of the AI system's guardrails against adversarial prompt manipulation; MS.2.7 mandates documented assessment of the system's ability to withstand such jailbreak attacks."
+      strength: secondary
+    - subcategory: "MG.2.3"
+      context: "When enhanced AIM jailbreak patterns are detected, mechanisms must be available to disengage or block the manipulated session before the unfiltered alter-ego produces harmful output; MG.2.3 requires these supersede/deactivate response plans for active jailbreak events."
+      strength: secondary
+  iso_42001:
+    - clause: "8.1"
+      context: "ISO/IEC 42001 Clause 8.1 (operational planning and control, including control of externally provided processes) is operationalised by this rule's detection of the prompt-injection attempt (Enhanced AIM Jailbreak with Persona Definition and Refusal Suppression)."
+      strength: primary
+    - clause: "6.2"
+      context: "ISO/IEC 42001 Clause 6.2 (AI objectives and planning) calls for risk treatment of known attack patterns; this rule's detection of the prompt-injection attempt (Enhanced AIM Jailbreak with Persona Definition and Refusal Suppression) is such a treatment."
+      strength: secondary
+  eu_ai_act:
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the prompt-injection attempt (Enhanced AIM Jailbreak with Persona Definition and Refusal Suppression)."
+      strength: primary
+    - article: "9"
+      context: "Article 9 (risk management system) requires identified risks to be addressed by appropriate measures; this rule is a runtime risk-treatment control that detects the prompt-injection attempt (Enhanced AIM Jailbreak with Persona Definition and Refusal Suppression)."
+      strength: secondary
+    - article: "14"
+      context: "Article 14 (human oversight) requires high-risk AI systems to remain subject to effective human oversight; this rule provides detection evidence where the prompt-injection attempt (Enhanced AIM Jailbreak with Persona Definition and Refusal Suppression) would bypass or undermine that oversight."
+      strength: secondary
 tags:
   category: prompt-injection
   subcategory: enhanced-persona-jailbreak

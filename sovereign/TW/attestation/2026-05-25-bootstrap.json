@@ -1,0 +1,50 @@
+{
+  "attestation_id": "atr-tw-bootstrap-2026-05-25",
+  "issued_at": "2026-05-25T08:00:00Z",
+  "issuer": {
+    "name": "Adam Lin",
+    "capacity": "Maintainer, Agent Threat Rules",
+    "email": "adam@agentthreatrule.org",
+    "github": "Adamthereal"
+  },
+  "scope": {
+    "sovereign_authority": "TW",
+    "id_range": "ATR-TW-YYYY-NNNNN",
+    "year_window": [2026, 2026],
+    "trust_tier": "tier-3-bootstrap"
+  },
+  "signing_key": {
+    "key_id": "atr-tw-bootstrap-2026-05-25",
+    "algorithm": "ed25519",
+    "public_key_pem": "PENDING_GENERATION",
+    "public_key_fingerprint_sha256": "PENDING_GENERATION"
+  },
+  "rules_covered": [
+    {
+      "rule_id": "ATR-TW-2026-00001",
+      "file": "sovereign/TW/rules/ATR-TW-2026-00001-taiwan-national-id-leak.yaml",
+      "content_hash_sha256": "PENDING_COMPUTATION_AFTER_KEY_GENERATION",
+      "signature": "PENDING_AFTER_KEY_GENERATION"
+    }
+  ],
+  "signature_envelope": {
+    "algorithm": "ed25519",
+    "key_id": "atr-tw-bootstrap-2026-05-25",
+    "canonical_form": "RFC 8785 JCS over (issued_at + scope + rules_covered[*].rule_id + rules_covered[*].content_hash_sha256)",
+    "signature_base64": "PENDING"
+  },
+  "sunset": {
+    "condition": "Re-attestation by recognized Taiwan sovereign authority OR 36 months from issued_at, whichever earlier",
+    "auto_expire_at": "2029-05-25T08:00:00Z"
+  },
+  "revocation": {
+    "status": "active",
+    "revocation_list_url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/sovereign/TW/attestation/revocation-list.json",
+    "last_checked": null
+  },
+  "_meta": {
+    "status": "BOOTSTRAP — signature pending maintainer key generation. See sovereign/TW/attestation/SIGNING-GUIDE.md for the key generation and signing procedure. Downstream collectors MUST treat this attestation as unverified (Tier 3 / community-tier trust) until signature_base64 is populated and verified against the published public_key_pem.",
+    "supersedes": null,
+    "superseded_by": null
+  }
+}

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { Inter, Inter_Tight, JetBrains_Mono, Source_Serif_4, Noto_Serif_TC } from "next/font/google";
+import { loadSiteStats } from "@/lib/stats";
 import "./globals.css";
+
+const stats = loadSiteStats();
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,13 +22,31 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "700"],
 });
 
+// Serif for spec body — gives W3C / IETF document feel.
+// Applied via `font-spec` utility on .spec-document wrappers.
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+// Traditional Chinese serif companion (used on zh-TW spec pages).
+const notoSerifTC = Noto_Serif_TC({
+  variable: "--font-noto-serif-tc",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: {
     default: "ATR - Agent Threat Rules",
     template: "%s | ATR",
   },
   description:
-    "Open-source detection standard for AI agent security. 113 rules, 96K skills scanned, 751 malware discovered, RFC-001 quality standard. Shipped in Cisco AI Defense. MIT Licensed.",
+    `Open-source detection standard for AI agent security. ${stats.ruleCount} rules, 96K skills scanned, 552 confirmed malware, RFC-001 quality standard. Shipped in Cisco AI Defense. MIT Licensed.`,
   metadataBase: new URL("https://agentthreatrule.org"),
   alternates: {
     canonical: "https://agentthreatrule.org",
@@ -37,7 +58,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ATR - Agent Threat Rules",
     description:
-      "The open detection standard for AI agent security. 113 rules. 96K skills scanned. 751 malware discovered. Shipped in Cisco.",
+      `The open detection standard for AI agent security. ${stats.ruleCount} rules. 96K skills scanned. 552 confirmed malware. Shipped in Cisco.`,
     url: "https://agentthreatrule.org",
     siteName: "ATR - Agent Threat Rules",
     type: "website",
@@ -56,7 +77,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ATR - Agent Threat Rules",
     description:
-      "The open detection standard for AI agent security. 113 rules. 96K skills scanned. 751 malware discovered. Shipped in Cisco.",
+      `The open detection standard for AI agent security. ${stats.ruleCount} rules. 96K skills scanned. 552 confirmed malware. Shipped in Cisco.`,
     images: ["https://agentthreatrule.org/og-image.png"],
   },
   keywords: [
@@ -101,7 +122,7 @@ const jsonLd = {
       "@type": "SoftwareSourceCode",
       name: "agent-threat-rules",
       description:
-        "Open-source detection standard for AI agent security. 113 rules, 96K skills scanned, 751 malware discovered. Sub-millisecond, zero dependencies.",
+        `Open-source detection standard for AI agent security. ${stats.ruleCount} rules, 96K skills scanned, 552 confirmed malware. Sub-millisecond, zero dependencies.`,
       codeRepository: "https://github.com/Agent-Threat-Rule/agent-threat-rules",
       programmingLanguage: ["YAML", "TypeScript"],
       license: "https://opensource.org/licenses/MIT",
@@ -126,7 +147,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${interTight.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${inter.variable} ${interTight.variable} ${jetbrainsMono.variable} ${sourceSerif.variable} ${notoSerifTC.variable} h-full`}
     >
       <body className="min-h-full flex flex-col antialiased">
         <script

@@ -20,16 +20,44 @@ author: ATR Community
 date: 2026/03/11
 schema_version: "0.1"
 detection_tier: pattern
-maturity: experimental
+maturity: test
 severity: critical
 references:
   owasp_llm:
-    - LLM06:2025 - Excessive Agency
+    - LLM06:2025
   owasp_agentic:
-    - ASI08:2026 - Excessive Autonomy
-    - ASI09:2026 - Inadequate Access Controls
+    - ASI08:2026
+    - ASI09:2026
   mitre_atlas:
-    - AML.T0053 - LLM Plugin Compromise
+    - AML.T0053 - AI Agent Tool Invocation
+compliance:
+  eu_ai_act:
+    - article: "14"
+      context: "Autonomous financial transfers and payments executed without explicit human confirmation in the current turn represent the paradigmatic human oversight failure Article 14 is designed to prevent; financial actions are inherently irreversible and must remain under direct human control."
+      strength: primary
+    - article: "9"
+      context: "Unauthorized financial action by AI agents is a high-severity risk requiring mandatory human-in-the-loop controls; Article 9 risk management systems must classify autonomous financial execution as an unacceptable risk and implement blocking controls."
+      strength: secondary
+    - article: "15"
+      context: "Article 15 (accuracy, robustness and cybersecurity) requires high-risk AI systems to resist unauthorised attempts to alter their use, outputs or performance; this rule provides runtime detection evidence by flagging the unsafe autonomous action (Unauthorized Financial Action by AI Agent)."
+      strength: secondary
+  nist_ai_rmf:
+    - subcategory: "GV.1.2"
+      context: "Autonomous financial transfers executed without explicit human confirmation require clearly defined accountability roles that assign responsibility for approving and auditing all agent-initiated payment and transfer actions."
+      strength: primary
+    - subcategory: "MG.2.3"
+      context: "Risk treatment plans for AI systems with financial tool access must implement mandatory human-in-the-loop gates that block payment and transfer tool calls lacking confirmed human authorization in the current turn."
+      strength: secondary
+    - subcategory: "MS.2.7"
+      context: "NIST AI RMF MEASURE 2.7 (security and resilience evaluated and documented) is supported by this rule's runtime detection of the unsafe autonomous action (Unauthorized Financial Action by AI Agent)."
+      strength: secondary
+  iso_42001:
+    - clause: "6.2"
+      context: "AI objectives and risk treatment plans must classify autonomous financial execution as an unacceptable risk and require explicit human approval as a blocking control before any payment or transfer tool is invoked."
+      strength: primary
+    - clause: "8.1"
+      context: "Operational controls must enforce a confirmation gate on all financial tool invocations to ensure the agent's execution of payments and transfers remains within the scope of explicitly sanctioned human instructions."
+      strength: secondary
 tags:
   category: excessive-autonomy
   subcategory: unauthorized-financial-action
@@ -50,8 +78,8 @@ detection:
       description: Direct financial tool call by name
     - field: tool_name
       operator: regex
-      value: (?i)(红包|紅包|转账|轉帳|付款|支付|汇款|匯款|打款|打錢|充值|充幣)
-      description: Chinese financial tool name patterns
+      value: (?i)(红包|紅包|转账|轉帳|付款|支付|汇款|匯款|打款|打錢|充值|充幣)(?!.{0,8}(余额|餘額|多少|查询|查詢|记录|記錄))
+      description: Chinese financial tool name patterns (excludes balance/history queries)
     - field: tool_name
       operator: regex
       value: (?i)(wechat_pay|alipay|apple_pay|google_pay|stripe_charge|paypal_send|venmo_send|cashapp_send|zelle_send)
@@ -96,20 +124,23 @@ detection:
 response:
   actions:
     - block_tool
-    - kill_agent
     - alert
     - snapshot
+  actions_rationale: >-
+    response-action eligibility (docs/RESPONSE-ACTION-ELIGIBILITY.md): benign FP 18/5352 = 0.34%
+    (partial measurement — a lower bound) meets the 0.5% ceiling but is not zero; ceiling =
+    degrade. Removed kill_agent(terminate). Detection unchanged — recall cost is zero.
   auto_response_threshold: critical
   message_template: |
     [ATR-2026-098] CRITICAL: AI agent attempting unauthorized financial action.
     Tool: {tool_name}. Agent {agent_id} tried to execute a payment/transfer
     without human confirmation. ALL financial actions require explicit human
-    approval. Agent terminated and session snapshot saved.
+    approval. Tool call blocked and session snapshot saved; the agent was NOT
+    killed.
     Session: {session_id}.
 confidence: 81
 wild_validated: 2026/04/08
 wild_samples: 53577
-wild_fp_rate: 0
 test_cases:
   true_positives:
     - tool_call:

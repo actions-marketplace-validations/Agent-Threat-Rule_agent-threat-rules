@@ -1,8 +1,15 @@
 # ATR → SAFE-MCP Technique Mapping
 
-Last updated: 2026-03-27
-ATR version: v1.0.0+ (108 rules)
+Last updated: 2026-07-12 (corpus re-stamp v3.5.2->v3.5.8)
+ATR corpus: v3.5.8, 793 rules (10 categories)
 SAFE-MCP version: latest (85 techniques, 47 mitigations)
+
+> Coverage note: the per-technique ATR rule citations in this document were last
+> fully enumerated against the 108-rule v1.0.0 corpus (rule IDs below use the old
+> short form, e.g. ATR-010). Technique coverage is monotonic — adding rules can
+> only maintain or increase it — so the current 462-rule corpus covers at least
+> the 78/85 techniques shown below; treat 78/85 as a conservative lower bound.
+> A full re-enumeration against the current corpus is pending.
 
 ## Coverage Summary
 
@@ -209,7 +216,7 @@ SAFE-MCP version: latest (85 techniques, 47 mitigations)
 | **Output** | "These attacks exist and here's how they work" | "Here's how to detect these attacks in real MCP traffic" |
 | **Format** | Markdown technique descriptions with mitigations | Machine-readable YAML rules with regex patterns |
 | **Data** | Theoretical framework with example scenarios | 36,394 real-world skills scanned, empirical findings |
-| **Benchmark** | No benchmark | PINT benchmark: 62.7% recall, 99.7% precision |
+| **Benchmark** | No benchmark | PINT-format corpus (self-built): 63.6% recall, 99.7% precision |
 | **OWASP** | Not mapped | 10/10 OWASP Agentic Top 10 coverage |
 
 **ATR provides the detection layer that operationalizes SAFE-MCP's threat taxonomy.** SAFE-MCP tells you what to look for; ATR tells you how to find it.

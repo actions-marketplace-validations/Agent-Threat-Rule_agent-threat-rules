@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import yaml from 'js-yaml';
 import type { ATRRule } from './types.js';
+import { validateContract } from './quality/rule-contract.js';
 
 /**
  * Load a single ATR rule from a YAML file.
@@ -79,6 +80,11 @@ export function validateRule(rule: unknown): { valid: boolean; errors: string[] 
     errors.push(`Invalid status: ${r['status']}`);
   }
 
+  // Contract-level fields (maturity enum + confirm) — single source of truth.
+  for (const e of validateContract(r as { maturity?: unknown; confirm?: unknown; detection?: { method?: string } })) {
+    errors.push(e);
+  }
+
   // Severity enum
   const validSeverities = ['critical', 'high', 'medium', 'low', 'informational'];
   if (typeof r['severity'] === 'string' && !validSeverities.includes(r['severity'])) {
@@ -105,6 +111,7 @@ export function validateRule(rule: unknown): { valid: boolean; errors: string[] 
       'llm_io', 'tool_call', 'mcp_exchange', 'agent_behavior',
       'multi_agent_comm', 'context_window', 'memory_access',
       'skill_lifecycle', 'skill_permission', 'skill_chain',
+      'agent_trace',
     ];
     if (typeof agentSource['type'] === 'string' && !validTypes.includes(agentSource['type'])) {
       errors.push(`Invalid agent_source.type: ${agentSource['type']}`);

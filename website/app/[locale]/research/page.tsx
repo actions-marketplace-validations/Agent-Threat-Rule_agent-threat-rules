@@ -2,6 +2,7 @@ import { Reveal } from "@/components/Reveal";
 import { CountUp } from "@/components/CountUp";
 import { StatsHydrator } from "@/components/StatsHydrator";
 import { loadSiteStats } from "@/lib/stats";
+import { getSpecMeta } from "@/lib/spec-meta";
 import { locales, t, type Locale } from "@/lib/i18n";
 import type { Metadata } from "next";
 
@@ -51,8 +52,8 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </div>
             <p className="text-sm text-stone mb-3">
               {locale === "zh"
-                ? `${stats.ruleCount} 條偵測規則、RFC-001 品質標準、96K 生態系掃描、751 惡意軟體發現、Cisco 採用。ATR 標準的完整論述，含六項研究貢獻。`
-                : `${stats.ruleCount} detection rules, RFC-001 quality standard, 96K ecosystem scan, 751 malware discovered, Cisco adoption. The complete ATR thesis with six research contributions.`}
+                ? `ATR 標準為何存在的完整論述：當 agent 能自主行動，信任不再能假設，偵測必須變成一個任何人都能查核、版本化、社群維護的標準層。涵蓋 RFC-001 品質規範、96,096 個 skill 的生態系掃描（1,302 個被標記、經人工複審確認 552 個惡意），以及把標準從一次性快照變成活飛輪的機制。`
+                : `The full argument for why ATR exists: once agents act on their own, trust can no longer be assumed, and detection has to become a standard layer anyone can audit, version, and maintain. Covers the RFC-001 quality specification, a 96,096-skill ecosystem scan (1,302 flagged, 552 confirmed malware after manual review), and the mechanism that turns the standard from a one-time snapshot into a living one.`}
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="https://doi.org/10.5281/zenodo.19178002" target="_blank" rel="noopener noreferrer" className="font-data text-xs text-blue hover:underline">Zenodo (DOI)</a>
@@ -69,13 +70,13 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </div>
             <div className="font-display text-base font-semibold text-ink mb-1">
               {locale === "zh"
-                ? "751 個惡意 AI Agent Skill：史上最大規模的 AI Agent 惡意軟體行動"
-                : "751 Malicious AI Agent Skills: The Largest AI Agent Malware Campaign Ever Documented"}
+                ? "552 個確認惡意的 AI Agent Skill：史上最大規模的 AI Agent 惡意軟體行動"
+                : "552 Confirmed Malicious AI Agent Skills: The Largest AI Agent Malware Campaign Ever Documented"}
             </div>
             <p className="text-sm text-stone mb-3">
               {locale === "zh"
-                ? "掃描 96,096 個 skill 時發現三個協同攻擊者（hightower6eu 354、sakaen736jih 212、52yuanchangxing 137）。已通報 NousResearch 並全數加入黑名單。"
-                : "Discovered while scanning 96,096 skills across six registries. Three coordinated threat actors (hightower6eu 354, sakaen736jih 212, 52yuanchangxing 137). Reported to NousResearch and blacklisted."}
+                ? "掃描 96,096 個 skill、標記 1,302 個風險項，人工複審後確認 552 個惡意軟體。發現三個協同攻擊者（hightower6eu 354、sakaen736jih 212、52yuanchangxing 137）。已通報 NousResearch 並全數加入黑名單。"
+                : "1,302 flagged across 96,096 skills scanned in six registries; 552 confirmed malware after manual review. Three coordinated threat actors (hightower6eu 354, sakaen736jih 212, 52yuanchangxing 137). Reported to NousResearch and blacklisted."}
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/docs/research/openclaw-malware-campaign-2026-04.md" target="_blank" rel="noopener noreferrer" className="font-data text-xs text-blue hover:underline">{locale === "zh" ? "完整報告 (EN)" : "Full Report (EN)"}</a>
@@ -89,12 +90,12 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
               <span className="font-data text-xs text-mist">April 2026 · 7 pages · 32 references</span>
             </div>
             <div className="font-display text-base font-semibold text-ink mb-1">
-              96,096 Skills, 751 Malware: A Large-Scale Security Audit of the AI Agent Ecosystem
+              96,096 Skills, 552 Confirmed Malware: A Large-Scale Security Audit of the AI Agent Ecosystem
             </div>
             <p className="text-sm text-stone mb-3">
               {locale === "zh"
-                ? "史上最大規模 AI agent 安全掃描。96,096 個 skill、1,302 個有風險、751 個確認惡意軟體。三個協同攻擊者。工具描述下毒佔偵測的 53%。"
-                : "The largest AI agent security scan to date. 96,096 skills across 6 registries, 1,302 flagged, 751 confirmed malware. Three coordinated threat actors. Credential access via tool descriptions accounts for 53% of detections."}
+                ? "史上最大規模 AI agent 安全掃描。96,096 個 skill、1,302 個有風險、人工複審後 552 個確認惡意軟體。三個協同攻擊者。工具描述下毒佔偵測的 53%。"
+                : "The largest AI agent security scan to date. 96,096 skills across 6 registries, 1,302 flagged, 552 confirmed malware after manual review. Three coordinated threat actors. Credential access via tool descriptions accounts for 53% of detections."}
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="https://doi.org/10.5281/zenodo.19476480" target="_blank" rel="noopener noreferrer" className="font-data text-xs text-blue hover:underline">Zenodo (DOI)</a>
@@ -134,7 +135,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
           {/* PINT */}
           <div className="bg-paper p-6">
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-4">{t(locale, "research.pint")}</div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <div className="font-data text-2xl font-bold text-ink"><CountUp target={stats.pintPrecision} suffix="%" liveKey="pintPrecision" /></div>
                 <div className="text-xs text-stone">{t(locale, "research.precision")}</div>
@@ -153,7 +154,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
           {/* Self-test */}
           <div className="bg-paper p-6">
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-4">{t(locale, "research.self")}</div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <div className="font-data text-2xl font-bold text-ink"><CountUp target={stats.selfTestPrecision} suffix="%" liveKey="selfTestPrecision" /></div>
                 <div className="text-xs text-stone">Precision</div>
@@ -193,7 +194,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-4">
               {locale === "zh" ? "整體表現" : "Overall Performance"}
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <div className="font-data text-2xl font-bold text-ink"><CountUp target={stats.skillBenchRecall} suffix="%" /></div>
                 <div className="text-xs text-stone">Recall</div>
@@ -219,6 +220,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </div>
           </div>
           <div className="bg-paper p-6">
+            {/* SKILL.md benchmark snapshot (v2.0.0, 498 samples): Layer A 24 + Layer C 8 = 32 malicious, both 100% detected. Pinned numbers — re-sync if the benchmark is re-run. */}
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-4">
               {locale === "zh" ? "按攻擊層分析" : "By Attack Layer"}
             </div>
@@ -269,7 +271,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-3">{locale === "zh" ? "生態系掃描（6 個 Registry）" : "Ecosystem Scan (6 Registries)"}</div>
             <div className="font-data text-3xl font-bold text-ink mb-1"><CountUp target={stats.megaScanTotal} useComma liveKey="megaScanTotal" /></div>
             <div className="text-sm text-stone mb-3">{locale === "zh" ? "個 skill 已掃描" : "skills scanned"}</div>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
               <div>
                 <div className="font-data text-lg font-bold text-critical"><CountUp target={stats.megaScanCritical} useComma liveKey="megaScanCritical" /></div>
                 <div className="text-xs text-stone">CRITICAL</div>
@@ -288,7 +290,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-3">ClawHub Registry Scan</div>
             <div className="font-data text-3xl font-bold text-ink mb-1"><CountUp target={stats.clawHubCrawled} useComma /></div>
             <div className="text-sm text-stone mb-3">{locale === "zh" ? "個 skill 已爬取" : "skills crawled"}</div>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
               <div>
                 <div className="font-data text-lg font-bold text-critical"><CountUp target={stats.clawHubCritical} /></div>
                 <div className="text-xs text-stone">CRITICAL</div>
@@ -304,6 +306,13 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </div>
           </div>
         </div>
+      </Reveal>
+      <Reveal delay={0.15}>
+        <p className="text-sm text-graphite leading-[1.7] mb-6 max-w-[760px]">
+          {locale === "zh"
+            ? `這個掃描不是一份報告，是一條每天運轉的迴圈。新攻擊出現 → 結晶成偵測規則 → 回流標準：紅隊巨量掃描與 CVE 攝取兩條飛輪各自跑完整輪後轉為每日更新，把規則集從 462 條推進到目前的 ${stats.ruleCount} 條（新增 ${stats.ruleCount - 462} 條，npm agent-threat-rules@${getSpecMeta().version}）。這就是「標準活著」的意思——不是一次性的快照，而是與威脅同速演化的層。`
+            : `This scan is not a report — it is a loop that runs every day. New attack appears → crystallizes into a detection rule → flows back into the standard. A red-team mega-scan flywheel and a CVE-ingestion flywheel each completed a full sweep, then moved to daily updates, taking the ruleset from 462 to the current ${stats.ruleCount} (${stats.ruleCount - 462} new rules, npm agent-threat-rules@${getSpecMeta().version}). This is what it means for a standard to be alive: not a one-time snapshot, but a layer that evolves at the speed of the threats it covers.`}
+        </p>
       </Reveal>
       <Reveal delay={0.2}>
         <div className="flex gap-4 mb-8">
@@ -323,8 +332,8 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
         </h2>
         <p className="text-sm text-stone mb-6">
           {locale === "zh"
-            ? "所有研究都是可重現的。資料集、掃描腳本、評估腳本全部開源於 MIT license。"
-            : "All research is reproducible. Datasets, scan scripts, and evaluation scripts are open-source under MIT license."}
+            ? "一個標準的數字只有在別人能複驗時才算數。所有研究都可重現——資料集、掃描腳本、評估腳本全部以 MIT license 開源，任何人都能拿同一版 ATR 重跑，自己得出這些數字，或證明它們是錯的。"
+            : "A standard's numbers only count if someone else can reproduce them. All research here is reproducible — datasets, scan scripts, and evaluation scripts are open-source under MIT license, so anyone can rerun them on the same ATR version and arrive at these figures, or prove them wrong."}
         </p>
       </Reveal>
       <Reveal delay={0.1}>
@@ -345,8 +354,8 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </div>
             <p className="text-sm text-graphite leading-[1.7]">
               {locale === "zh"
-                ? `${stats.ruleCount} 條規則全部以確定性 regex / AST 比對執行，無 LLM 推論。這確保同一個輸入在不同環境下的偵測結果完全一致——可重現性是前提。每條規則在發布前都會對 ${stats.clawHubCrawled.toLocaleString()} 個 ClawHub skill 的 wild 樣本驗證。`
-                : `All ${stats.ruleCount} rules execute deterministic regex / AST matching. No LLM inference. The same input produces the same detection result across environments — reproducibility is a prerequisite. Every rule is wild-validated against ${stats.clawHubCrawled.toLocaleString()} ClawHub skills before publication.`}
+                ? `偵測核心是確定性的：規則以 regex / AST 比對執行、無 LLM 推論，同一個輸入在任何環境都得到一致的結果——可重現性是前提，也是預設啟用的部分。v3.1.0 起另有一個選用、實驗性的語意 judge 階段，用來補抓 pattern 漏掉的改寫式攻擊；它需手動開啟、預設關閉，不更動確定性核心。每條規則在發布前都會對 ${stats.clawHubCrawled.toLocaleString()} 個 ClawHub skill 的 wild 樣本驗證。`
+                : `The detection core is deterministic: rules execute regex / AST matching with no LLM inference, so the same input produces the same result in every environment — reproducibility is a prerequisite, and it is what ships on by default. Since v3.1.0 an optional, experimental semantic judge stage recovers paraphrased attacks the patterns miss; it is opt-in, off by default, and never alters the deterministic core. Every rule is wild-validated against ${stats.clawHubCrawled.toLocaleString()} ClawHub skills before publication.`}
             </p>
           </div>
           <div className="border-l-2 border-fog pl-4">
@@ -365,8 +374,8 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </div>
             <p className="text-sm text-graphite leading-[1.7]">
               {locale === "zh"
-                ? "誤報率以真實 benign 樣本（通過人工或社群審查的正常 skill）除以總偵測數量測。每條已記錄的誤報情境會寫入 YAML 的 false_positives 欄位，並在規則頁面公開。"
-                : "False positive rate is measured against real benign samples (skills vetted by manual or community review), divided by total detections. Every documented FP context is written into the rule YAML's false_positives field and surfaced on the rule page."}
+                ? "誤報率以真實 benign 樣本（通過人工或社群審查的正常 skill）除以總偵測數量測，並逐車道揭露、不用單一數字概括：enforce 車道只跑最成熟的規則（在一個約 65,000 筆的良性語料上約 0.24% 誤報），預設的 hunt 車道把全部規則當建議性訊號跑（約 9%）。一個標準的可信度，取決於它願不願意公開自己最差的數字——所以這裡兩個都列。每條已記錄的誤報情境會寫入 YAML 的 false_positives 欄位，並在規則頁面公開。"
+                : "False positive rate is measured against real benign samples (skills vetted by manual or community review), divided by total detections, and reported lane by lane rather than as one flattering number: the enforce lane runs only the most mature rules (~0.24% on a ~65,000-sample benign corpus), while the default hunt lane runs everything as an advisory signal (~9%). A standard earns trust by publishing its worst figure, not hiding it — so both are stated here. Every documented FP context is written into the rule YAML's false_positives field and surfaced on the rule page."}
             </p>
           </div>
           <div className="border-l-2 border-fog pl-4">
@@ -391,8 +400,8 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
         </h2>
         <p className="text-sm text-stone mb-6">
           {locale === "zh"
-            ? "追蹤引用 ATR 的學術論文與技術報告。"
-            : "Academic papers and technical reports that cite ATR."}
+            ? "ATR 的設計目標就是被引用、被內嵌、被別人的工作所依賴。這裡誠實記錄外部引用——包括目前還沒有的部分。"
+            : "ATR is built to be cited, embedded, and depended on by other people's work. This section records external citations honestly — including where there are none yet."}
         </p>
       </Reveal>
       <Reveal delay={0.1}>
@@ -404,11 +413,36 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
               <>No external citations recorded yet. If your paper, technical report, or product documentation cites ATR, please let us know via <a href="https://github.com/Agent-Threat-Rule/agent-threat-rules/issues/new" target="_blank" rel="noopener noreferrer" className="text-blue hover:underline">GitHub issue</a>.</>
             )}
           </p>
-          <p className="text-xs text-mist mt-3 leading-[1.7]">
-            {locale === "zh"
-              ? "Cite as: Lin, Kuan-Hsin (2026). The Collapse of Trust. DOI: 10.5281/zenodo.19178002"
-              : "Cite as: Lin, Kuan-Hsin (2026). The Collapse of Trust. DOI: 10.5281/zenodo.19178002"}
-          </p>
+          <div className="mt-4 pt-4 border-t border-fog space-y-3">
+            <div>
+              <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-1">
+                {locale === "zh" ? "引用此標準" : "Cite the standard"}
+              </div>
+              <p className="text-xs text-mist leading-[1.7]">
+                {locale === "zh"
+                  ? "Cite as: Agent Threat Rules (ATR) Project (2026). Agent Threat Rules: An open detection standard for AI agent threats. DOI: 10.5281/zenodo.19178002"
+                  : "Cite as: Agent Threat Rules (ATR) Project (2026). Agent Threat Rules: An open detection standard for AI agent threats. DOI: 10.5281/zenodo.19178002"}
+              </p>
+            </div>
+            <div>
+              <div className="font-data text-xs text-stone tracking-[2px] uppercase mb-1">
+                {locale === "zh" ? "原始論文" : "Originating paper"}
+              </div>
+              <p className="text-xs text-mist leading-[1.7]">
+                {locale === "zh"
+                  ? "Cite as: Lin, Kuan-Hsin (2026). The Collapse of Trust. DOI: 10.5281/zenodo.19178002"
+                  : "Cite as: Lin, Kuan-Hsin (2026). The Collapse of Trust. DOI: 10.5281/zenodo.19178002"}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <a href={`/${locale}/citations`} className="font-data text-xs text-blue hover:underline">
+                {locale === "zh" ? "BibTeX / 引用格式" : "BibTeX / citation formats"} &rarr;
+              </a>
+              <a href="https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/CITATION.cff" target="_blank" rel="noopener noreferrer" className="font-data text-xs text-blue hover:underline">
+                {locale === "zh" ? "機器可讀引用 (CITATION.cff)" : "Machine-readable citation (CITATION.cff)"}
+              </a>
+            </div>
+          </div>
         </div>
       </Reveal>
 
@@ -419,8 +453,8 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
         </h2>
         <p className="text-sm text-stone mb-6">
           {locale === "zh"
-            ? "以下是 ATR 下一階段的研究方向。進度會反映在 GitHub release 與 paper 更新。"
-            : "The next research frontiers for ATR. Progress is reflected in GitHub releases and paper updates."}
+            ? "飛輪的下一段：把偵測從靜態 pattern 推向 runtime 行為與語意，再讓難判定的案例結晶回確定性規則。每一步都公開在 GitHub release 與 paper 更新，進度可被外部追蹤。"
+            : "The next turns of the flywheel: pushing detection from static patterns toward runtime behavior and semantics, then crystallizing the hard cases back into deterministic rules. Each step ships in GitHub releases and paper updates, so the progress is auditable from the outside."}
         </p>
       </Reveal>
       <Reveal delay={0.1}>

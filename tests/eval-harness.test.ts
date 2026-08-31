@@ -230,7 +230,32 @@ describe('Latency Stats', () => {
 // 5. Full eval harness (end-to-end)
 // ---------------------------------------------------------------------------
 describe('Full Eval Harness', () => {
-  it('runs eval against real rules and produces valid report', { timeout: 30000 }, async () => {
+  // No per-test timeout override here on purpose; this inherits testTimeout
+  // (180s) from vitest.config.ts like every other test in this file.
+  //
+  // It used to carry `{ timeout: 30000 }`. That was added on 2026-04-07, when
+  // vitest's default was 5s and 30s was therefore a RAISE. On 2026-04-15 the
+  // config-wide testTimeout went to 180s and this override was not removed, so
+  // from that day it silently became a 6x REDUCTION -- and only for this test.
+  // The four siblings below call the same runEval() over the same 341 samples
+  // and the same 780 rules, and all four get 180s. Nothing about this test is
+  // cheaper; it is simply the one holding a stale number.
+  //
+  // A wall-clock deadline is the same defect #401 removed from the assertion
+  // body five lines down: it measures the runner. Measured on a contended
+  // 10-core machine (1-min load average 109 against 10 cores), one runEval()
+  // spent 46.2s inside the engine -- mean 135.5ms x 341 samples, against a
+  // 9.3ms/sample figure on a quiet machine -- and the test died with
+  // "Test timed out in 30000ms" while every assertion in its body passed with
+  // room to spare (recall 0.950 vs >= 0.50 required, fpRate 0.000 vs <= 0.05,
+  // f1 0.974 vs > 0.50). It failed for the machine's state, not the rules'.
+  //
+  // 180s is not "no limit". A genuine engine blow-up still trips it: the
+  // pathological construct this repo profiles -- `(?:[a-z]+\s*){0,8}` -- costs
+  // 9.8s on a single input, so one such rule reaching a handful of the 341
+  // samples exhausts 180s outright. What 180s stops doing is failing a build
+  // because something else on the box was busy.
+  it('runs eval against real rules and produces valid report', async () => {
     const { report, regression, corpusStats } = await runEval({
       rulesDir: RULES_DIR,
     });
@@ -250,8 +275,40 @@ describe('Full Eval Harness', () => {
     // Sanity: F1 should be reasonable
     expect(report.overall.f1).toBeGreaterThan(0.5);
 
-    // Latency should be fast (regex-only)
-    expect(report.latency.p95).toBeLessThan(50);
+    // Latency is REPORTED here, never judged in absolute terms. Wall-clock p95
+    // on a shared runner measures the runner, not the rules: across 14 real CI
+    // runs with an unchanged corpus, p95 varied by 2.716x. The old assertion
+    // (`p95 < 50`) sat inside that noise band and failed builds that changed
+    // nothing -- PR #383 read 51.111ms while adding zero rules, and main's own
+    // 2026-07-29 run was red. Worse, it was blind to what it claimed to guard:
+    // injecting a rule that costs 9.8s on one pathological input does not move
+    // an engine-wide p95, because one rule out of 768 vanishes into the sum.
+    //
+    // Rule cost is now gated by scripts/gate-rule-latency.ts, which measures
+    // each rule against a cohort of rules fixed by the baseline and timed in the
+    // SAME profiling pass, so runner speed cancels out. What remains here are
+    // two checks that cannot be satisfied by a busy runner.
+    //
+    // First, that the latency series describes the corpus at all. p50/p95/p99
+    // are indices into one ascending array (src/eval/metrics.ts computeLatency),
+    // so asserting p95 >= p50 would be a tautology -- an earlier draft did
+    // exactly that and shipped an assertion that could never go red. These can:
+    // an engine that stopped timing, or stopped evaluating, reads zero.
+    expect(report.latency.p50).toBeGreaterThan(0);
+    expect(report.latency.max).toBeGreaterThanOrEqual(report.latency.p99);
+
+    // Second, a catastrophe ceiling that scales with the corpus. The worst p95
+    // ever recorded on a real runner is 51.1ms over 341 samples (0.15ms/sample)
+    // and the local figure is 26.2ms over 5 runs; 1.5ms per sample is ~10x the
+    // worst of those, so this can only trip if the engine has genuinely fallen
+    // over. It is expressed per sample rather than as a flat number so that
+    // growing the corpus -- expected behaviour -- never walks into it, and it
+    // has a floor so a tiny corpus cannot make it strict by accident.
+    //
+    // Do not tighten this back toward the observed range: a threshold inside
+    // the runner's noise band is what made this assertion measure the runner.
+    const catastropheCeilingMs = Math.max(500, report.corpusSize * 1.5);
+    expect(report.latency.p95).toBeLessThan(catastropheCeilingMs);
 
     // Corpus stats match
     expect(corpusStats.total).toBe(report.corpusSize);
@@ -259,8 +316,15 @@ describe('Full Eval Harness', () => {
 
   it('regression check passes with default thresholds', async () => {
     const { regression } = await runEval({ rulesDir: RULES_DIR });
-    // Default thresholds are conservative (60% recall, 5% FP, 70% F1)
+    // Default thresholds are conservative (60% recall, 5% FP, 70% F1).
+    // Assert on violations rather than the bare boolean so a failure names the
+    // offending metric instead of just reporting "expected true, got false".
+    expect(regression.violations).toEqual([]);
     expect(regression.passed).toBe(true);
+    // Latency is advisory (shared CI runners are noisy) — surface, never fail on it.
+    if (regression.perfWarnings.length > 0) {
+      console.warn(`performance advisory: ${regression.perfWarnings.join('; ')}`);
+    }
   });
 
   it('identifies missed attacks correctly', async () => {

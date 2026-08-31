@@ -1,257 +1,192 @@
 # Contributing to ATR
 
-ATR is MIT-licensed. Contributing requires a text editor, a YAML file,
-and `npx agent-threat-rules test`. Nothing else.
+ATR is an MIT-licensed open standard for detecting AI agent attacks — think Snort rules but for LLMs and MCP tools. 768 detection rules across 10 categories; canonical rule counts and per-lane precision/FP figures live in [`data/stats.json`](data/stats.json) and the README evaluation table. Merged into open-source repos at Microsoft, Cisco, MISP, and OWASP-community projects. When you contribute a detection rule, it ships to every downstream consumer within hours.
 
-No proprietary tooling. No telemetry. No CLA.
-
-ATR is community-maintained and governed as an open standard.
-Rules contributed here are MIT-licensed and belong to the community.
+No CLA. No telemetry. No proprietary tooling.
 
 ---
 
-## How to Contribute
+## Path 1: Submit an attack probe (5 min, no setup)
 
-ATR accepts contributions through both traditional open source workflows
-and AI-native workflows. In the age of AI agents, contributing to a
-security standard should not be limited to writing regex by hand.
+You spotted an attack pattern. You have example payloads. That's enough to start.
 
-### Traditional Contributions
+1. Open a new issue using the [Red Team Probe template](https://github.com/Agent-Threat-Rule/agent-threat-rules/issues/new?template=red-team-probe.yml).
 
-#### A. Report an Evasion (~15 minutes)
+2. Fill in the required fields:
+   - Probe name (short title, becomes the rule title)
+   - Attack category (prompt-injection, tool-poisoning, context-exfiltration, etc.)
+   - Severity
+   - Attack description (two or three sentences: what the probe does, what the attacker gains)
+   - Positive examples — at least 3 real attack payloads, one per line
+   - Negative examples — at least 3 benign strings that look similar but must NOT trigger
+   - Discovered by (your name and handle — this becomes your attribution)
 
-Found a way to bypass an existing rule? This is the most valuable contribution.
+3. Submit the issue.
 
-1. Check the rule's existing `evasion_tests` section and [LIMITATIONS.md](./LIMITATIONS.md)
-   to verify the bypass is not already documented.
-2. Open an issue using the **Evasion Report** template.
-3. Include: rule ID, bypass input, technique used, why it works.
+That's it. A workflow runs immediately and opens a draft PR. The proposal YAML
+is auto-generated from your examples. You do not need to clone anything.
 
-Every confirmed evasion becomes a new `evasion_tests` entry in the rule YAML.
-You get credited in [CONTRIBUTORS.md](./CONTRIBUTORS.md).
-
-We already know regex has limits. We publish evasion tests openly.
-Your bypass makes the project more honest.
-
-#### B. Report a False Positive (~20 minutes)
-
-A rule triggered on legitimate content?
-
-1. Open an issue using the **False Positive Report** template.
-2. Include: rule ID, the input that triggered it, why it is legitimate.
-
-Confirmed false positives become new `true_negatives` test cases.
-
-#### C. Submit a New Rule (1-2 hours)
-
-Write a full detection rule for a new attack pattern.
-
-1. Fork this repository
-2. Create a YAML file in the appropriate `rules/<category>/` subdirectory
-3. Follow the ATR schema (`spec/atr-schema.yaml`)
-4. See [examples/how-to-write-a-rule.md](./examples/how-to-write-a-rule.md) for a walkthrough
-5. Validate and test locally (see Quick Start below)
-6. Submit a PR
-
-### AI-Native Contributions
-
-Security standards in the AI era need AI-era contribution workflows.
-You do not have to write YAML by hand to make ATR better.
-
-#### D. Scan and Report (~2 minutes)
-
-Run ATR against your MCP skills or any public skill. Findings go to
-Threat Cloud for aggregation (anonymized, opt-in via `--report-to-cloud`).
-
-```bash
-npx agent-threat-rules scan .                       # Scan current directory
-npx agent-threat-rules scan skill.md                # Scan a single SKILL.md
-npx agent-threat-rules scan events.json             # Scan MCP event log
-npx agent-threat-rules scan . --report-to-cloud     # Scan + report to TC
-```
-
-When TC aggregates enough signals for a new attack pattern, it
-crystallizes a draft rule, opens a PR to this repo, and a human
-reviewer merges it. Your scan data becomes part of the global defense.
-
-#### E. Add ATR to Your CI (~5 minutes)
-
-Add one file to your repo. Every PR gets scanned automatically.
-
-```yaml
-# .github/workflows/atr-scan.yml
-name: ATR Security Scan
-on: [pull_request]
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npx agent-threat-rules scan . --sarif > results.sarif
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
-```
-
-Results appear in GitHub's Security tab as code scanning alerts.
-
-#### F. Contribute via LLM-Assisted Rule Generation
-
-Use AI tools to draft ATR rules. The ATR MCP server lets any AI
-agent read, test, and propose new rules:
-
-```bash
-npx agent-threat-rules mcp   # Start the ATR MCP server
-```
-
-Example prompt for your AI assistant:
-> "Read the ATR rules in rules/prompt-injection/. Find a prompt injection
-> technique not yet covered. Draft a new rule following the ATR schema at
-> spec/atr-schema.yaml. Include 3 true positives and 3 true negatives.
-> Validate with `atr validate` and test with `atr test`."
-
-Submit LLM-assisted rules via PR. Mark them with `author: your-name (LLM-assisted)`
-so reviewers know to pay extra attention to regex quality and edge cases.
+A maintainer reviews the regex shape and runs the full quality gate before
+merging. You can stop at step 3, or check out the PR branch and write the
+regex yourself if you want to stay involved.
 
 ---
 
-## Quick Start
+## Path 2: Write a detection regex for an existing CVE stub (30 min)
 
-Clone and test all rules:
+The `proposals/` directory contains CVE-sourced stubs: real attack payloads,
+no detection logic yet. These are the fastest rules to ship because the hard
+part (finding the attack) is already done.
+
+1. Clone the repo and install dependencies:
+
+   ```bash
+   git clone https://github.com/Agent-Threat-Rule/agent-threat-rules
+   cd agent-threat-rules
+   npm install
+   ```
+
+2. Find a stub with `_triage.detection_ready: true`:
+
+   ```bash
+   grep -rl "detection_ready: true" proposals/
+   ```
+
+3. Create a branch and open the file. Write the `detection.conditions` regex
+   based on the `_triage.example_payload` field in the stub.
+
+4. Run the safety gate:
+
+   ```bash
+   npx tsx scripts/check-rules-safety.ts path/to/your-rule.yaml
+   ```
+
+   This checks your rule against 432 known-benign skills. Must show 0 FP.
+
+5. Run the test suite:
+
+   ```bash
+   npx agent-threat-rules test path/to/your-rule.yaml
+   ```
+
+6. Submit a PR.
+
+If you need a new rule ID before creating the file:
+
+```bash
+npx tsx scripts/next-rule-id.ts
+```
+
+---
+
+## What happens after you submit
+
+Once your issue or PR lands:
+
+1. Automated PR opens (probe path) or CI runs (direct PR path). The safety gate
+   checks 0 FP against 432 benign samples. If it fails, the PR gets the
+   `needs-human-review` label and a maintainer looks at it manually.
+
+2. Maintainer reviews the regex. Usually one round of tightening. The benign
+   corpus is the bar — the regex must not fire on clean content.
+
+3. PR merges. The `publish-on-rules-merge.yml` workflow runs automatically:
+   patch version bump, npm publish, GitHub release.
+
+4. Downstream sync runs. Microsoft AGT, Cisco AI Defense, MISP galaxy, and OWASP
+   pull from the npm package on their regular cadence. Your rule is live in
+   production at those organizations within their next update cycle.
+
+Typical time from probe submission to npm publish: same day or next day,
+depending on maintainer availability.
+
+---
+
+## Where your name appears
+
+Every rule that ships from your probe or PR carries your attribution in two places:
+
+- `author` field in the rule YAML — ships in the npm package, visible to every
+  organization that installs ATR
+- `metadata_provenance.discovered_by` — links back to the original issue or
+  research that surfaced the attack
+
+Your name also appears in:
+
+- [CONTRIBUTORS.md](./CONTRIBUTORS.md)
+- Release notes for each version that includes your rule
+- Downstream at Microsoft, Cisco, OWASP, MISP — every consumer of the npm
+  package gets the YAML with your name in it
+
+If your rule maps to a CVE you discovered, `references.cve` links your work
+permanently in the rule record.
+
+---
+
+## Path 3: Mine a corpus (a few hours)
+
+Most of the ruleset came from attack corpora, not from the proposal queue.
+[docs/RULE-PRODUCTION.md](docs/RULE-PRODUCTION.md) is the written procedure for
+that path: how to decide whether a corpus is usable raw material at all, how to
+measure recall against it without wiring the harness wrong, how to turn false
+negatives into candidate rule anchors, and every gate between a candidate and
+`main`. Start with `npx tsx scripts/mine-corpus-fn.ts --list`.
+
+Read §4.4 before writing anything. Every artifact-bearing candidate the corpora
+currently in this repository produce is a fixture of the benchmark rather than
+of an attack, and the document explains how to tell the difference.
+
+---
+
+## Quality bar
+
+The CI gate is non-negotiable. Everything else is guidance.
+
+Required for any rule to merge:
+
+- At least 3 true positive test cases — real attack payloads, not synthetic
+- At least 3 true negative test cases — real benign strings, not placeholders
+- 0 false positives on the benign skill corpus, 467 samples as of ATR v4.0.0
+  (`check-rules-safety.ts`; count it with
+  `find data/skill-benchmark/benign -name '*.md' | wc -l` rather than trusting
+  this line)
+- Regex must be attack-specific. Broad patterns that match general conversation
+  will not pass review.
+- `description` must say what IS detected and what IS NOT
+
+The most common rejection reason is a regex that's too broad. If your positive
+examples all share a specific structural marker, anchor the regex to that marker.
+Do not try to catch the entire attack family in one pattern — narrow rules with
+0 FP are more valuable than wide rules with 1%.
+
+Maintainers handle stable promotion after merge: the rule needs at least
+5 TPs, 5 TNs, 3 evasion tests, framework mappings, and wild validation
+on 1,000+ samples. You do not need to do this yourself.
+
+---
+
+## Local dev setup
 
 ```bash
 git clone https://github.com/Agent-Threat-Rule/agent-threat-rules
 cd agent-threat-rules
 npm install
 npm test
+npx agent-threat-rules validate path/to/rule.yaml
+npx agent-threat-rules test path/to/rule.yaml
 ```
 
-Or validate and test a single rule without cloning:
-
-```bash
-npx agent-threat-rules validate path/to/my-rule.yaml
-npx agent-threat-rules test path/to/my-rule.yaml
-```
-
-The `agent-threat-rules` CLI pulls from npm. No monorepo setup required.
-Source code: [src/cli.ts](./src/cli.ts).
+Rule schema: `spec/atr-schema.yaml`. Categories: `rules/prompt-injection/`,
+`rules/tool-poisoning/`, `rules/context-exfiltration/`,
+`rules/agent-manipulation/`, `rules/privilege-escalation/`,
+`rules/excessive-autonomy/`, `rules/skill-compromise/`,
+`rules/data-poisoning/`, `rules/model-security/`.
 
 ---
 
-## Rule Quality Checklist
+Credit original research when submitting rules based on published work.
+Report security vulnerabilities privately via [SECURITY.md](./SECURITY.md).
+No product promotion in rule descriptions.
 
-Before submitting, verify:
-
-**Required (experimental tier, per RFC-001 v1.1):**
-
-- [ ] Follows ATR schema (`spec/atr-schema.yaml`)
-- [ ] Has `maturity: experimental`
-- [ ] Has `author` field with your name or handle
-- [ ] At least 3 true positive test cases (real attack payloads)
-- [ ] At least 3 true negative test cases (similar-looking legitimate content)
-- [ ] `description` explains what IS detected AND what IS NOT
-- [ ] `npx agent-threat-rules validate` passes
-- [ ] `npx agent-threat-rules test` passes
-
-**Encouraged (improves confidence score, helps promotion to stable):**
-
-- [ ] OWASP Agentic Top 10 or OWASP LLM Top 10 mapping
-- [ ] MITRE ATLAS mapping
-- [ ] Evasion tests with `bypass_technique` and honest `expected: not_triggered`
-- [ ] `false_positives` section listing known edge cases
-- [ ] Regex patterns tested for catastrophic backtracking (ReDoS)
-
-**Required for stable promotion (maintainers handle this):**
-
-- [ ] 5+ true positives, 5+ true negatives, 3+ evasion tests
-- [ ] OWASP + MITRE mapping with `human-reviewed` provenance
-- [ ] Wild-validated on 1,000+ samples with FP rate ≤ 0.5%
-- [ ] 14+ days at experimental, confidence score ≥ 80
-
-See [RFC-001](docs/proposals/001-atr-quality-standard-rfc.md) for full details.
-
----
-
-## Rule Naming Convention
-
-- File: `ATR-YYYY-NNN-short-description.yaml`
-- Place in the correct `rules/<category>/` subdirectory
-- Categories: `prompt-injection`, `tool-poisoning`, `context-exfiltration`,
-  `agent-manipulation`, `privilege-escalation`, `excessive-autonomy`,
-  `skill-compromise`, `data-poisoning`, `model-security`
-- If unsure about the next available ID, use a placeholder.
-  Maintainers assign the final ID during review.
-
----
-
-## Where to Hunt
-
-Not sure what to contribute? **[CONTRIBUTION-GUIDE.md](CONTRIBUTION-GUIDE.md)** maps 12 research
-areas with concrete attack surfaces, data sources, and difficulty levels.
-From 5-minute incident reports to weekend red team fuzzing sessions.
-
----
-
-## See ATR in Action (Optional)
-
-Want to see ATR rules working before contributing? Try scanning some content
-with the CLI:
-
-```bash
-npx agent-threat-rules scan events.json
-npx agent-threat-rules stats
-```
-
-Or start the MCP server and test interactively:
-
-```bash
-npx agent-threat-rules mcp
-```
-
-If you notice a gap -- an attack it should catch but does not -- that gap
-is your first rule contribution.
-
-Reading [COVERAGE.md](./COVERAGE.md)
-and [LIMITATIONS.md](./LIMITATIONS.md) is another way to find what is missing.
-
----
-
-## Recognition
-
-Contributors are credited through:
-
-1. **YAML `author` field** -- Your name appears in every rule you write.
-   Ships with the npm package. Everyone who installs ATR sees it.
-2. **[CONTRIBUTORS.md](./CONTRIBUTORS.md)** -- Listed by contribution type.
-3. **Release notes** -- New rules credited by author in each release.
-4. **CVE credit** -- If your rule detects a CVE you discovered, the
-   `references.cve` section links your work permanently.
-
----
-
-## Schema Changes
-
-Major schema changes require community discussion:
-
-1. Open an issue with the `schema-change` label
-2. Describe the proposed change and rationale
-3. Minimum 7-day comment period
-4. Submit a PR if consensus is reached
-
----
-
-## Code of Conduct
-
-- Be constructive in reviews
-- Credit original research when submitting rules based on published work
-- Report security vulnerabilities privately (see [SECURITY.md](./SECURITY.md))
-- Respect differing opinions on severity classification
-- No marketing or product promotion in rule descriptions
-
----
-
-## License
-
-All contributions are licensed under MIT.
-By submitting a PR, you agree to license your contribution under MIT.
-No CLA required.
+All contributions are MIT. By submitting a PR, you agree to license your
+contribution under MIT.
