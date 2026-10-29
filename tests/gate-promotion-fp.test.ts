@@ -40,6 +40,7 @@ import {
   formatIdList,
   gitRuleFiles,
   runGate,
+  scopedRulesDir,
   GateUsageError,
   EXIT_OK,
   EXIT_FAIL,
@@ -174,7 +175,15 @@ describe("parseCliOptions", () => {
       emitDirty: null,
       emitMeasurement: null,
       filterMode: false,
+      workers: null,
     });
+  });
+
+  it("parses --workers as a positive integer and refuses anything else", () => {
+    expect(parseCliOptions(["--workers", "4"]).workers).toBe(4);
+    for (const bad of [["--workers"], ["--workers", "0"], ["--workers", "-2"], ["--workers", "two"], ["--workers", "--filter-mode"]]) {
+      expect(() => parseCliOptions(bad), bad.join(" ")).toThrow(GateUsageError);
+    }
   });
 
   it("keeps the existing --ids / --base parsing", () => {
@@ -308,6 +317,30 @@ describe("runGate against a fixture corpus", () => {
     expect(readIds(clean)).toEqual([CLEAN_ID]);
     expect(readIds(dirty)).toEqual([DIRTY_ID]);
   });
+
+  it("writes the same measurement with worker processes as in-process", async () => {
+    const run = async (workers: number): Promise<Record<string, unknown>> => {
+      const path = join(fixture.out, `measurement-w${workers}.json`);
+      const dirty = join(fixture.out, `measurement-w${workers}-dirty.txt`);
+      const code = await runGate(
+        {
+          ...BASE_OPTIONS,
+          idsFile: mixedIds,
+          emitDirty: dirty,
+          emitMeasurement: path,
+          filterMode: true,
+          workers,
+        },
+        fixture.deps,
+      );
+      expect(code).toBe(EXIT_OK);
+      const doc = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+      return { rules: doc.rules, sample_count: doc.sample_count, corpus_digest: doc.corpus_digest };
+    };
+    const inProcess = await run(1);
+    expect(inProcess.rules).toHaveProperty([DIRTY_ID, "fp_count"], 1);
+    expect(await run(2)).toEqual(inProcess);
+  }, 120_000);
 
   it("emits empty lists (not missing files) when the id list is empty", async () => {
     const empty = writeIdsFile(fixture, "empty.txt", []);
@@ -471,5 +504,215 @@ describe("CLI entry point (guards against a no-op gate)", () => {
     expect(stderr).toContain("ATR-2026-99999");
     expect(existsSync(clean)).toBe(false);
     rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("rule ids written with quotes", () => {
+  // YAML, the engine and the action gate all read `id: 'ATR-...'` and
+  // `id: "ATR-..."` as the bare id. The gate's own id lookup used to keep the
+  // quotes, so a requested id never matched a quoted rule: exit 3 here, and the
+  // reverify job could not measure a rule the action gate trusted.
+  it("resolves a quoted id to its rule instead of reporting it missing", async () => {
+    const root = mkdtempSync(join(tmpdir(), "atr-gate-quoted-"));
+    try {
+      const rulesDir = join(root, "rules");
+      const corpusDir = join(root, "corpus");
+      mkdirSync(rulesDir, { recursive: true });
+      mkdirSync(corpusDir, { recursive: true });
+      const single = fixtureRule("ATR-2026-90003", "single-quoted id", "zzq-never-zzq").replace(
+        "id: ATR-2026-90003",
+        "id: 'ATR-2026-90003'",
+      );
+      const double = fixtureRule("ATR-2026-90004", "double-quoted id", "zzq-never-zzq").replace(
+        "id: ATR-2026-90004",
+        'id:  "ATR-2026-90004"',
+      );
+      writeFileSync(join(rulesDir, "single.yaml"), single, "utf-8");
+      writeFileSync(join(rulesDir, "double.yaml"), double, "utf-8");
+      writeFileSync(join(corpusDir, "benign.jsonl"), `${JSON.stringify({ text: "nothing to see" })}\n`, "utf-8");
+      const ids = join(root, "ids.txt");
+      writeFileSync(ids, "ATR-2026-90003\nATR-2026-90004\n", "utf-8");
+      const clean = join(root, "clean.txt");
+      const code = await runGate(
+        { ...BASE_OPTIONS, idsFile: ids, emitClean: clean },
+        {
+          repoRoot: root,
+          rulesDir,
+          corpora: [corpusDir],
+          listRuleFiles: () => ["rules/double.yaml", "rules/single.yaml"],
+        },
+      );
+      expect(code).toBe(EXIT_OK);
+      expect(readIds(clean)).toEqual(["ATR-2026-90003", "ATR-2026-90004"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * The measurement may only record what it measured.
+ *
+ * Two ways it used to record a number for a rule it never evaluated:
+ *
+ * - A rule the engine skips (status draft or deprecated, maturity deprecated)
+ *   got `fp_count: 0`. detection_fingerprint does not cover status, so flipping
+ *   that one line revived the rule with a record the action gate trusted: a
+ *   0 that was never measured, worth DEGRADE for a test-maturity rule, enough
+ *   for block_tool.
+ * - scopedRulesDir() copied rule files by basename, so of two files sharing a
+ *   name in different directories the second replaced the first, and the first
+ *   was reported clean without being read.
+ */
+describe("a measurement records only what it measured", () => {
+  const MATCHING = "(?i)import random";
+  const LIVE = "ATR-2026-90041";
+  const DRAFT = "ATR-2026-90042";
+  const RETIRED = "ATR-2026-90043";
+  const LEFT = "ATR-2026-90044";
+  const RIGHT = "ATR-2026-90045";
+  const TWICE = "ATR-2026-90046";
+  const QUIET = "ATR-2026-90047";
+
+  function workspace(files: Record<string, string>) {
+    const root = mkdtempSync(join(tmpdir(), "atr-gate-measured-"));
+    const corpusDir = join(root, "corpus");
+    mkdirSync(corpusDir, { recursive: true });
+    writeFileSync(
+      join(corpusDir, "benign.jsonl"),
+      `${[{ text: "import random\nprint(random.random())" }, { text: "plain prose" }]
+        .map((s) => JSON.stringify(s))
+        .join("\n")}\n`,
+      "utf-8",
+    );
+    for (const [rel, text] of Object.entries(files)) {
+      mkdirSync(dirname(join(root, rel)), { recursive: true });
+      writeFileSync(join(root, rel), text, "utf-8");
+    }
+    const deps: GateDeps = {
+      repoRoot: root,
+      rulesDir: join(root, "rules"),
+      corpora: [corpusDir],
+      listRuleFiles: () => Object.keys(files).sort(),
+    };
+    return { root, deps };
+  }
+
+  async function measure(root: string, deps: GateDeps, ids: readonly string[]) {
+    const idsFile = join(root, "ids.txt");
+    writeFileSync(idsFile, formatIdList(ids), "utf-8");
+    const out = join(root, "measurement.json");
+    const code = await runGate(
+      { ...BASE_OPTIONS, idsFile, emitDirty: join(root, "dirty.txt"), emitMeasurement: out, filterMode: true },
+      deps,
+    );
+    expect(code).toBe(EXIT_OK);
+    return JSON.parse(readFileSync(out, "utf-8")) as {
+      sample_count: number;
+      rules: Record<string, { fp_count: number; detection_fingerprint: string | null }>;
+    };
+  }
+
+  it("writes no record for a rule the engine never evaluates", async () => {
+    const { root, deps } = workspace({
+      [`rules/${LIVE}.yaml`]: fixtureRule(LIVE, "live", MATCHING),
+      [`rules/${DRAFT}.yaml`]: fixtureRule(DRAFT, "draft", MATCHING).replace("status: experimental", "status: draft"),
+      [`rules/${RETIRED}.yaml`]: fixtureRule(RETIRED, "retired", MATCHING).replace("maturity: test", "maturity: deprecated"),
+    });
+    try {
+      const m = await measure(root, deps, [LIVE, DRAFT, RETIRED]);
+      expect(m.rules[LIVE]?.fp_count).toBe(1);
+      expect(Object.keys(m.rules)).toEqual([LIVE]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("gives a rule revived from draft no tier from the measurement taken while it was draft", async () => {
+    const { readRules, findViolations } = await import("../scripts/gate-action-eligibility.js");
+    const draft = fixtureRule(DRAFT, "draft", MATCHING)
+      .replace("status: experimental", "status: draft")
+      .replace("actions: [alert]", "actions: [alert, block_tool]");
+    const { root, deps } = workspace({ [`rules/${DRAFT}.yaml`]: draft });
+    try {
+      const m = await measure(root, deps, [DRAFT]);
+      // The one-line revival: same detection, same fingerprint, status flipped.
+      const [onDisk] = readRules(join(root, "rules"));
+      expect(onDisk?.id).toBe(DRAFT);
+      const revived = { ...onDisk!, status: "experimental" };
+      const v = findViolations([revived], m as never);
+      expect(v.map((x) => x.id)).toEqual([DRAFT]);
+      expect(v[0]?.unearned).toEqual(["block_tool"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("measures every requested rule when two rule files share a name", async () => {
+    const { root, deps } = workspace({
+      "rules/a/same-name.yaml": fixtureRule(LEFT, "left", MATCHING),
+      "rules/b/same-name.yaml": fixtureRule(RIGHT, "right", MATCHING),
+    });
+    try {
+      const m = await measure(root, deps, [LEFT, RIGHT]);
+      expect(m.rules[LEFT]?.fp_count).toBe(1);
+      expect(m.rules[RIGHT]?.fp_count).toBe(1);
+      expect(m.rules[LEFT]?.detection_fingerprint).toMatch(/^[0-9a-f]+$/);
+      expect(m.rules[RIGHT]?.detection_fingerprint).toMatch(/^[0-9a-f]+$/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("writes no record for an id two loaded rule files carry", async () => {
+    const { root, deps } = workspace({
+      "rules/a/one.yaml": fixtureRule(TWICE, "one", MATCHING),
+      "rules/b/two.yaml": fixtureRule(TWICE, "two", "qqq-never-in-any-sample-qqq"),
+      [`rules/${LIVE}.yaml`]: fixtureRule(LIVE, "live", MATCHING),
+    });
+    try {
+      const m = await measure(root, deps, [TWICE, LIVE]);
+      expect(Object.keys(m.rules)).toEqual([LIVE]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("fails the gate, without --filter-mode, when a promoted rule cannot be measured", async () => {
+    const { root, deps } = workspace({
+      [`rules/${QUIET}.yaml`]: fixtureRule(QUIET, "quiet", "qqq-never-in-any-sample-qqq"),
+      [`rules/${DRAFT}.yaml`]: fixtureRule(DRAFT, "draft", "qqq-never-in-any-sample-qqq").replace(
+        "status: experimental",
+        "status: draft",
+      ),
+    });
+    try {
+      const both = join(root, "both.txt");
+      const quietOnly = join(root, "quiet.txt");
+      writeFileSync(both, formatIdList([QUIET, DRAFT]), "utf-8");
+      writeFileSync(quietOnly, formatIdList([QUIET]), "utf-8");
+      expect(await runGate({ ...BASE_OPTIONS, idsFile: both }, deps)).toBe(EXIT_FAIL);
+      expect(await runGate({ ...BASE_OPTIONS, idsFile: quietOnly }, deps)).toBe(EXIT_OK);
+      // --filter-mode hands the lists to its caller and keeps exit 0, as for a dirty rule.
+      const filtered = { ...BASE_OPTIONS, idsFile: both, filterMode: true, emitDirty: join(root, "d.txt") };
+      expect(await runGate(filtered, deps)).toBe(EXIT_OK);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("resolveExitCode fails an unmeasured promotion only in gate semantics", () => {
+    expect(resolveExitCode(0, false, 1)).toBe(EXIT_FAIL);
+    expect(resolveExitCode(0, true, 1)).toBe(EXIT_OK);
+    expect(resolveExitCode(0, false, 0)).toBe(EXIT_OK);
+  });
+
+  it("refuses a rule path that would leave the scratch directory", () => {
+    const { root } = workspace({});
+    try {
+      expect(() => scopedRulesDir(root, ["../escape.yaml"])).toThrow(/leaves the scope directory/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

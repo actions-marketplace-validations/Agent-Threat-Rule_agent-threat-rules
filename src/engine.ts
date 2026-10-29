@@ -32,9 +32,11 @@ import { loadRulesFromDirectory, loadRuleFile } from './loader.js';
 import { evaluateTraceRule } from './trace-evaluator.js';
 import { evaluateSemanticRule } from './semantic-evaluator.js';
 import { laneAllows, requiresConfirm, type Lane } from './quality/rule-contract.js';
+import { appliesToToolDefinition } from './tool-definition-scope.js';
 import { laneFromConfig } from './enforcement.js';
 import type { SessionTracker } from './session-tracker.js';
-import { computeVerdict } from './verdict.js';
+import { computeVerdict, isModelDecided, modelDecisionsFromConfig, type ModelDecisions } from './verdict.js';
+import { ruleConfidence } from './rule-confidence.js';
 import type { ActionExecutor } from './action-executor.js';
 import type { SkillFingerprintStore } from './skill-fingerprint.js';
 import { SemanticModule } from './modules/semantic.js';
@@ -50,6 +52,10 @@ import type { InvariantChecker } from './tier0-invariant.js';
 import type { BlacklistProvider } from './tier1-blacklist.js';
 import { buildBlacklistMatch, resolveSkillId as resolveBlacklistSkillId } from './tier1-blacklist.js';
 import type { EmbeddingModule } from './modules/embedding.js';
+import { normalizeRegex, regexConditionSpec } from './regex-dialect.js';
+// Re-exported: scripts and tests import these from the engine.
+export { needsUnicodeFlag, regexConditionSpec } from './regex-dialect.js';
+export type { RegexConditionSpec } from './regex-dialect.js';
 
 /**
  * Rules excluded from skill-context scanning due to high false-positive rate.
@@ -136,14 +142,103 @@ export function decodeBase64Blocks(content: string): string[] {
 }
 
 /** Map agent event types to ATR source types */
-const EVENT_TYPE_TO_SOURCE: Record<string, string> = {
+export const EVENT_TYPE_TO_SOURCE: Readonly<Record<string, string>> = Object.freeze({
   llm_input: 'llm_io',
   llm_output: 'llm_io',
   tool_call: 'tool_call',
   tool_response: 'mcp_exchange',
   agent_behavior: 'agent_behavior',
   multi_agent_message: 'multi_agent_comm',
-};
+});
+
+/**
+ * agent_source types that name what a rule reads rather than a stream of
+ * events of their own (spec/atr-schema.yaml), mapped to the source type whose
+ * events carry that data: a context window reaches the model as LLM input or
+ * as tool output, so those rules run where llm_io rules run; a skill is
+ * installed, granted permissions and chained through tool calls, so those
+ * rules run where tool_call rules run. memory_access is left out for now
+ * (WITHHELD_SOURCE_TYPES).
+ *
+ * No event type maps to them in EVENT_TYPE_TO_SOURCE, so the source filter used
+ * to skip them on every typed event: on the tool_call and tool_response events
+ * src/hook-handler.ts builds, such a rule never ran, while `atr test` mapped its
+ * type to a base type and passed its cases. Only an event with no source type
+ * (mcp_exchange) or a SKILL.md scan reached it. `atr test` now leaves the type
+ * alone: what it runs is what the engine admits.
+ */
+export const RUNTIME_SOURCE_TYPE: Readonly<Record<string, string>> = Object.freeze({
+  context_window: 'llm_io',
+  skill_lifecycle: 'tool_call',
+  skill_permission: 'tool_call',
+  skill_chain: 'tool_call',
+});
+
+/**
+ * Extended agent_source types left out of RUNTIME_SOURCE_TYPE for now, each
+ * with the reason. A rule of such a type still runs only on an event with no
+ * source type and in a SKILL.md scan. `atr test` reports its cases as
+ * unevaluable with this reason instead of passing them on an event the engine
+ * skips the rule on.
+ *
+ * memory_access reads what context_window reads, an agent's memory as it
+ * reaches the model, and would map to llm_io. Its rules (ATR-2026-00075 and
+ * -01155 today) were written for memory writes, and 00075 also matches standing
+ * instructions in an ordinary chat turn ("From now on, always answer in
+ * French."). On llm_input events the adapters that block by default would
+ * refuse those messages: the Mastra ATRProcessor aborts on high and critical
+ * in the hunt lane, and the OpenShell filter denies at high. Map it once those
+ * rules match memory writes only, measured on chat-turn data.
+ */
+export const WITHHELD_SOURCE_TYPES: Readonly<Record<string, string>> = Object.freeze({
+  memory_access:
+    'its rules also match standing instructions in ordinary chat turns, which adapters that block by default would refuse',
+});
+
+/**
+ * Whether a rule of this agent_source.type runs on an event of this source
+ * type: the rule's source type (after RUNTIME_SOURCE_TYPE) is the event's, or
+ * one of two documented exceptions holds. An event type with no source type
+ * (mcp_exchange) admits every rule, whatever its agent_source holds; on a typed
+ * event a type that is not a string is admitted by nothing.
+ * sourceAdmits() adds the trace exception.
+ */
+export function sourceTypeAdmits(ruleSourceType: unknown, eventSourceType: string | undefined): boolean {
+  if (!eventSourceType) return true;
+  if (typeof ruleSourceType !== 'string') return false;
+  const source = Object.hasOwn(RUNTIME_SOURCE_TYPE, ruleSourceType)
+    ? RUNTIME_SOURCE_TYPE[ruleSourceType]
+    : ruleSourceType;
+  if (source === eventSourceType) return true;
+  // mcp_exchange rules also match tool_call events.
+  if (source === 'mcp_exchange' && eventSourceType === 'tool_call') return true;
+  // Indirect prompt injection: llm_io (prompt-injection) rules must also run on
+  // tool_response events. A poisoned tool / MCP / RAG output is the primary
+  // indirect-injection channel — the payload never appears in a direct
+  // llm_input, it rides in on tool output the model then reads. tool_response
+  // maps to source type 'mcp_exchange', so without this the entire llm_io
+  // family was silently skipped on every tool response. (Field resolution
+  // routes event.content into user_input/agent_output for tool_response events
+  // — see resolveField.)
+  return source === 'llm_io' && eventSourceType === 'mcp_exchange';
+}
+
+/**
+ * Whether the source-type filter admits a rule on an event: sourceTypeAdmits(),
+ * or a trace-method rule on an event that carries a trace. One definition for
+ * evaluateRaw() and evaluateAsync().
+ */
+function sourceAdmits(rule: ATRRule, eventSourceType: string | undefined, event: AgentEvent): boolean {
+  // agent_source?. : the loader requires only id, title and detection, and a
+  // rule without agent_source must not abort the whole evaluation.
+  if (sourceTypeAdmits(rule.agent_source?.type, eventSourceType)) return true;
+  // Trace-method rules declare agent_source.type: agent_trace, which maps to no
+  // event source type and would always be filtered out. Evaluate them whenever
+  // the event actually carries a trace payload; evaluateRule still returns null
+  // if the trace primitives don't fire, and ordinary (non-trace) events are
+  // unaffected because event.trace is undefined.
+  return rule.detection?.method === 'trace' && event.trace !== undefined;
+}
 
 /** Map agent event types to default field names */
 const EVENT_TYPE_TO_FIELD: Record<string, string> = {
@@ -236,10 +331,50 @@ export interface ATREngineConfig {
    * (they are too broad to block without confirmation). Default 0.6.
    */
   confirmThreshold?: number;
+  /**
+   * What a match a model decided may do in evaluateWithVerdict(): a semantic
+   * rule's semanticJudge, the embeddingModule signal, the semanticModule layer.
+   *   'advisory' (default): reported, observe-tier actions only, no part in the
+   *     verdict's outcome.
+   *   'enforce': counts like a rule's own match. No benign-corpus measurement
+   *     stands behind a model's decision; choose it only if you accept that.
+   * Any other value throws at construction time.
+   */
+  modelDecisions?: ModelDecisions;
+  /**
+   * Every event this engine evaluates is an MCP tool definition: an entry of a `tools/list`
+   * document, which defines a tool and calls none (`atr scan` on such a document sets it). Rules
+   * written for a tool being called then do not run: a rule with agent_source.type `tool_call` runs
+   * only if one of its conditions reads `tool_description`, or if its subject is the tool's identity
+   * (TOOL_IDENTITY_RULES). Every other rule runs as without the option. See
+   * src/tool-definition-scope.ts. Default false: other producers (hooks, adapters, event files) are
+   * unaffected.
+   */
+  toolDefinitions?: boolean;
+}
+
+/**
+ * A semantic rule's pattern fallback decided this match: the rule's own regex,
+ * not its judge, so it counts as a deterministic decision.
+ */
+function asSemanticFallback(match: ATRMatch | null): ATRMatch | null {
+  return match === null ? null : { ...match, decidedBy: 'semantic-fallback' };
 }
 
 export class ATREngine {
   private rules: ATRRule[] = [];
+  /**
+   * id -> the FIRST loaded rule carrying that id, i.e. exactly what
+   * `this.rules.find(r => r.id === id)` returns.
+   *
+   * The per-condition paths below used to run that find() on every regex
+   * condition they evaluated: a linear walk over every loaded rule, repeated
+   * thousands of times per event. Measured 2026-10-15 on the benign-corpus FP
+   * scan (scripts/gate-promotion-fp.ts, 829 rules, 13,848 samples), that walk
+   * was ~11% of all CPU and replacing it was a 1.18x speed-up on its own, with
+   * the matched-rule set identical for every sample.
+   */
+  private readonly ruleById = new Map<string, ATRRule>();
   private readonly compiledPatterns = new Map<string, Map<string, RegExp[]>>();
   private readonly semanticModuleInstance: SemanticModule | null;
   /**
@@ -248,6 +383,7 @@ export class ATREngine {
    * lifetime.
    */
   private readonly lane: Lane;
+  private readonly modelDecisions: ModelDecisions;
 
   /**
    * Find bundled rules directory shipped with the npm package.
@@ -272,6 +408,7 @@ export class ATREngine {
     // Config only — never the environment. An embedder's detection breadth must
     // not depend on a variable someone exported in a shell profile.
     this.lane = laneFromConfig(config.lane);
+    this.modelDecisions = modelDecisionsFromConfig(config.modelDecisions);
 
     // Initialize Layer 3 semantic module if config provided
     if (config.semanticModule) {
@@ -287,6 +424,7 @@ export class ATREngine {
    */
   async loadRules(): Promise<number> {
     this.rules = [];
+    this.ruleById.clear();
     this.compiledPatterns.clear();
 
     if (this.config.rules) {
@@ -304,6 +442,7 @@ export class ATREngine {
       }
     }
 
+    for (const rule of this.rules) this.indexRule(rule);
     // Pre-compile regex patterns for performance
     for (const rule of this.rules) {
       this.compilePatterns(rule);
@@ -312,15 +451,58 @@ export class ATREngine {
     return this.rules.length;
   }
 
+  /** First rule wins, so the index answers what Array.find() would. */
+  private indexRule(rule: ATRRule): void {
+    if (!this.ruleById.has(rule.id)) this.ruleById.set(rule.id, rule);
+  }
+
   /**
    * Lane gate: does this rule's maturity qualify for the configured detection
    * lane? 'enforce' = stable only; 'alert' = stable+test; 'hunt'/unset = all.
    * Keeps experimental content out of the auto-block path without deleting it.
    */
-  private passesLane(rule: ATRRule): boolean {
+  private passesLane(rule: Pick<ATRRule, 'maturity'>): boolean {
     // Single source of truth for the maturity->lane mapping (incl. safe-fail on
     // missing/odd maturity) lives in the rule-quality contract.
     return laneAllows(rule.maturity, this.lane);
+  }
+
+  /**
+   * Whether this engine evaluates `rule` at all. A draft or deprecated status, a
+   * maturity outside the lane, or (on an engine constructed with
+   * `toolDefinitions: true`) a rule written for a tool being called, stops a rule
+   * before any of its conditions run,
+   * so nothing about it — its false positives included — can be observed through
+   * this engine. evaluateRaw() and evaluateAsync() both ask this, and a
+   * measurement harness must ask it too before recording a number for a rule:
+   * a rule that is never evaluated scores 0 by construction, and that 0 is not
+   * a measurement.
+   */
+  evaluates(
+    rule: Pick<ATRRule, 'status' | 'maturity'> & Partial<Pick<ATRRule, 'id' | 'agent_source' | 'detection'>>,
+  ): boolean {
+    if (rule.status === 'deprecated' || rule.status === 'draft') return false;
+    // An engine scanning tool definitions does not run the rules written for a tool being called.
+    if (this.config.toolDefinitions === true && !appliesToToolDefinition(rule)) return false;
+    return this.passesLane(rule);
+  }
+
+  /**
+   * On an engine constructed with `toolDefinitions: true`: how many loaded rules it evaluates, and how
+   * many it would evaluate (status and lane allow them) but leaves out because they were written for
+   * a tool being called. Null on any other engine. Lets a report say "not run" instead of reading as
+   * "ran and found nothing".
+   */
+  getToolDefinitionScope(): { rulesEvaluated: number; rulesSkippedByScope: number } | null {
+    if (this.config.toolDefinitions !== true) return null;
+    let rulesEvaluated = 0;
+    let rulesSkippedByScope = 0;
+    for (const rule of this.rules) {
+      if (rule.status === 'deprecated' || rule.status === 'draft' || !this.passesLane(rule)) continue;
+      if (appliesToToolDefinition(rule)) rulesEvaluated += 1;
+      else rulesSkippedByScope += 1;
+    }
+    return { rulesEvaluated, rulesSkippedByScope };
   }
 
   /** Active detection lane (config, else 'hunt'). Diagnostics/tests. */
@@ -329,11 +511,21 @@ export class ATREngine {
   }
 
   /**
+   * What a model-decided match may do (config, else 'advisory'). A caller that
+   * runs evaluateAsync() and computes the verdict itself passes this on:
+   * computeVerdict(matches, { modelDecisions: engine.getModelDecisions() }).
+   */
+  getModelDecisions(): ModelDecisions {
+    return this.modelDecisions;
+  }
+
+  /**
    * Load a single rule file and add it to the engine.
    */
   addRuleFile(filePath: string): void {
     const rule = loadRuleFile(filePath);
     this.rules.push(rule);
+    this.indexRule(rule);
     this.compilePatterns(rule);
   }
 
@@ -342,6 +534,7 @@ export class ATREngine {
    */
   addRule(rule: ATRRule): void {
     this.rules.push(rule);
+    this.indexRule(rule);
     this.compilePatterns(rule);
   }
 
@@ -403,36 +596,21 @@ export class ATREngine {
     // Tier 2: Pattern matching (existing regex rules)
     const isSkillContext = event.scanContext === 'skill';
     for (const rule of this.rules) {
-      // Skip deprecated and draft rules
-      if (rule.status === 'deprecated' || rule.status === 'draft') continue;
-      // Lane gate: keep non-stable maturities out of enforce/alert lanes
-      if (!this.passesLane(rule)) continue;
+      // Skip deprecated and draft rules, and maturities outside the lane
+      // (non-stable rules stay out of the enforce/alert lanes).
+      if (!this.evaluates(rule)) continue;
 
       // Source type filtering: skip rules that don't apply to this event type
-      // When scanContext is 'skill', skip source-type filtering — all rules fire
-      if (!isSkillContext && eventSourceType && rule.agent_source.type !== eventSourceType) {
-        // Allow mcp_exchange rules to also match tool_call events
-        const mcpOverTool = rule.agent_source.type === 'mcp_exchange' && eventSourceType === 'tool_call';
-        // Indirect prompt injection: llm_io (prompt-injection) rules must also
-        // run on tool_response events. A poisoned tool / MCP / RAG output is the
-        // primary indirect-injection channel — the payload never appears in a
-        // direct llm_input, it rides in on tool output the model then reads.
-        // tool_response maps to source type 'mcp_exchange', so without this the
-        // entire llm_io family was silently skipped on every tool response.
-        // (Field resolution routes event.content into user_input/agent_output
-        // for tool_response events — see getFieldValue.)
-        const llmIoOverToolResponse =
-          rule.agent_source.type === 'llm_io' && eventSourceType === 'mcp_exchange';
-        // Trace-method rules declare agent_source.type: agent_trace, which maps
-        // to no event source type and would always be filtered out. Evaluate
-        // them whenever the event actually carries a trace payload; evaluateRule
-        // still returns null if the trace primitives don't fire, and ordinary
-        // (non-trace) events are unaffected because event.trace is undefined.
-        const traceWithPayload = rule.detection?.method === 'trace' && event.trace !== undefined;
-        if (!mcpOverTool && !llmIoOverToolResponse && !traceWithPayload) {
-          continue;
-        }
-      }
+      // (sourceAdmits). When scanContext is 'skill', skip it — all rules fire.
+      if (!isSkillContext && !sourceAdmits(rule, eventSourceType, event)) continue;
+
+      // Whether the skill compound gate below applies to this rule. Hoisted so
+      // the pre-check and the gate itself read one expression.
+      const skillGated =
+        isSkillContext && rule.tags?.scan_target !== 'skill' && rule.tags?.scan_target !== 'both';
+      // The gate's verdict is already known for most rules — see
+      // skillGateAlwaysRejects(). Skip the evaluation, not the verdict.
+      if (skillGated && skillGateAlwaysRejects(rule)) continue;
 
       const matchResult = this.evaluateRule(rule, event);
       if (matchResult) {
@@ -463,15 +641,16 @@ export class ATREngine {
         // shapes has NOT measured those 645 rules on it) is named by
         // skillPathCoverage() in scripts/lib/corpus-event.ts and pinned by
         // tests/skill-path-coverage.test.ts.
-        if (isSkillContext && rule.tags.scan_target !== 'skill' && rule.tags.scan_target !== 'both') {
-          const totalConds: number = Number(rule.detection?.conditions?.length ?? 1);
-          const minRequired = Math.max(2, Math.ceil(totalConds * 0.3));
+        if (skillGated) {
+          const minRequired = skillGateMinRequired(rule);
           if ((matchResult.matchedConditions?.length ?? 0) < minRequired) {
             continue;
           }
         }
         matches.push(matchResult);
-        allMatchedPatterns.push(...matchResult.matchedPatterns);
+        // A judge's category and evidence are not patterns a rule matched; they
+        // must not feed pattern_frequency and other cross-event conditions.
+        if (!isModelDecided(matchResult)) allMatchedPatterns.push(...matchResult.matchedPatterns);
       }
     }
 
@@ -569,37 +748,31 @@ export class ATREngine {
     // Tier 2: Pattern matching + async semantic rules
     const isSkillContext = event.scanContext === 'skill';
     for (const rule of this.rules) {
-      if (rule.status === 'deprecated' || rule.status === 'draft') continue;
-      if (!this.passesLane(rule)) continue;
+      if (!this.evaluates(rule)) continue;
 
-      if (!isSkillContext && eventSourceType && rule.agent_source.type !== eventSourceType) {
-        const mcpOverTool = rule.agent_source.type === 'mcp_exchange' && eventSourceType === 'tool_call';
-        // Indirect prompt injection: llm_io rules also run on tool_response
-        // (source type mcp_exchange) — poisoned tool/MCP/RAG output. See the
-        // matching note in evaluateRaw().
-        const llmIoOverToolResponse =
-          rule.agent_source.type === 'llm_io' && eventSourceType === 'mcp_exchange';
-        // Trace-method rules are source-agnostic — evaluate when a trace is present.
-        const traceWithPayload = rule.detection?.method === 'trace' && event.trace !== undefined;
-        if (!mcpOverTool && !llmIoOverToolResponse && !traceWithPayload) {
-          continue;
-        }
-      }
+      // Same source-type filter as evaluateRaw() (sourceAdmits).
+      if (!isSkillContext && !sourceAdmits(rule, eventSourceType, event)) continue;
+
+      // Same hoisted predicate and pre-check as evaluateRaw().
+      const skillGated =
+        isSkillContext && rule.tags?.scan_target !== 'skill' && rule.tags?.scan_target !== 'both';
+      if (skillGated && skillGateAlwaysRejects(rule)) continue;
 
       const matchResult = await this.evaluateRuleAsync(rule, event, this.config.semanticJudge);
       if (matchResult) {
         // Skill compound gate — see the long note in evaluateRaw(). For
         // `condition: any` rules this rejects unconditionally, which is why the
         // SKILL.md path effectively runs only scan_target: skill|both rules.
-        if (isSkillContext && rule.tags.scan_target !== 'skill' && rule.tags.scan_target !== 'both') {
-          const totalConds: number = Number(rule.detection?.conditions?.length ?? 1);
-          const minRequired = Math.max(2, Math.ceil(totalConds * 0.3));
+        if (skillGated) {
+          const minRequired = skillGateMinRequired(rule);
           if ((matchResult.matchedConditions?.length ?? 0) < minRequired) {
             continue;
           }
         }
         matches.push(matchResult);
-        allMatchedPatterns.push(...matchResult.matchedPatterns);
+        // A judge's category and evidence are not patterns a rule matched; they
+        // must not feed pattern_frequency and other cross-event conditions.
+        if (!isModelDecided(matchResult)) allMatchedPatterns.push(...matchResult.matchedPatterns);
       }
     }
 
@@ -675,14 +848,14 @@ export class ATREngine {
       }
       const result = evaluateTraceRule(rule, event.trace);
       if (!result.matched) return null;
-      const baseConfidence = rule.tags.confidence === 'high' ? 0.9 : rule.tags.confidence === 'medium' ? 0.7 : 0.5;
       return {
         rule,
         matchedConditions: result.matchedPrimitives.map((p) => `trace.${p}`),
         matchedPatterns: result.violations,
-        confidence: baseConfidence,
+        confidence: ruleConfidence(rule.tags.confidence, 0),
         timestamp: new Date().toISOString(),
         scan_context: 'native' as const,
+        decidedBy: 'trace' as const,
       };
     }
 
@@ -693,7 +866,7 @@ export class ATREngine {
       // If the rule has fallback_method=pattern, evaluate pattern conditions
       // synchronously. Otherwise skip because the judge path is async-only.
       if (detection.semantic?.fallback_method === 'pattern') {
-        return this.evaluatePatternRule(rule, event);
+        return asSemanticFallback(this.evaluatePatternRule(rule, event));
       }
       return null;
     }
@@ -745,9 +918,18 @@ export class ATREngine {
       const result = await evaluateSemanticRule(rule, event.content, { judge: effectiveJudge });
       if (!result.matched) {
         if (result.reason?.includes('fallback_pattern')) {
-          return this.evaluatePatternRule(rule, event);
+          return asSemanticFallback(this.evaluatePatternRule(rule, event));
         }
         return null;
+      }
+      // The judge matched (atr-method-v1.1 §6.4: a match iff its confidence clears
+      // the threshold). When the rule's own pattern fallback matches the same
+      // input, the measured regex stands behind the decision: report it as the
+      // fallback's match, which is enforced. Otherwise only the judge does, and
+      // under modelDecisions: 'advisory' its match is reported, not enforced.
+      if (this.modelDecisions === 'advisory' && rule.detection.semantic?.fallback_method === 'pattern') {
+        const corroborated = asSemanticFallback(this.evaluatePatternRule(rule, event));
+        if (corroborated) return corroborated;
       }
       const matchedPatterns = [
         ...(result.category ? [result.category] : []),
@@ -760,6 +942,7 @@ export class ATREngine {
         confidence: result.confidence ?? 0.5,
         timestamp: new Date().toISOString(),
         scan_context: 'native' as const,
+        decidedBy: 'semantic-judge' as const,
       };
     }
     // For non-semantic methods, fall back to sync path.
@@ -801,6 +984,7 @@ export class ATREngine {
       confidence: 1.0, // exact match
       timestamp: new Date().toISOString(),
       scan_context: 'native' as const,
+      decidedBy: 'signature' as const,
     };
   }
 
@@ -840,9 +1024,8 @@ export class ATREngine {
 
     if (!matched) return null;
 
-    const baseConfidence = rule.tags.confidence === 'high' ? 0.9 : rule.tags.confidence === 'medium' ? 0.7 : 0.5;
     const matchRatio = matchedConditionIndices.length / Math.max(conditions.length, 1);
-    const confidence = Math.min(baseConfidence + matchRatio * 0.1, 1.0);
+    const confidence = ruleConfidence(rule.tags.confidence, matchRatio);
 
     return {
       rule,
@@ -851,6 +1034,7 @@ export class ATREngine {
       confidence,
       timestamp: new Date().toISOString(),
       scan_context: 'native' as const,
+      decidedBy: 'pattern' as const,
     };
   }
 
@@ -908,7 +1092,7 @@ export class ATREngine {
         // NL-style rules set tags.suppress_in_code_blocks: true so that matches
         // landing inside ```...``` fenced blocks (e.g. pentest example payloads)
         // do not fire. Built lazily so non-opt-in rules pay no cost.
-        const ruleForSuppress = this.rules.find(r => r.id === ruleId);
+        const ruleForSuppress = this.ruleById.get(ruleId);
         const suppressInCodeBlocks = (ruleForSuppress?.tags as { suppress_in_code_blocks?: boolean } | undefined)?.suppress_in_code_blocks === true;
         const codeRanges = suppressInCodeBlocks ? buildCodeBlockRanges(fieldValue) : [];
 
@@ -929,9 +1113,7 @@ export class ATREngine {
           return false;
         }
         // Fallback: compile on the fly (ReDoS-gated — see safeCompile)
-        const normalized = normalizeRegex(value);
-        const rFlags = needsUnicodeFlag(normalized) ? 'iu' : 'i';
-        const regex = safeCompile(normalized, rFlags);
+        const regex = compileRegexCondition(value);
         if (regex && testNormalisedThenRaw(regex, fieldValue, rawFieldValue)) {
           if (suppressInCodeBlocks && codeRanges.length > 0 && isInsideCodeBlock(fieldValue, regex, codeRanges)) {
             return false;
@@ -993,9 +1175,8 @@ export class ATREngine {
     const finalResult = this.evaluateExpression(conditionExpr, conditionResults);
     if (!finalResult) return null;
 
-    const baseConfidence = rule.tags.confidence === 'high' ? 0.9 : rule.tags.confidence === 'medium' ? 0.7 : 0.5;
     const matchRatio = matchedConditionNames.length / Math.max(Object.keys(conditions).length, 1);
-    const confidence = Math.min(baseConfidence + matchRatio * 0.1, 1.0);
+    const confidence = ruleConfidence(rule.tags.confidence, matchRatio);
 
     return {
       rule,
@@ -1004,6 +1185,7 @@ export class ATREngine {
       confidence,
       timestamp: new Date().toISOString(),
       scan_context: 'native' as const,
+      decidedBy: 'pattern' as const,
     };
   }
 
@@ -1068,7 +1250,7 @@ export class ATREngine {
     //   skills)
     // - Other rules → suppressed (their patterns FP on code examples)
     const isSkillCtx = event.scanContext === 'skill';
-    const matchedRule = this.rules.find(r => r.id === ruleId);
+    const matchedRule = this.ruleById.get(ruleId);
     const isSkillRule = matchedRule?.tags?.scan_target === 'skill';
     const explicitSuppress = (matchedRule?.tags as { suppress_in_code_blocks?: boolean } | undefined)?.suppress_in_code_blocks === true;
     const suppressInCodeBlocks = explicitSuppress
@@ -1143,7 +1325,7 @@ export class ATREngine {
    * because attackers deliberately hide payloads in code blocks.
    */
   private shouldSuppressInCodeBlocks(ruleId: string): boolean {
-    const rule = this.rules.find(r => r.id === ruleId);
+    const rule = this.ruleById.get(ruleId);
     if (!rule) return false;
     const category = rule.tags?.category ?? '';
     const subcategory = rule.tags?.subcategory ?? '';
@@ -1527,9 +1709,7 @@ export class ATREngine {
       for (let i = 0; i < conditions.length; i++) {
         const cond = conditions[i] as unknown as Record<string, unknown>;
         if (cond['operator'] === 'regex' && typeof cond['value'] === 'string') {
-          const pattern = normalizeRegex(cond['value'] as string);
-          const flags = needsUnicodeFlag(pattern) ? 'iu' : 'i';
-          const compiledRe = safeCompile(pattern, flags, rule.id);
+          const compiledRe = compileRegexCondition(cond['value'] as string, rule.id);
           if (compiledRe) ruleMap.set(String(i), [compiledRe]);
         }
       }
@@ -1620,7 +1800,8 @@ export class ATREngine {
     if (hasConfirmMatch) {
       const sim = embResult?.value ?? 0;
       // Note: confirmThreshold 0 disables the gate (every similarity is >= 0).
-      if (sim < (this.config.confirmThreshold ?? 0.6)) {
+      // Written so that a similarity that is not a number drops the rule too.
+      if (!(sim >= (this.config.confirmThreshold ?? 0.6))) {
         matches = matches.filter((m) => !requiresConfirm(m.rule));
         layersUsed.push('embedding-confirm');
       }
@@ -1629,7 +1810,8 @@ export class ATREngine {
     // Additive Tier 2.5 signal: a high-similarity input surfaced as an embedding-only
     // match. EXCLUDED from the enforce lane — an embedding-only signal must never
     // produce a block there (only deterministic stable rules can block in enforce).
-    // Available in alert/hunt as an advisory signal.
+    // In alert/hunt it is a model's decision (decidedBy: 'embedding'), which
+    // computeVerdict reports without enforcing unless modelDecisions is 'enforce'.
     if (lane !== 'enforce' && embResult && embResult.value >= 0.65) {
       const severity = embResult.value >= 0.95 ? 'critical' as const
         : embResult.value >= 0.88 ? 'high' as const
@@ -1658,6 +1840,7 @@ export class ATREngine {
         confidence: embResult.value,
         timestamp: new Date().toISOString(),
         scan_context: 'native' as const,
+        decidedBy: 'embedding' as const,
       };
       matches = [...matches, syntheticMatch];
     }
@@ -1686,7 +1869,7 @@ export class ATREngine {
       }
     }
 
-    const verdict = computeVerdict(matches);
+    const verdict = computeVerdict(matches, { modelDecisions: this.modelDecisions });
 
     let actionResults: readonly ActionResult[] = Object.freeze([]);
 
@@ -1854,16 +2037,70 @@ export class ATREngine {
   }
 }
 
+/**
+ * The skill compound gate's threshold: how many conditions a rule that is not
+ * `scan_target: skill|both` must report as matched on the SKILL.md path.
+ * evaluateRaw(), evaluateAsync() and skillGateAlwaysRejects() all read it from
+ * here, so the gate and the pre-check in front of it cannot drift apart.
+ */
+function skillGateMinRequired(rule: ATRRule): number {
+  const totalConds: number = Number(rule.detection?.conditions?.length ?? 1);
+  return Math.max(2, Math.ceil(totalConds * 0.3));
+}
+
+/**
+ * The most conditions a match of this rule can report. An array-format pattern
+ * rule with `condition: any|or` reports at most one, because
+ * evaluateArrayConditions() breaks on the first matching condition. Every other
+ * shape is treated as unbounded, so it is never skipped.
+ */
+function maxReportedConditions(rule: ATRRule): number {
+  const { detection } = rule;
+  if ((detection.method ?? 'pattern') !== 'pattern') return Number.POSITIVE_INFINITY;
+  if (!Array.isArray(detection.conditions)) return Number.POSITIVE_INFINITY;
+  return detection.condition === 'any' || detection.condition === 'or'
+    ? 1
+    : Number.POSITIVE_INFINITY;
+}
+
+/**
+ * True when the skill compound gate is certain to reject this rule's match
+ * whatever the input, so evaluating the rule on the SKILL.md path is wasted work:
+ * the most conditions it can report is below the gate's threshold.
+ *
+ * Deliberately the narrowest provable case, and deliberately NOT
+ * skillPathBlocker() from src/corpus-event.ts: that predicate exists to be
+ * CHECKED against this engine (tests/skill-path-coverage.test.ts), and an engine
+ * that consulted it would turn those tests into the predicate checking itself.
+ * If the any-mode short-circuit in evaluateArrayConditions() is ever removed,
+ * maxReportedConditions() has to change with it — the test "evaluateArrayConditions
+ * still short-circuits" in tests/skill-path-coverage.test.ts fails first.
+ *
+ * Measured 2026-10-15 on the benign-corpus FP scan: 645 of 829 rules qualify,
+ * and skipping them took the skill pass from 16.8% to ~3% of all CPU with the
+ * matched-rule set identical for every one of 13,848 samples.
+ */
+function skillGateAlwaysRejects(rule: ATRRule): boolean {
+  return maxReportedConditions(rule) < skillGateMinRequired(rule);
+}
+
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
- * Strip inline flags like (?i) from regex patterns.
- * JavaScript RegExp uses flags as a constructor parameter, not inline.
+ * Compile an array-format `operator: regex` value the way the engine does: the
+ * leading flag group handled by regexConditionSpec(), then the ReDoS gate in
+ * safeCompile(). Returns null for a pattern the gate rejects or that does not
+ * compile; such a condition never matches. Exported for code outside
+ * ATREngine, such as ShadowEvaluator and RuleScaffolder, that must compile a
+ * condition exactly as the engine does.
+ *
+ * @internal Not re-exported from the package entry point.
  */
-function normalizeRegex(pattern: string): string {
-  return pattern.replace(/^\(\?[imsx]+\)/, '');
+export function compileRegexCondition(value: string, ruleId?: string): RegExp | null {
+  const spec = regexConditionSpec(value);
+  return safeCompile(spec.source, spec.flags, ruleId);
 }
 
 /**
@@ -1874,11 +2111,23 @@ function normalizeRegex(pattern: string): string {
  * (\uFF21\uFF22\uFF23 vs ABC) remain distinct so rules that explicitly target full-width
  * evasion can still match. For aggressive normalization use
  * `normalizeUnicodeAggressive()`.
+ *
+ * Hot path, memoised the same way as foldConfusables() below: every condition
+ * normalises the field it reads, and consecutive conditions almost always read
+ * the same string, so a single-entry memo turns per-condition work into
+ * per-distinct-input work. Measured 2026-10-15 on the benign-corpus FP scan,
+ * the repeated NFKC pass plus its zero-width strip were ~9% of all CPU.
  */
+let _normKey = '';
+let _normVal = '';
 export function normalizeUnicode(text: string): string {
-  return text
+  if (text === _normKey) return _normVal;
+  const out = text
     .normalize('NFKC')
     .replace(/[\u200B\u200C\u200D\uFEFF\u2060\u180E\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
+  _normKey = text;
+  _normVal = out;
+  return out;
 }
 
 /**
@@ -2065,8 +2314,11 @@ const MAX_EVAL_LENGTH = 100_000;
 /**
  * Safely test a regex pattern against input with length limits.
  * Returns false if input exceeds MAX_EVAL_LENGTH to prevent ReDoS.
+ * Exported so ShadowEvaluator and RuleScaffolder apply the same limit as the engine.
+ *
+ * @internal Not re-exported from the package entry point.
  */
-function safeRegexTest(regex: RegExp, input: string): boolean {
+export function safeRegexTest(regex: RegExp, input: string): boolean {
   if (input.length > MAX_EVAL_LENGTH) return false;
   return regex.test(input);
 }
@@ -2165,30 +2417,6 @@ export function isReDoSSafe(source: string): boolean {
  * be LOUD, not silent, so a rejected ReDoS pattern warns to stderr (never
  * stdout — that carries the hook protocol) with the offending source.
  */
-/**
- * Does this pattern need the RegExp `u` flag?
- *
- * `\\u{...}` and `\\p{...}` require it by syntax, and so does a literal astral
- * character: without `u`, JavaScript reads a surrogate pair, and a class range
- * written with literals -- [<U+E0000>-<U+E007F>] -- is a SyntaxError rather than
- * a range.
- *
- * The literal form matters because it is the only spelling the three consuming
- * engines share. `\\u{...}` is JS-only: Python re needs `\\U000E0000`, Go needs
- * `\\x{E0000}`, and neither of those is valid JavaScript. Sixteen conditions
- * across ten rules used it, which made those rules uncompilable from the Python
- * and Go channels; they are literals now, and this is what keeps them working
- * here.
- */
-export function needsUnicodeFlag(pattern: string): boolean {
-  if (pattern.includes('\\u{') || pattern.includes('\\p{')) return true;
-  for (const ch of pattern) {
-    const cp = ch.codePointAt(0);
-    if (cp !== undefined && cp > 0xffff) return true;
-  }
-  return false;
-}
-
 function safeCompile(source: string, flags: string, ruleId?: string): RegExp | null {
   if (!isReDoSSafe(source)) {
     console.warn(

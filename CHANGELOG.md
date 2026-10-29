@@ -4,6 +4,1188 @@ All notable changes to ATR will be documented in this file.
 
 ## [Unreleased]
 
+## [4.2.2] - 2026-10-28
+
+A patch release of export and converter fixes, five rule rewrites for Python
+portability, and reference corrections. The rule format, identifier scheme,
+engine matching and Match output are unchanged.
+
+Default behaviour that changes:
+
+- Nothing the engine matches. The five rewritten rules match the same samples
+  as before on every test case, evasion test and text file under `data/`.
+- Exports regenerated from this release differ from earlier ones: the
+  converters (`atr convert`, `ruleToSPL()`, `ruleToElastic()`, Sage), the
+  Cisco Skill Scanner pack, the PyRIT digest, the Pipelock bundle and the
+  RAMPART evaluator now follow SPEC §6.4, so a condition without a flag group
+  matches case-insensitively and a leading `(?s)` or `(?m)` has no effect.
+  See the upgrade note under the converters entry below.
+- `references` and `compliance` metadata changes on 139 rules (the OWASP and
+  ATLAS corrections below). Tooling that reports or groups by those ids sees
+  different buckets.
+
+### Added
+
+- **`export-cisco-pack.ts --downstream` writes the Cisco Skill Scanner's
+  schema_version 2 pack.** The scanner now validates its bundled packs
+  against a strict schema at startup: it rejects `signature_files` and any
+  rule field outside its allowlist (`maturity`, `atr_id`, `atr_url` and
+  `file` included), and every rule needs a Cisco AI taxonomy code or a
+  default for its category. A pack exported as before fails to load. With
+  `--downstream <vendored pack dir>` the exporter writes that schema and
+  carries the scanner maintainers' choices forward: each existing rule keeps
+  the scanner category and taxonomy code it has downstream, and a new rule
+  takes the scanner category its ATR category already maps to and inherits
+  that category's default code. It stops instead of guessing when an ATR
+  category maps to more than one scanner category or a new rule's category
+  has no default; `--taxonomy <ATR id>=<code>` supplies the code. The pack
+  description names no benchmark figure. Without `--downstream` the output is
+  unchanged. `tests/cisco-pack-downstream-v2.test.ts` covers the contract.
+
+### Fixed
+
+- **OWASP and MITRE ATLAS references corrected on 108 rules** (#675).
+  `references.owasp_llm`, `references.owasp_agentic` and
+  `references.mitre_atlas` are corrected where a rule named an identifier
+  that does not describe what it detects. No detection, severity, maturity,
+  status, confidence or response field changes. The two crosswalks CI checks
+  against rule metadata are regenerated.
+
+- **OWASP compliance entries aligned with the corrected references on 25
+  rules** (#680). 29 `compliance.owasp_agentic` / `compliance.owasp_llm`
+  entries still named an identifier #675 removed from `references`, which
+  kept it in `docs/OWASP-AGENTIC-MAPPING.md`.
+
+- **`LLM08:2025` used for Excessive Agency replaced on 30 rules** (#684). In
+  the OWASP Top 10 for LLM Applications 2025, LLM08 is Vector and Embedding
+  Weaknesses and Excessive Agency is LLM06. Only `references.owasp_llm` and
+  `compliance.owasp_llm` change; two rules that use LLM08 for its real
+  meaning keep it.
+
+- **Five rules compile under Python `re`.** The Cisco Skill Scanner pack and
+  other Python consumers compile patterns with `re`, which rejects
+  variable-width look-behind and a back-reference to a group that does not
+  exist; such a pattern is skipped and detects nothing there. Twelve
+  conditions in five rules were affected. ATR-2026-00442 and -02100 split a
+  negative look-behind over alternatives of different lengths into one
+  look-behind per alternative. ATR-2026-02300 and -02304 match the
+  `mcpServers` or fetch-verb prefix instead of looking behind for it, which
+  changes the matched span but not whether the condition matches. The fourth
+  condition of ATR-2026-00290, `(?:(?:\w+\s+){40,})\1{3,}`, is removed: its
+  `\1` refers to no group, which JavaScript reads as the character U+0001, so
+  it never matched anything. On every test case and evasion test of the five
+  rules and the text files under `data/` (7,963 samples), the old and new
+  rules match the same samples. `check-python-compat.py` now reports 0
+  uncompilable patterns in the exported pack, down from 12, and
+  ATR-2026-02300 and -02304 profile more than 3x cheaper than their latency
+  baseline (171.6x and 9.2x).
+  Compiling under Python also exposed the ReDoS gate to three of these
+  conditions for the first time, and they backtracked quadratically on a long
+  run of whitespace: ATR-2026-00442#1 on `\s*[:,-]?\s*` and ATR-2026-02300#1
+  and #3 on `:\s*\n\s+`. Both are rewritten to accept the same strings
+  without the ambiguity, `(?:\s*[:,-])?\s*` and `:[^\S\n]*\n\s+`. The
+  five rules' entries in `data/benign-fp-measurement.json` are re-measured
+  because their detection fingerprints changed; their false-positive counts
+  are unchanged.
+
+- **The RAMPART evaluator compiles patterns as SPEC §6.4 says.**
+  `integrations/rampart/src/atr_rules_evaluator.py` compiled each rule's
+  pattern as written with `re.IGNORECASE | re.MULTILINE`, so `^` and `$`
+  matched at every line of a field and the letters of a leading flag group
+  took effect (`(?s)` let `.` match a newline). It now removes one leading
+  `(?imsx)` group and compiles the rest with `re.IGNORECASE` only, as pyATR
+  does. On the rules on main this can change a result only on multi-line
+  input to a rule whose first regex condition, the only one the evaluator
+  reads, contains `^` or `$`; none of those rules' test samples is matched
+  differently by that condition. The evaluator is one of the exports issue
+  #698 lists.
+
+- **The PyRIT digest, the Cisco Skill Scanner pack and the Pipelock bundle
+  now follow SPEC §6.4.** PyRIT's `RegexScorer` and the Cisco scanner
+  compile patterns with Python `re` and no flags, Pipelock with Go RE2, and
+  both honour an inline flag group. The exporters passed each condition's
+  leading group through, so the `(?im)`, `(?si)` and `(?is)` of
+  ATR-2026-00450, -00859 and -00207 were applied. A condition written
+  without `(?i)` was case-sensitive in the Cisco pack, and in the Pipelock
+  bundle's injection rules, which Pipelock releases up to v3.7.0 compile as
+  written; Pipelock adds `(?i)` to DLP and tool-poison rules itself, and the
+  digest already added it. Each pattern is now `(?i)` followed by
+  `regexConditionSpec(value).source`, the pattern the engine compiles; the
+  Pipelock bundle puts one `(?i)` in front of a rule's joined alternatives.
+  Output change on the rules on main: in `data/pyrit-digest.json`, four
+  patterns, of which only ATR-2026-00450#2 matches differently. The digest is
+  also regenerated at main for the first time since 4.0.0, in a commit of its
+  own: 116 new conditions, 5 removed with the deprecated ATR-2026-00233, 121
+  patterns edited in their rules and nine new `condition: all` exclusions.
+  The exporter no longer emits a `case_sensitive` marker, which no rule sets
+  and §6.4 gives no effect. `tests/pyrit-digest.test.ts` checks the
+  transform on fixed inputs and that every committed pattern starts with
+  exactly one `(?i)`; it does not compare the digest with the rules, so a
+  rule edit does not require regenerating it. The Cisco pack changes 1,161
+  of 3,471 patterns in 307 signatures, 1,157 of them because they gain
+  `(?i)`; `--reproduce-vendored` keeps the vendored pack's verbatim
+  patterns, its output is unchanged, and a new test checks that wiring. The
+  Pipelock bundle changes every rule's regex: 814 conditions in 191
+  injection rules become case-insensitive on Pipelock releases up to v3.7.0,
+  and ATR-2026-00450 no longer matches at the start of a second line; the
+  compiler version is now 1.0.1. No pattern starts or stops compiling under
+  Python `re` or Go RE2. Issue #698; `tests/compile-pipelock.test.ts` is new.
+
+- **The rule converters translate regex conditions per SPEC §6.4.**
+  `atr convert generic-regex|splunk|elastic`, the package exports
+  `ruleToSPL()`, `ruleToElastic()`, `convertRule()` and `convertAllRules()`,
+  and the `converters/sage` and `converters/sage-reverse` subpaths each
+  followed a condition's leading flag group instead of SPEC §6.4 (issue
+  #698):
+  - generic-regex copied the group's letters into `flags`, so a condition
+    without `(?i)` exported `flags: ""` (case-sensitive) and `(?im)` or
+    `(?is)` turned on multiline or dotAll in the consumer. `flags` is now
+    always `i`, or `iu` when the pattern needs Unicode mode.
+  - Splunk passed the group to PCRE unchanged, with the same two effects.
+    Every regex now starts with a single `(?i)`.
+  - Elastic put the group into a Lucene `regexp` value, where inline flags do
+    not exist. The value is now the condition without its group;
+    `case_insensitive: true` is unchanged.
+  - Sage exported a rule as case-sensitive unless a group said `(?i)`. Every
+    exported rule now sets `case_insensitive: true`; a condition that depends
+    on the `u` flag, which Sage cannot set, is skipped with a warning; and the
+    "mixes case-sensitive" and "unsupported inline flags" warnings are gone.
+    Importing from Sage (`sage-reverse`) now always writes `(?i)` and warns
+    (`case_sensitivity_lost`) when the Sage rule was case-sensitive.
+
+  The dialect lives in the new dependency-free `src/regex-dialect.ts`
+  (`regexConditionSpec()`, `needsUnicodeFlag()`, `inlineCaseInsensitive()`),
+  so the published `converters/sage` subpath does not load the engine;
+  `src/engine.ts` imports and re-exports it, and the rule-quality and
+  rule-latency gates now also run when it changes. The generic-regex docs no
+  longer show an import path the package does not export.
+
+  Upgrade note: exports regenerated after this change differ from earlier
+  ones. Conditions without a flag group now match case-insensitively, so a
+  SIEM or scanner that loads them can see more matches, and conditions whose
+  group had `s` or `m` no longer let `.` cross a line break or `^` and `$`
+  match inside the field. Generic-regex `flags` can now be `iu`, so a consumer
+  that maps the letters to another regex engine must accept `u`. The Sage
+  export skips conditions that depend on `u`. `ReverseWarning['kind']` gains
+  `case_sensitivity_lost`; TypeScript code that switches over it exhaustively
+  must handle it.
+
+## [4.2.1] - 2026-10-24
+
+A patch release of rule fixes and one new rule, plus two release-tooling
+fixes. The rule format, identifier scheme and Match output are unchanged.
+
+Default behaviour that changes:
+
+- ATR-2026-01601 (SQL injection with destructive DDL, maturity `stable`, so it
+  runs in the enforce lane) now also matches when whitespace separates the
+  single quote from the semicolon, as in `1' ; TRUNCATE TABLE accounts; --` and
+  `7' ; DELETE FROM sessions; --`, which it missed before. An integration that
+  blocks on the enforce lane blocks these too. Its benign false positives were
+  re-measured: none over the 14,172 samples of the benign gate (#748, issue
+  #620).
+
+### Added
+
+- **ATR-2026-02870: an invisible control before a directive in a tool
+  description or skill file.** A zero-width, soft-hyphen or bidi control
+  character at the start of a clause that tells the agent to ignore or
+  override instructions, send or read secrets, conversations or credential
+  files, or keep something from the user. Presence of the character alone
+  does not match, so soft hyphens in German, ZWNJ in Persian, LRM/RLM in Hebrew
+  and Arabic, emoji ZWJ sequences and a leading BOM stay clear. It reads
+  `tool_description`, so it runs in a `tools/list` scan, on `mcp_exchange`
+  events and on SKILL.md files. Maturity `test` (hunt and alert lanes). No
+  benign false positives on the gate corpora or on the 710 tool definitions in
+  `data/test-corpora/mcp-tools-list-benign/`, which contain no such characters,
+  so that last figure is weak evidence. A control inside a word, rather than at
+  the start of a clause, is ATR-2026-00276's case and not covered here (#749,
+  from issue #653 by @Paraphern).
+
+### Fixed
+
+- **ATR-2026-00040 and -00064 matched the wrong chmod modes.** Their chmod
+  condition matched the owner digit of `chmod 755 deploy.sh` or `chmod 700
+  ~/.ssh` and missed `chmod -R 777 /`. They now match a world-writable mode or
+  a setuid/setgid/sticky four-digit mode; with options such as `-R` before the
+  mode, only when the target is the root, a system directory or the home
+  directory, since `chmod -R 777` on an application subdirectory is documented
+  practice in the benign corpus. Group-writable modes are not matched. Both
+  rules are maturity `test` (#740, issue #735, from the probe in #658 by
+  @PHM-Audit).
+- **ATR-2026-00500, -00501 and -00505 are grounded in the vendor test cases
+  they cite.** 00500 and 00501 matched 1 and 0 of promptfoo's SSRF and
+  data-exfiltration test cases, and 00505 missed an llm-guard case with a
+  typographic apostrophe. They now match all of them (3 of 3, 3 of 3, 6 of 6),
+  their true positives that did not occur in any vendor repository were
+  replaced by verbatim vendor cases with repository, commit, file and line,
+  and -00503 and -00521 gained the vendor originals behind their shortened
+  samples. On the pinned vendor suites, hunt-lane recall goes from 97 to 100 of
+  126 attack cases; the ablation reference is unchanged (#709, measurement in
+  #750).
+- **ATR-2026-00223's samples use a documentation address** (203.0.113.30)
+  instead of an address from a real dropper. Detection is unchanged (#738).
+- **The release workflow commits the reconciled stats cache with the version
+  bump.** The 4.2.0 bump reached `main` with `data/stats.json` still at 4.1.5,
+  which failed CI on `main`; the published package was not affected (#746).
+- **The Gemara catalogs' first publish reads oras's "not found" as
+  unpublished.** The first publish from v4.2.0 stopped at the
+  already-published check; this release tag is the first that can publish the
+  bundle (#747).
+
+## [4.2.0] - 2026-10-24
+
+The first release since 4.1.5. For an integrator it changes three things at
+runtime: the Claude Code guard reads what a tool returned instead of what it
+was given, rules written for `context_window` and `skill_*` events now run on
+the events their data arrives in, and a match that a model decided is
+reported instead of enforced unless the integrator opts in. `atr scan` now
+scans an MCP config file it used to skip, and an MCP `tools/list` document
+as one event per tool, without running the rules written for a tool being
+called. Many rule conditions that took polynomial time on long input were
+rewritten, and three rules left the enforce
+lane after matching benign samples. Like 4.1.5, the npm package carries the
+rules without their test samples; the repository keeps them.
+
+Default behaviour that changes, and how to keep the old one:
+
+- Model-decided matches are advisory. A match from a semantic rule's judge
+  that its own pattern fallback does not corroborate, from the embedding
+  module or from the semantic layer is listed in `verdict.advisory` and no
+  longer sets the verdict's outcome or dispatches more than observe-tier
+  actions. To keep the old behaviour pass `modelDecisions: 'enforce'` to
+  `ATREngine` or `computeVerdict()`, or use `--model-decisions enforce` or
+  `ATR_MODEL_DECISIONS=enforce` with `atr scan` and `atr mcp`. Integrations
+  that wire no model, including `atr guard` and the bundled adapters, see no
+  change (#720). `verdict.highestSeverity` and `highestConfidence` now
+  describe only the matches the outcome came from (read `advisorySeverity`
+  for the rest), and `atr scan --json` gives every match `decided_by` and
+  `enforced`.
+- More of what an agent sees reaches the rules. A guard registered under
+  Claude Code's PostToolUse now scans the tool's output, where it used to scan
+  the tool's input; registering it under PostToolUseFailure as well also scans
+  failed calls (#715, #721). Rules of type `context_window` and `skill_*` now
+  run on typed runtime events (#701). The OpenShell filter
+  and NemoClaw preflight adapters evaluate in the hunt lane and deny at `high`
+  and above by default (`ATR_MIN_SEVERITY`), so they can now deny on
+  ATR-2026-00070 and -01774 (high, `llm_input`/`llm_output`) and
+  ATR-2026-00157 and -02405 (critical, `tool_call`), where 4.1.5 did not. Both raise matches in
+  the hunt lane, the engine default, including on benign text (measured
+  figures under Fixed below); neither moves the enforce lane. There is no
+  switch back. An integration that blocks on PostToolUse should block on the
+  enforce lane: `atr guard --blocking --lane enforce` (or `ATR_BLOCKING=1
+  ATR_LANE=enforce`), or `lane: 'enforce'` on `ATREngine`. The guard's default
+  lane is hunt, so `--blocking` alone blocks on the hunt-lane matches above.
+- ATR-2026-00080, -00436 and -01606 moved from maturity `stable` to `test`
+  after matching benign samples in the grown corpus (#625). They still alert;
+  an integration that blocks only in the enforce lane no longer blocks on
+  them.
+- ATR-2026-00012 moved from maturity `test` to `experimental` (#683), so it
+  runs in the hunt lane only and no longer in the alert lane. ATR-2026-00233,
+  a duplicate of ATR-2026-00228, is deprecated and runs in no lane (#666).
+- `atr scan` on an MCP config file scans one event per server (#581, by
+  @ciceroyang), and on an MCP `tools/list` document, bare or in a JSON-RPC
+  response, one event per tool (#737). 4.1.5 skipped both and reported them
+  clean. Any JSON file `atr scan` reads in which no event reaches the engine
+  now exits 1, in text, `--json` and `--sarif` output alike; `events_scanned`
+  counts only events that did, beside a new `events_skipped`. A CI step that ran
+  `atr scan` on such a file and always passed may now fail, on the exit code or
+  through `--fail-on`. The GitHub Action ignores the exit code (#575) but counts
+  the new findings toward `fail-on-finding`. Scanning a directory that holds
+  only an MCP config is not fixed yet (#575).
+
+Under SPEC §10 this is a minor release: the rule format, identifier scheme and
+Match output are unchanged (matches gain an optional `decidedBy`, which §7
+allows). SPEC.md moves to 1.0.1, a [Compatible] correction of §6.4 (#699).
+SPEC §10 versions the format, not the package's defaults, and some defaults
+change above. 4.0.0 went major because every `atr guard` user lost a block
+they had by default. Here an integration that wires no model loses no block;
+one that wired a model judge and blocked on its decisions does, and one that
+blocks in the hunt lane, as `atr guard --blocking` does on PostToolUse and the
+OpenShell and NemoClaw adapters do, can gain blocks. If that describes your
+integration, apply the switches above or stay on 4.1.5.
+
+### Added
+
+- **New rules, all at maturity `test`** (hunt and alert lanes, not the
+  enforce lane): ATR-2026-02815, -02817 and -02820 (#612); -02858, -02859 and
+  -02860, technique rules for llm-guard samples lost to earlier FP repairs
+  (#668); -02855, -02861 and -02862 from the FN-mine sweeps (#650, #671);
+  -02864, -02865, -02866, -02867 and -02868 from agent-related CVEs published
+  2026-09-22 to 2026-10-21 (#730, #731).
+
+- **The category registry as Gemara catalogs, generated and published from
+  here.** `spec/category-registry/gemara/` holds a vector, capability, threat
+  and control catalog validated against the Gemara v1.6.0 CUE schemas. The
+  vector catalog is generated from `spec/category-registry/v1.0.yaml` (ids and
+  descriptions verbatim) by `scripts/generate-gemara-catalogs.ts`;
+  `tests/gemara-catalogs.test.ts` fails when the committed catalogs are stale.
+  `.github/workflows/publish-gemara.yml` publishes them as one keyless-signed
+  OCI bundle, `ghcr.io/agent-threat-rule/agent-threat-rules/gemara:<bundle
+  version>`, on release tags only, and pushes nothing when that version is
+  already published with the same catalogs.
+
+- **`atr test` reports a true positive that matches only through a copy the
+  test event makes.** The test event offers a case's input under every alias a
+  rule might read, whatever the event type: as `user_input` and `tool_args`, and
+  its content as `agent_message`. `buildEventFromTestCase` gains a `runtime`
+  field set, which holds what this repository's producers put on an event of the
+  type: content, the fields the case names (taken as given), `user_input` on an
+  `llm_input` event, and on a tool event the `tool_name` and `tool_args`
+  `src/hook-handler.ts` fills. `caseMatchesAtRuntime` runs a case on that set
+  for every event type, the engine's source filter deciding which of them the
+  rule runs on, or as a skill document. `atr test` lists a passing true positive
+  that matches none of them under `harnessOnly` (JSON) and "Harness-only"
+  (text); it still counts as passed. No true positive on main is one.
+  ATR-2026-01610's two cases declared as `user_input` match their `llm_input`
+  event only through the input copied into `tool_args`; the engine also runs
+  `llm_io` rules on `tool_response` events, where the hook fills `tool_args`,
+  and there they match. `tests/testcase-runtime-parity-rules.test.ts` runs every
+  rule's true positives the way `atr test` does, leaving out a type the engine
+  withholds as `atr test` does, and fails on one.
+
+- **Every benchmark measurement records the enforce lane beside its
+  headline.** A measurement's `metrics.recall` is the `hunt` lane (the engine
+  default, every maturity). Each runner the weekly measurement calls now also
+  runs the same samples through its own detection loop on an engine
+  constructed with `lane: 'enforce'` (only `maturity: stable` rules, the lane
+  for blocking) and records the result as `breakdown.enforce_lane`. Where a
+  measurement records it, README's Recall cell cites both lanes and root
+  `stats.json` cites the enforce figure as `enforceLaneRecall`;
+  `scripts/check-benchmark-citations.ts` fails CI when either disagrees with
+  the measurement or leaves the enforce figure out. Before this, the enforce
+  figures in README were one-off replays.
+- **Recall figures outside README are rendered from the measurement files.**
+  `scripts/render-recall-citations.ts` fills the figures between recall
+  markers in `LIMITATIONS.md` and the `docs/owasp-pr/` texts, from the file each
+  source's `latest.json` points at, in both lanes (every rendering is held to
+  the rule README's table is checked by). `scripts/sync-citation-garak.ts`
+  generates the garak sentence in `CITATION.cff` from root `stats.json`, with
+  both lanes and the closed-book caveat. The weekly measurement run re-renders
+  and stages both and lists what it could not render in the rolling PR's body;
+  CI (`eval.yml`) fails on a stale or unrenderable figure.
+- **`scripts/bench-evaluate-latency.ts` times single `ATREngine.evaluate()`
+  calls** in the hunt and enforce lanes on three committed corpora of
+  different input length, so the latency wording in LIMITATIONS.md and
+  THREAT-MODEL.md can be checked on any hardware. The `latency_ms` blocks in
+  `data/measurements/` time whole corpus samples (several event shapes, a
+  skill scan and, when installed, an embedding pass) inside a full benchmark
+  run, and are not comparable.
+- **CI re-checks the /red-team page's links against GitHub.** The page's list
+  of offensive tools and corpora moved out of the page into
+  `website/data/red-team-tools.json`. `scripts/verify-red-team-links.mjs`, run
+  by `verify-red-team-links.yml` when the list or the checker changes and
+  weekly, fails when an in-review entry's PR or issue is no longer open, an
+  in-production entry's PR is not merged, a corpus entry's link is neither a
+  merged PR nor a commit on the default branch, or the `stillPresent` file an
+  in-production or corpus entry must name no longer holds its text. It
+  reports drift, links that are gone, and lookups GitHub could not answer
+  separately, and counts none of them as a pass; a failure on main or on the schedule opens a tracking issue.
+  It would have flagged NVIDIA/garak#1676 within a week of its withdrawal on
+  2026-08-04, instead of the ten weeks it stayed listed before #688. It cannot
+  flag an open proposal nobody answers, which is why the page calls that group
+  "Open proposals". The three corpus entries linked to ATR PRs #51, #52 and
+  #53, which do not contain the rules they named; they now link to the commits
+  that added ATR-2026-00452..00456, 00500..00505 and 00510..00517, the second
+  no longer names NeMo-Guardrails as a rule source, and every figure they and
+  the page's 2026-05-12 sprint section quote now comes from a measurement file
+  or a committed re-run record. HackAPrompt is quoted per lane on its pinned
+  4,780-prompt subset, followed by its ablation reference (the same prompts
+  without the rules whose YAML names HackAPrompt), read from
+  `breakdown.in_sample_ablation` of the measurement file and called what it is,
+  an approximation of out-of-sample recall rather than an out-of-sample result;
+  the vendor-suite entry is followed by its own. The sprint's 28.6% to 66.2%
+  becomes the re-measured 28.6% to 66.0%: 66.2% could not be reproduced at the
+  sprint commits `e9efefdd` and `92c0d0fe` (66.0% at best), and the 28.6% is
+  itself in-sample. The paper is described as listed under Best Paper Awards at
+  EMNLP 2023, on gpt-3.5-turbo, FlanT5-XXL and text-davinci-003 (not
+  GPT/Claude/PaLM). The 2026-05-12 import is described as 79 of 94 samples
+  occurring verbatim in the vendor file they name. The sprint added 71 rule
+  files, not 75 (the 2.2.0 entry also counted four earlier CVE rules), and the
+  claims that the sprint's and the 2026-06 mega-scan's rules all passed the
+  quality gate with 0 benign FP are replaced by the gate re-run on 2026-10-19
+  and again on 2026-10-22 (`data/gate-reruns/2026-10-19_red-team-rule-batches.json`):
+  at 92c0d0fe, 10 of the 71 failed (own true positives) and none flagged a benign
+  SKILL.md file; at main b9d16840 on 2026-10-22, 33 of 71 and 4 of 29 fail, and
+  26 and 3 flag at least one benign sample, none of them in the enforce lane,
+  the same as at 9d74fc50 on 2026-10-19 although nine of the recorded rules
+  changed in between. Each corpus entry links its
+  measurement file.
+
+### Changed
+
+- **Three rules left the enforce lane.** ATR-2026-00080, -00436 and -01606
+  each matched benign samples in the grown corpus and were demoted from
+  maturity `stable` to `test` (#625). ATR-2026-00233, a duplicate of another
+  rule, is deprecated (#666).
+- **Six rules follow MITRE ATLAS v2026.07.** AML.T0019 and AML.T0104, retired
+  into AML.T0115 as sub-techniques, are replaced by AML.T0115.000 and
+  AML.T0115.002 in the rules' `references.mitre_atlas` (#543).
+
+- **A match a model decided is reported, not enforced, unless the integrator
+  opts in.** Three engine paths turn a model's output into a match: a semantic
+  rule's `semanticJudge`, the `embeddingModule` similarity signal (which in the
+  hunt and alert lanes could produce a critical `block_input` match), and the
+  `semanticModule` layer. No evidence a response tier is earned from measures
+  them: the benign-corpus evidence runs the synchronous engine, where a semantic
+  rule is its pattern fallback, and neither the embedding module nor the
+  semantic layer. Every match now carries `decidedBy`, and
+  `computeVerdict()` keeps a model-decided one out of the outcome and dispatches
+  only its observe-tier actions; it is listed in the new `verdict.advisory`
+  (with `verdict.advisorySeverity`), and `highestSeverity` and
+  `highestConfidence` now describe the matches the outcome came from. A
+  semantic rule whose judge matches is enforced when the rule's own pattern
+  fallback matches the same input (reported as the fallback's match); a judge
+  match the fallback does not corroborate is advisory. Rule, invariant,
+  blacklist and fingerprint matches decide as before. `modelDecisions:
+  'enforce'` on the engine (or on `computeVerdict`) restores the previous
+  behaviour; any other value throws. `computeVerdict` now sorts the matches it
+  is given instead of trusting their order.
+- **`atr scan` and the MCP server follow the same default.** `atr scan
+  --semantic` lists a judge-only match but leaves it out of `--fail-on`, and
+  writes it to SARIF at level `note` with `properties.enforced: false`, which the
+  GitHub Action no longer counts toward `fail-on-finding`. JSON and SARIF output
+  name what decided each match (`decided_by`). The MCP scan tool reports a
+  judge-only match with outcome `allow`, `enforced: false` and observe-tier
+  recommended actions. `--model-decisions enforce` or
+  `ATR_MODEL_DECISIONS=enforce` restores counting for `atr scan` and `atr mcp`.
+  `atr guard` and the bundled adapters wire no model, so nothing they do
+  changes.
+
+- **The ReDoS gate now times long inputs, every branch of an alternation
+  and input tiled with a pattern's own openers, and its baseline grew from 9
+  to 439 conditions because of it.** Nothing got slower; the gate started
+  looking. Two integrations packaging the corpus found conditions that took
+  seconds to minutes on 8,000- and 50,000-character inputs while
+  `scripts/gate-redos.py` reported them clean: its inputs were 1,500 to
+  3,000 characters, where a quadratic condition costs about a tenth of a
+  second, and only the first branch of an alternation was ever pumped. Each
+  condition is now also run on 20,000-character inputs built per quantifier
+  -- the text that reaches the quantifier, through whichever branch,
+  lookbehind or back-reference leads there, followed by a long run of its
+  own body -- and on its openers and pumped near-match tiled to length
+  (#601). Each worker calibrates per chunk and times are reported in
+  reference-machine seconds, which reduces, but does not remove, the effect
+  of load that changes during a run. `data/redos-baseline.json` now lists
+  439 conditions in 259 rules: 350 over the budget when it was written (201
+  of them did not return within the wall even timed alone) and 89 under the
+  budget but over a third of it, recorded too because one condition's
+  readings spread by more than 2x across runs and machines. 41 are in the
+  enforce lane and 412 are high or critical.
+  Each entry carries a fingerprint of its pattern, so editing a baselined
+  condition makes it new again instead of inheriting the exemption; an
+  unchanged baselined hang is not re-run. The gate stays a ratchet: it fails
+  on a slow condition outside that file. `scripts/verify_rule_redos.py` now
+  uses the gate's own inputs and timing -- it had reported PASS on
+  ATR-2026-02372 with both conditions hanging -- and with `--base REF` also
+  times a changed condition on the inputs derived from its previous pattern.
+  Twelve conditions that Python `re` cannot compile, and that the gate
+  skipped without saying so, are now listed by key. pyatr runs eleven of
+  them through its `regex` fallback and the TypeScript engine compiles all
+  twelve, so they run in production and are still untimed here; the twelfth,
+  ATR-2026-00290#3, back-references a group that does not exist, which pyatr
+  refuses and JavaScript reads as the character U+0001 (#331). The semantic
+  lane's per-draft ReDoS precheck now allows 300 s instead of 120 s.
+
+- **Every recall figure the site, LIMITATIONS.md, CITATION.cff and the docs
+  above take from the measurement files now names its lane** and gives the
+  enforce figure wherever the measurement records one. Figures no measurement
+  file records are labelled instead: the about page's historical garak figure
+  as taken with every rule loaded, the neutral-benchmarks post's runs as having
+  no recorded lane. The website reads `breakdown.enforce_lane` from the measurement
+  files (home, coverage, research, red-team, garak integration, ATD and
+  sovereign-AI pages, the PINT blog post); it no longer reads recall
+  from the old eval report files or their typed fallbacks, and no longer
+  hydrates recall in the browser. The garak figures carry the closed-book
+  caveat, and so now do the PINT-format and HackAPrompt figures, which have
+  rules mined from them too. The SKILL.md benchmark is described as the
+  internal, labelled corpus it is, with the harness's layer names. An erratum
+  (`e-2026-10-16-recall-lanes`) records the change on the site.
+- `sync-stats.ts` now fails when CITATION.cff has no garak sentence to
+  rewrite, instead of leaving an old figure in place.
+- **`scripts/check-rules-safety.ts` checks that a modified rule still matches
+  its own true positives, and checks renamed rules.** A new rule's true
+  positives had to match; a modified rule only had to add no benign false
+  positive, and a rule that matches nothing adds none. `npm run
+  gate:generalization` covers pattern rules only, so a semantic rule whose
+  `fallback_method` was set to `none` passed every check. The new own-TP check
+  runs each true positive on both paths `atr test` tries, replaying every case
+  to the changed rule as the event the base rule would receive: a case the
+  base rule matched on a path (`evaluate()`, `scanSkill()`) must still match
+  there, one the change adds must match, and the changed rule must still match
+  one of the cases the base rule matched. That also catches re-routing a rule
+  away from its cases. A rule of a type the engine withholds from typed events
+  (`WITHHELD_SOURCE_TYPES`), which `atr test` reports as unevaluable, is
+  skipped while it stays that type. A renamed rule file was on neither the new
+  nor the modified list and skipped both checks; it is now compared with the
+  file it was at the base, and a changed file whose rule id differs is checked
+  as a new rule. `npm run validate` also checks a semantic rule's
+  `fallback_method` (`pattern` or `none`, compared exactly, as the engine
+  does), its `threshold` (a number from 0 to 1), and that a pattern fallback
+  has a condition to match.
+- **`scripts/check-rules-safety.ts` runs a new rule's true positives the way
+  `atr test` does (Check 2).** It read only a case's `input` and ran it as the
+  text of the benign corpus shapes. On main, as if each rule past Check 1 were
+  new, 250 true positives in 54 rules carry their payload elsewhere
+  (`tool_response`, `tool_args`, `tool_description`, a `user_input` key, an
+  object `input`, ...) and were never read; 47 of those rules had none read
+  and passed with nothing run. The routing a rule declares was never
+  exercised. Each case now runs as the event built from it for the rule's own
+  `agent_source.type`, and through `scanSkill()`, with the code the own-TP
+  check for modified rules uses (`scripts/lib/own-true-positives.ts`), and its
+  text must still match on the corpus shapes, so a case that fires only
+  through a tool name, which no benign sample exercises, fails. The semantic
+  lane's pre-gate runs the same code. A case that cannot be run fails, and so
+  does a rule of a type the engine withholds from typed events
+  (`memory_access`), whose cases `atr test` reports as unevaluable. A new rule
+  the benign checks cannot run at all (deprecated, or a trace, behavioral or
+  signature method) is refused with the reason; Check 2 used to fail most of
+  them only because it could not match their cases either, and one whose cases
+  carried no `input` passed the whole gate.
+- **README §8 discloses that the `garak` and `garak-full` figures are partly
+  closed-book.** A replay without the rules whose own YAML shows they were
+  written from the in-the-wild corpus is given in the new `[^garakcorpus]`
+  footnote, and the paragraph on the two `garak` rows no longer calls them
+  independent: `garak-full` contains that corpus twice.
+- `data/stats.json` no longer carries the orphaned `benchmark.pintRecall`
+  block, a 3.5.11 figure nothing has written since #600 and nothing reads.
+
+### Fixed
+
+- **`atr scan` scans an MCP config file instead of skipping it.** The file was
+  parsed, wrapped as one event without `content` and skipped, while the
+  summary counted it as scanned, so a config that sets `NODE_OPTIONS` to a
+  `require` payload came back as no threats. Each server in the document is
+  now its own event, `events_scanned` counts what reached the engine beside
+  `events_skipped`, and a file with nothing scannable exits non-zero (#581,
+  by @ciceroyang; issue #575, where directory scans and the Action's exit
+  handling remain open).
+
+- **Rule conditions that took polynomial time on long input were
+  rewritten.** 86 conditions in 48 rules found by the extended ReDoS gate
+  (#704), eight conditions quadratic in a long run of one character (#723),
+  and ATR-2026-00063 and -00228 (#666). The rewrites keep the language of
+  each condition, except four deliberate changes in #704:
+  ATR-2026-00446 condition 0 widens, and ATR-2026-01005 condition 1 and
+  ATR-2026-01307 conditions 0 and 1 narrow. ATR-2026-02261 condition 0
+  narrows on purpose in #723 (its back-reference no longer ties two different
+  variables), and ATR-2026-00228 condition 1 in #666 (on JSON-encoded content
+  the two labels must be on one line). Conditions still over the gate's
+  budget stay listed in `data/redos-baseline.json`.
+- **Rule false positives.** ATR-2026-00012 matched 1,817 of 14,157 benign
+  samples and now matches 150, with every match of the new version also a
+  match of the old one (#683). ATR-2026-02010 no longer matches blank or
+  whitespace-only input (#704). ATR-2026-00013 also flags apex
+  loopback-wildcard domains (CVE-2026-55096) and its IPv6 condition matches
+  IPv4-mapped obfuscation only (#732, #733).
+- **`atr scan` scans an MCP `tools/list` document, one event per tool.** A file
+  holding `{"tools": [...]}`, or the JSON-RPC response `{"jsonrpc": "2.0",
+  "result": {"tools": [...]}}`, was wrapped as one event with no content,
+  skipped, and reported as "nothing was scanned", so the usual input for a
+  tool-poisoning check reached no rule. Each tool is now an `mcp_exchange`
+  event (`src/cli/mcp-tools-document.ts`): the content is the tool definition as
+  JSON, input schema and per-parameter descriptions included, and
+  `tool_name` / `tool_description` are set from the definition. A JSON array of
+  such responses is accepted too. A document that lists no tools fails with
+  "nothing was scanned" rather than reporting clean. `mcpServers` documents and
+  event files are read as before. Tests: `tests/cli-mcp-tools-list-scan.test.ts`.
+- **A tools/list scan does not run the rules written for a tool being called.**
+  A definition defines a tool and calls none, but an `mcp_exchange` event admits
+  every rule, so call rules (ATR-2026-00099 and others, which read the called
+  tool's name and arguments) flagged every definition named `delete_*`,
+  `*_reset` or `exec*`. New engine option `toolDefinitions` (`ATREngineConfig`,
+  default false), which `atr scan` sets only for a tools/list document: a rule
+  with `agent_source.type: tool_call` then runs only if one of its conditions
+  reads `tool_description` (the test is per rule: such a rule runs with all its
+  conditions), or if its subject is the tool's identity (`TOOL_IDENTITY_RULES`
+  in `src/tool-definition-scope.ts`: ATR-2026-00060, impersonation); every other
+  rule runs as before. No rule file changes; hooks, adapters, config documents
+  and event files are unaffected. `atr scan --json` reports
+  `tool_definition_scope`, `rules_evaluated` and `rules_skipped_by_scope` (SARIF:
+  run properties) and the `tool_name` of each result, so a rule that was not run
+  does not read as a clean result. An event that also carries a `tools` array
+  is still scanned as an event. Documented in `docs/ARCHITECTURE.md` §3.2,
+  `docs/schema-spec.md` (agent_source.type) and `docs/rule-writing-guide.md`.
+  On 710 benign tool definitions from 45 official and vendor MCP servers,
+  flagged definitions go from 58 to 6 (hunt) and 57 to 5 (alert); enforce is 0
+  before and after, which says nothing here, since none of the rules involved is
+  stable. The true positives of the rules that read `tool_description` give the
+  same result with and without the scope: of 41, 39 fire (35 description texts,
+  and 4 ATR-2026-00441 code snippets through its content conditions) and 2 do
+  not (ATR-2026-00441 tool calls given as JSON with arguments, which are not
+  definitions). The 6 remaining hunt-lane false positives come from rules this
+  change does not touch: ATR-2026-01987, -00225, -00217, -00161 and -00569 (over-
+  broad conditions) and a form match of ATR-2026-00579 (experimental); see
+  `data/measurements/mcp-tools-list-benign/README.md`. The scope also costs
+  detection: a poisoned definition that only a call rule catches (for example
+  ATR-2026-00114) is missed in a tools/list scan; no malicious tool-definition
+  corpus measures this yet. Tests:
+  `tests/tool-definition-scope.test.ts`, `tests/cli-mcp-tools-list-scan.test.ts`.
+
+- **On Claude Code, the guard scans what a tool returned on PostToolUse.**
+  Claude Code sends a tool's output at the top level of the PostToolUse hook
+  input, as `tool_response` (checked against the shipped 2.1.280 binary).
+  `src/hook-handler.ts` read an output only from `tool_input.output` or
+  `tool_input.response`, where Claude Code never puts one, so the event's content
+  was the tool's input, and a prompt injection in a command's output, a file or a
+  fetched page reached no rule. The event's content and `tool_response` are now
+  the text of the output: `src/hook-tool-output.ts` keeps every string in it, as
+  written, and leaves out binary data, what Claude Code keeps from the model,
+  and labels and strings the tool only repeats from its input. A tool that edits
+  a file returns the edit it made, so its event is still built from its input.
+  `tool_args` stays the JSON of the input, and `tool_input.output` and
+  `.response` are still read for a host that sends the output there, now as raw
+  text in content too. Measured through the hook in the default hunt lane, each
+  sample as a Bash command's output: the own true positives of the 746 rules the
+  engine runs on a tool response (`llm_io`, `mcp_exchange` and `context_window`)
+  match 3,852 of 3,890 times (0 before, and the same as a Read or MCP output);
+  289 of PINT's 451 attacks match (0 before) and none of its 399 benign samples;
+  1,246 of the 14,157 benign-corpus samples match a rule (0 before), most of them
+  through rules at maturity `test`. In the alert lane 1,183 match, in the enforce
+  lane none. Not covered: an output whose text exceeds 100,000 characters
+  taken together (`MAX_EVAL_LENGTH`); and some rules take time quadratic in a
+  long run of one character. `atr init` registers the guard on
+  PreToolUse only, so this reaches an installation that added it under
+  PostToolUse.
+
+- **The guard also scans a failed tool call's output (PostToolUseFailure).**
+  When a tool call fails, a Bash command whose exit code Claude Code counts as
+  a failure among them (most non-zero codes; `grep`'s exit 1 is not one),
+  Claude Code sends `PostToolUseFailure` instead of `PostToolUse`. Its input
+  carries `tool_name`, `tool_input`, `tool_use_id`, `error`, `is_interrupt`
+  and `duration_ms`, and no `tool_response` (checked against the shipped
+  2.1.280 binary). The guard answered it "Unknown hook type" and allowed it,
+  so ending a command with `; exit 1` kept its output from every rule. It now
+  builds the event from `error`, the failure as the model sees it: for a shell
+  command, its stderr and stdout after Claude Code's `Exit code N` line and
+  abort note, which are left out. A command that printed nothing leaves no
+  text, and its event is built from the input, as an output-less PostToolUse
+  is. It answers in the PostToolUse contract under the `PostToolUseFailure`
+  name, which Claude Code accepts, and with blocking on its `decision:
+  "block"` reaches the model as a blocking error. Measured through the hook in
+  the default hunt lane, each sample as a failed Bash command's error: the own
+  true positives of the 746 rules the engine runs on a tool response match
+  3,852 of 3,890 times (0 before); 289 of PINT's 451 attacks match (0 before)
+  and none of its 399 benign samples; 1,246 of the 14,157 benign-corpus
+  samples match a rule (0 before). On every sample the verdict and the rules
+  matched are those of the same text as a Bash command's output on
+  PostToolUse. Claude Code cuts a failed call's error to about 10,000
+  characters; 1,117 of the benign samples are longer and were sent whole. To
+  use it, register the guard under `PostToolUseFailure` too.
+
+- **Flywheel shadow rules can match.** `ShadowEvaluator` compiled each
+  condition with `new RegExp(value, 'i')`. A value that starts with `(?i)` is
+  a SyntaxError in JavaScript, the error was swallowed, and the condition
+  never matched. `RuleScaffolder` starts every pattern it writes with `(?i)`,
+  so no rule the flywheel generated could match in shadow mode or reach
+  promotion. Shadow conditions now go through the engine's own
+  `compileRegexCondition()` (leading flag group removed per SPEC §6.4, `u`
+  when needed, ReDoS gate) and `safeRegexTest()` (the engine's input-length
+  limit), and a condition whose value is not a string is skipped instead of
+  throwing. Shadow evaluation still differs from `ATREngine` in field
+  resolution, operators, `condition: all`, Unicode normalisation and
+  `agent_source` routing; those differences are unchanged.
+- **Flywheel promotion needs a reviewed true positive, and promotes a rule
+  once.** `ShadowEvaluator.getPromotionCandidates()` divided confirmed false
+  positives by all matches, so a rule with no recorded feedback had an FP rate
+  of 0 and became a candidate after its first match. Once shadow rules could
+  match (above), `FlywheelManager.promoteReady()` would have handed such rules
+  to `onPromote` with status `stable`, and the same rule again on every call.
+  A rule is now a candidate only after at least `minReviewedMatches` (new
+  `FlywheelConfig` option, default 1) matches with recorded feedback including
+  a confirmed true positive; the FP rate is computed over reviewed matches; and
+  `promoteReady()` hands each rule to `onPromote` once. A promoted rule keeps
+  `maturity: draft`.
+- **`RuleScaffolder` no longer writes a pattern that misses its own example
+  payload.** An attack indicator is chosen by a broad test and writes a
+  narrower pattern: "Ignore all previous instructions", "please ignore the
+  rules above" and "disregard everything you were told" all selected the
+  instruction-override indicator, whose pattern did not match them. An
+  indicator now counts only when its pattern matches the payload, and the
+  exact payload is used if nothing else does. Keyword patterns are now tried
+  only at line starts, `(?:^|[\n\r\u2028\u2029])(?=[^\n\r\u2028\u2029]*word)...`,
+  and exact patterns are the escaped payload without a surrounding `.*`. Both
+  match the same inputs as before, but neither is quadratic on a long
+  single-line input any more (about 7-12 seconds per pattern on 100,000
+  characters before, about a millisecond now). An empty or whitespace-only
+  example payload, which produced a pattern that matched everything, is now
+  rejected. Output of `atr scaffold` and the `atr_submit_proposal` MCP tool
+  changes accordingly.
+
+- **SPEC §6.4 corrected: SPEC.md 1.0.1 [Compatible].** A `regex` pattern
+  condition matches case-insensitively whether or not it begins with `(?i)`,
+  and `m`, `s` and `x` in a leading flag group have no effect. The 1.0.0 text,
+  added on 2026-07-19 (#340), said an engine applies the flags named in that
+  group, which made a pattern without `(?i)` case-sensitive and gave `(?s)`
+  and `(?m)` their dotAll and multiline meaning. Compatible: an engine that
+  passes the conformance suite needs no change, because its true-positive
+  fixtures already require case-insensitive matching; an implementation built
+  to the 1.0.0 wording does. 1.0.1 also admits `x` in the group, which both
+  engines already removed, says when the `u` flag applies, advises against
+  modifier groups such as `(?-i:...)`, and adds a revision history (Appendix
+  D). Issue #698 has the evidence; erratum `e-2026-10-19-regex-dialect`
+  records the error. `tests/spec-regex-dialect.test.ts` and pyATR's
+  `TestRegexDialectSpec64` pin the statements. `scripts/generate-sigma.py` no
+  longer copies `m` and `s` from that group into exported Sigma patterns,
+  where a backend would honour them; of the three rules on main that carry
+  such a group, only ATR-2026-00450's `(?im)^...` condition matched
+  differently because of it. Other exports that still follow the 1.0.0
+  wording are listed in #698.
+- **Rules with a `context_window` or `skill_*` `agent_source.type` run on the
+  events their data arrives in.** `src/engine.ts` maps an event type to one of
+  five source types and skipped every rule whose type differed, so a rule of an
+  extended type never ran on a typed event: on the `tool_call` and
+  `tool_response` events `src/hook-handler.ts` builds, ATR-2026-00070, -00075,
+  -01155, -01774, -00134, -00157 and -02405 never fired, while `atr test` mapped
+  their types to a base type and passed every case. The engine now does that
+  mapping itself (`RUNTIME_SOURCE_TYPE`): `context_window` runs where `llm_io`
+  rules run, the `skill_*` types where `tool_call` rules run, and a rule without
+  `agent_source` no longer throws a `TypeError` that aborted the whole
+  evaluation of a typed event. `memory_access` is withheld
+  (`WITHHELD_SOURCE_TYPES`): ATR-2026-00075 also matches standing instructions
+  in an ordinary chat turn ("From now on, always answer in French."), which the
+  Mastra processor and the OpenShell filter, both blocking by default, would
+  refuse; -00075 and -01155 still run only on an untyped event and in a skill
+  scan, and a new `memory_access` rule fails the test suite until the type is
+  mapped. `atr test` no longer maps anything, so what passes there is what the
+  engine runs, and it reports a withheld type's cases as unevaluable, with the
+  reason. The rule-latency gate profiles the five rules instead of listing them
+  as unexercised. The benign-corpus measurement does not change, because its
+  untyped shape already ran these rules; what changes is that their matches now
+  surface at runtime in the hunt lane, the default: ATR-2026-00070 (high)
+  matches 20 of the 14,157 benign samples. On the weekly benchmark suite three
+  hunt-lane recalls rise: garak 601 to 602 of 650 and garak-full 1,989 to 1,991
+  of 3,475 (one prompt, which -00070 catches on the tool-response channel and
+  garak-full holds twice), and atr-self-test 310 to 312 of 321 (-00070's own
+  true positives). No precision or false-positive figure moves (the new matches
+  fall on attack samples), and no enforce-lane figure moves (none of the five
+  rules is stable).
+
+- **A tool event built from a test case always names a tool.**
+  `buildEventFromTestCase` (`src/testcase-event.ts`, behind `atr test`,
+  `scripts/validate-rule-testcases.ts` and the case-sensitivity gate) gave a case
+  that names no tool the `tool_name` `""`, meant to keep the case's text out of
+  `tool_name`. `src/engine.ts` reads a field only when it is truthy and, on a
+  `tool_call` event, then falls back to the event's content, so a `tool_name`
+  condition read the payload as the tool's name and a rule keyed on the tool
+  could pass its cases without naming one. A tool event now carries
+  `atr-test-tool` (`UNNAMED_TOOL`) when the case names no tool, as
+  `src/hook-handler.ts` fills it from the host's tool call, and the
+  case-sensitivity gate leaves that name out of the text it checks a condition
+  against. No rule on main relied on the old behaviour: every true positive and
+  true negative of every rule tests the same.
+
+- **A test case's own `agent_message` is no longer replaced by its content.**
+  `buildEventFromTestCase` set the field from the case and then copied the
+  event's content over it, so a case that names an `agent_message` beside its
+  input was run on the input there. No case on main names one.
+
+- **A `medium` confidence label no longer depends on float rounding to stay
+  out of `deny`.** A pattern match scored `0.7 + 0.1 * coverage`, and a
+  `high`-severity match denies at `>= 0.8`. At full coverage that sum is
+  `0.7999999999999999` in IEEE doubles, so the verdict was `ask` only because
+  of the rounding direction; the same quantity as an integer percentage is
+  `0.8`. Label-derived confidence is now computed in one place
+  (`src/rule-confidence.ts`) on a basis-point scale, and a label below the
+  deny threshold is capped one basis point under it. No verdict or
+  auto-response decision changes. The raw `confidence` of a `medium` match at
+  full coverage is `0.7999` instead of `0.7999999999999999`, and other
+  partial-coverage values lose trailing float noise (`0.9500000000000001`
+  becomes `0.95`). One displayed percentage moves as a result: a
+  named-condition rule labelled `medium` at 3/4 coverage shows 78% (`0.775`)
+  where the noise used to show 77%. No shipped rule reaches that cell.
+
+- **A semantic rule without a pattern fallback is no longer recorded as
+  measured clean.** The benign-corpus measurement
+  (`scripts/gate-promotion-fp.ts`, and `scripts/remeasure-benign-fp.ts`
+  through it) drives the synchronous engine, which returns null for
+  `method: semantic` unless `detection.semantic.fallback_method` is exactly
+  `pattern`; the judge runs only in `evaluateAsync()`. `fieldCoverage()`
+  named trace, behavioral and signature as methods it cannot run, but not
+  this one, and it skipped a rule with no condition field, such as a pattern
+  fallback with nothing in it. Either was written down as `fp_count: 0,
+  partial_measurement: false`, which `scripts/gate-action-eligibility.ts`
+  graded `terminate` at maturity `stable` and `degrade` at `test`. Both are
+  now recorded partial and capped at `observe`. No rule on main is in either
+  state, so the committed evidence is unchanged. The skill-path check uses
+  the same predicate; it used to read `fallback_method: Pattern` as
+  `pattern`, which the engine does not, and it exempted a
+  `scan_target: both` rule with no conditions.
+- **NIST-related statements corrected across the docs and the website.**
+  Pages described a NIST CAISI dialogue and position paper that did not
+  happen, an RFI response ATR never filed, an OSCAL "Path 1" acceptance,
+  and a quote NIST never published; they listed NIST among adopters and
+  in a trust bar, and showed "100%" or "4/4 functions" for an AI RMF
+  mapping that covers a subset of subcategories. usnistgov/oscal-content#338
+  is described as what it is: open, reworked against NIST's AI RMF catalog,
+  awaiting NIST review. The website changelog page now shows the notes on
+  historical entries, which it used to drop.
+- **Integration status, provenance, evasion and latency claims corrected.**
+  The red-team page listed seven proposals as under review that their ATR
+  author had withdrawn unmerged (NVIDIA/garak#1676 on 2026-08-04; HarmBench,
+  AgentDojo, JailbreakBench, Counterfit, PromptInject and Damn Vulnerable MCP
+  Server on 2026-10-14 and 15, six of them never answered). They are removed,
+  along with the lapsed "On deck" schedule, and the garak, sovereign-AI,
+  responsible-use, integrate and STANDARDIZATION-STATUS surfaces no longer
+  call the garak integration or any OWASP PR open. The garak page and the
+  contributor docs (QUALITY-GATE.md, TSC-ONBOARDING.md, REVIEWER-GUIDE.md,
+  RULE-PRODUCTION.md, the issue-to-proposal PR text) no longer describe
+  auto-merge, which has been off since 2026-06-03. The red-team and governance
+  pages no longer promise a `metadata_provenance.discovered_by` field no rule
+  has, and the home, red-team, about and quality-standard pages no longer
+  credit daily auto-crystallization for growth that came from CVE sweeps,
+  benchmark-miss mining and contributors. The sovereign-AI page no longer says
+  ATR detects intent and cannot be evaded; LIMITATIONS.md and the
+  responsible-use, integrate and research pages no longer say every rule
+  carries evasion tests or that there are 64; LIMITATIONS.md and
+  THREAT-MODEL.md now agree that the optional judge and embedding modules ship
+  but are off by default. "Sub-millisecond", "< 5ms", "5ms pattern match" and
+  "Done in 47ms" are replaced by how evaluation cost scales; the OpenShell
+  example is marked as a sketch of a proposal OpenShell closed, and its
+  timeouts now exceed a one-shot cold start. CITATION.cff no longer calls the
+  rules hand-authored and says what the safety gate checks for added and
+  changed rules; the OWASP PR text drops its 76-rule count and notes the PR
+  was withdrawn. Errata `e-2026-10-16-integration-status`,
+  `e-2026-10-16-evasion`, `e-2026-10-16-latency` and `e-2026-10-16-provenance`
+  record the site changes.
+- **A rule the engine does not evaluate no longer gets a false-positive
+  record.** `scripts/gate-promotion-fp.ts --emit-measurement` wrote
+  `fp_count: 0` for draft and deprecated rules, which the engine skips, so
+  nothing was counted for them. `detection_fingerprint` does not cover
+  `status`, so a one-line revival handed the rule that 0, and
+  `scripts/gate-action-eligibility.ts` trusted it: at maturity `test`, enough
+  for `block_tool`. Seven records in `data/benign-fp-measurement.json` were of
+  this kind. The measurement now asks the engine (`ATREngine.evaluates`) and
+  lists such a rule, or an id two loaded files share, under NOT MEASURED
+  instead. Without `--filter-mode` that fails the gate: promoting a rule the
+  engine does not evaluate no longer passes as clean.
+  `scripts/remeasure-benign-fp.ts` leaves the same rules out, and measures in
+  full, rather than extends, a record for a rule that was inert at its base
+  commit. `scripts/promote-to-stable.ts` no longer counts a draft rule at
+  maturity `test` as FP-clean.
+- **The action gate refuses evidence that holds a record for a rule that is
+  not live** (inert, or its file gone): exit 2, as for evidence taken on
+  another corpus. A record carries no status, so the gate cannot tell a count
+  taken while the rule was live from a 0 nothing measured, and left in place
+  either is trusted the day the rule is revived or restored. Deprecating or
+  deleting a rule now means re-emitting the evidence in the same change. The
+  gate also reads a status that is not a string (`status: [draft]`) as live,
+  as the engine does; it used to skip such a rule while the engine ran it.
+- **Two rule files with the same name are both measured.** The measurement
+  copied rule files into its scratch directory by file name, so of two
+  same-named files in different directories only the last was read, and the
+  other was reported clean.
+- **`scripts/promote-to-stable.ts` no longer promotes on a 0 it did not
+  measure.** A `maturity: test` rule whose conditions the benign corpus cannot
+  fully exercise (a field no sample fills, such as `tool_name`, or a method the
+  synchronous engine cannot run, such as `trace`) scored 0 false positives
+  without being read, and `--write` promoted it to `stable`. Such a rule is now
+  reported as not promotable; one that did false-positive stays with the rules
+  that have false positives. No `maturity: test` rule on main is affected today.
+- **verify-adopters.yml no longer fails when other commits land on main during
+  a run, and its failures get noticed.** The job commits the refreshed
+  `data/adopters-verification.json` straight to main with a plain push, which
+  was rejected whenever another commit landed first, failing the run with
+  nothing wrong in ADOPTERS.md (2026-10-07, 2026-10-15). It now rebases its
+  one-file commit onto the moved main and retries, at most three times; runs
+  one verification at a time per branch; and checks out the branch tip rather
+  than the triggering commit, so a run that waited behind another starts from
+  the data the other pushed instead of conflicting with it (the 2026-10-07
+  shape: two adopter merges, each run writing the same file). A conflict with
+  a hand edit of the generated file still fails the run. Four red runs in a
+  row (2026-10-12 to 10-15) went unnoticed for days; a failure on main now
+  opens one tracking issue, or rewrites the open one, and the next green run
+  closes it. The issue lists drift only from a verification that finished.
+
+## [4.1.5] - 2026-10-10
+
+4.1.4 was staged on npm and removed by publish-time scanning before it could be
+approved, like 4.1.1 to 4.1.3. 4.0.0 passed that scanning. What the 4.1 line
+added were rules whose test samples are complete attack snippets: a
+crypto-miner command line with a mining-pool URL, PHP, JSP and ASPX webshells,
+and a Node.js reverse shell. This release carries the 4.1.4 rules and engine,
+packaged without those samples.
+
+### Changed
+
+- **The npm package ships the rules without their test samples.** The release
+  workflow removes `test_cases` and `evasion_tests` from each rule just before
+  staging, after the tests have run on the full rules. The engine does not read
+  them, so detection is unchanged: the same rules load and the same rules fire.
+  The samples stay in the repository. With the package alone, `atr test` on a
+  bundled rule has no samples to run, and `atr stats` reports zero TP/TN
+  counts. DISCLOSURE says so.
+
+### Fixed
+
+- **ATR-2026-02600 no longer names a real public IP in its test samples.** Its
+  two reverse-shell samples now connect to the documentation ranges 203.0.113.14
+  and 192.0.2.4. The detection is unchanged.
+- **ATR-2026-02627 describes the web shells it detects instead of quoting
+  them.** Its description and one false-positive note quoted a working one-line
+  PHP command shell; they now say what it is. The detection is unchanged.
+
+### Changed
+
+- **npm releases go only through the staged path in `publish.yml`.** The
+  package is dual-use, so npm's policy lets CI stage a version but not publish
+  one; a maintainer promotes it with 2FA. Three workflows could still put a
+  version on the registry another way and have been removed:
+  `publish-current-version.yml` (direct `npm publish` through trusted
+  publishing), `publish-on-rules-merge.yml` (bumped and ran `npm publish` with
+  `NPM_TOKEN` on pushes to `main`) and `npm-stage.yml` (approved staged
+  versions from CI with `NPM_TOKEN`, skipping the maintainer's 2FA).
+  `scripts/release.sh` now stops at the tag push instead of also publishing
+  locally. No workflow references `NPM_TOKEN`, and
+  `tests/npm-release-path.test.ts` fails if any workflow other than
+  `publish.yml` gains a publish, stage or approve step.
+
+## [4.1.4] - 2026-10-07
+
+> Not published to npm (see 4.1.5).
+
+The first release since 4.0.0 meant to reach npm. 4.1.1, 4.1.2 and 4.1.3 were
+each blocked by npm's publish-time malware scanning, which reads the attack
+strings in rule files as malware, so `npm install agent-threat-rules` still
+returns 4.0.0. This release declares the package dual-use (see Changed below)
+and goes through npm's staged publishing, approved by a maintainer with 2FA. It
+carries everything listed under 4.1.3, 4.1.2, 4.1.1 and 4.1.0 below.
+
+### Added
+
+- **Four rules.** Each one passed the repository's PR checks, and is
+  experimental, maturity `test`, with alert-level response actions only:
+  - ATR-2026-02846: ignore-previous-and-following instructions (PromptInject
+    goal hijacking), a semantic rule with a narrow regex fallback.
+  - ATR-2026-02847: email exfiltration under a policy, audit or compliance
+    pretext.
+  - ATR-2026-02850: data exfiltration by email under a documentation pretext,
+    including French phrasings.
+  - ATR-2026-02851: a fake user turn inside content that instructs the agent to
+    send an email.
+  ATR-2026-02847, 02850 and 02851 come from human-written attack emails
+  (LLMail-Inject). They fire on none of 526 real emails or 694 benign web pages
+  presented as tool output, and each catches attack emails that were held out
+  while the rule was written.
+
+### Fixed
+
+- **pyATR falls back for regex conditions Python's `re` cannot compile** (such
+  as variable-width lookbehind) instead of dropping the condition (#554, thanks
+  @dc-tw).
+- **The test-case validator reads every key a test case can use.** It read four
+  of nine and misjudged rules whose cases use the others. Its failure count on
+  the current rules drops from 40 to 11, with no new failures (#607).
+
+### Security
+
+- **`atr tc pull` checks the rules a Threat Cloud endpoint returns before
+  writing them, and no longer goes through a shell.** The response is now
+  treated as untrusted: a rule is written only if its id has the form
+  `ATR-YYYY-NNNNN`, its category is one of the schema's categories and no rule
+  with that id is already in the repo; anything else is rejected without
+  touching the disk. The validator then runs as a separate Node.js process with
+  the file path as a plain argument. Before, the id and category came from the
+  response unchecked and the validator was started through a shell, so a
+  compromised or impersonated endpoint could affect the operator's machine
+  beyond the rules directory. The category is also read from the rule's `tags`,
+  not from the first `subcategory:` line in a compliance block, and the
+  validator is found next to the installed CLI rather than in the current
+  directory, so valid rules are no longer filed under the wrong directory or
+  rejected when the command runs outside a checkout of this repo.
+
+### Changed
+
+- **The package is declared dual-use under the npm Dual-Use Content Policy.**
+  npm's publish-time malware scanning, introduced in July 2026, blocked 4.1.1,
+  4.1.2 and 4.1.3: rule files carry attack strings by design, as detection
+  patterns and test samples, and the scanner treats them like malware.
+  `package.json` now carries `"contentPolicy": {"class": "dual-use"}`, and a
+  plain-text `DISCLOSURE` file at the package root says what the attack content
+  is for and what the package does not do. Under that policy, CI may only stage
+  a release; a maintainer approves it with 2FA before it goes live, so
+  `publish.yml` now stages through trusted publishing and waits for the approval
+  before creating the GitHub release.
+
+## [4.1.3] - 2026-10-06
+
+> Not published to npm (see 4.1.4).
+
+The first release of the 4.1 line to reach npm; 4.1.2 did not either. Its
+publish on 2026-10-01 went through trusted publishing (OIDC), printed
+`+ agent-threat-rules@4.1.2`, and was placed in npm's staging queue instead of
+being published. It never appeared on the registry, and a re-run on 2026-10-05
+was refused with E409 ("Cannot publish over previously staged version"), so the
+number is skipped like 4.1.1. The trusted publisher has since been set to allow
+direct publishing. Rules, engine and spec are unchanged from the `v4.1.2` tag.
+
+### Changed
+
+- **The release workflow fails when the version never reaches the registry.**
+  It now asks npm for the exact version after publishing, waits up to ten
+  minutes, and fails before the GitHub release is created. Before, the check
+  read `latest`, ran after the release, and only warned, which is how both 4.1.1
+  and 4.1.2 went green without being published (#633).
+
+## [4.1.2] - 2026-10-01
+
+> Not published to npm (see 4.1.3).
+
+The first release of the 4.1 line to reach npm. Until this one,
+`npm install agent-threat-rules` returned 4.0.0. 4.1.2 carries everything
+listed under 4.1.1 and 4.1.0 below. Rules, engine and spec are unchanged from
+the `v4.1.1` tag; the README rewords one row of its ETSI mapping, which had
+stated a conformance requirement as a fact about the corpus.
+
+Neither earlier 4.1 tag reached the registry:
+
+- `4.1.0` (tagged 2026-09-14): the publish step got E404 on the registry PUT.
+- `4.1.1` (tagged 2026-09-22): the tag-triggered publish failed with EOTP, npm
+  asking CI for a one-time password. A manual republish later that day was
+  placed in npm's staging queue instead of being published, and the retry on
+  2026-09-23 was refused with E409. npm does not allow publishing over a staged
+  version, so the number is skipped.
+
+The 4.1.1 entry below opens by calling itself the first 4.1 release to reach
+npm. It was not; the entry is otherwise left as written.
+
+### Changed
+
+- **Releases publish through npm trusted publishing (OIDC).** `publish.yml` no
+  longer reads a registry token. npm mints a short-lived credential for each
+  run, bound to this repository and that workflow file, and generates the
+  provenance attestation itself (#606).
+
+## [4.1.1] - 2026-09-22
+
+> Not published to npm (see 4.1.2).
+
+The first release of the 4.1 line to actually reach npm. `4.1.0` was tagged on
+2026-09-14 and never published — the publish step failed on an expired registry
+token and nobody was watching, so for 30 days `npm install agent-threat-rules`
+kept returning 4.0.0 while `main` moved 38 commits ahead. **4.1.1 carries
+everything listed under 4.1.0 below, plus the entries here.** The version number
+skips 4.1.0 on purpose, so that what is on npm and what the git tag points at are
+the same tree.
+
+### Security
+
+- **`ATR-2026-00220` condition 2 backtracked catastrophically**, the same defect
+  as condition 0 of the same rule, which was fixed in #531 — a quantified run of
+  base64 characters between two unbounded `.*` gaps, with a literal at the end.
+  Only condition 0 was rewritten at the time. Measured on Node against a
+  base64-dense single line with no matching tail: 0.5s at 1 KB, 3.4s at 2 KB,
+  **23.4s at 4 KB**. The gaps are now bounded and the run is fixed-length;
+  the same inputs measure under a millisecond at 64 KB. All five of the rule's
+  true positives still fire and all five true negatives stay clean, with
+  condition 2 matching exactly the cases it matched before.
+  Reported as GHSA-66x9-5vw9-3wv3 against condition 0, which 4.1.0 had already
+  fixed; this closes the half of the rule that report did not cover.
+- **The package no longer ships a default endpoint for detection data.**
+  Reporting has been opt-in since 4.1.0, but opting in without naming a
+  recipient silently picked one. `--report-to-cloud` now requires `--tc-url` or
+  `ATR_TC_URL` and exits with an error naming the fix if neither is set. ATR is
+  an open standard, not one collector's client: an operator who turns reporting
+  on decides who receives it, and there is no address in the package to forget
+  to change. Detection events now also carry an `X-ATR-Client-Id` header; the
+  previous vendor-named header is still sent so existing collectors keep working.
+
+> **Nine conditions still backtrack** and are listed in
+> [`data/redos-baseline.json`](data/redos-baseline.json) with measured
+> times — `ATR-2026-00285#0` and `ATR-2026-00272#0` are the worst at 16s and
+> 14s, and `ATR-2026-00707#0` is `maturity: stable`, which means it runs in the
+> enforce lane. The ReDoS gate is a ratchet against that file: a green gate
+> means nothing got worse, not that the class is closed. Do not read this
+> release as "ReDoS fixed".
+
+### Changed
+
+- `CHANGELOG.md` is now included in the npm tarball. The `files` allowlist had
+  excluded it, so a release that fixed a security defect arrived at consumers
+  with nothing in the package to say so.
+
+### Fixed — external claims that overstated what had happened
+
+- **The npm package `description` claimed a vendor product shipped the ATR rule
+  pack.** What actually happened is that rules were merged into
+  `cisco-ai-defense/skill-scanner`, an open-source scanner repository — not the
+  same thing as shipping inside that vendor's product. The blurb is the single
+  most-copied sentence in the project, so it now says what the package is and
+  makes no adoption claim at all (#580).
+- **Withdrew the two per-lane false-positive rates** published alongside the
+  enforce/hunt split. Three defects, any one of which is disqualifying: both
+  were measured on a subsample roughly a sixth of the corpus they were credited
+  to; the benign corpus contained real jailbreak samples — material the rules
+  are meant to catch, sitting in the set that defines a false positive — until
+  an exclusion filter landed on 2026-08-04 (#373); and the ladder that produced
+  the hunt figure depended on a file no longer in the repository, so that figure
+  cannot be reproduced at all. A gap is more useful to an adopter than a number
+  nobody can reproduce. Re-measurement against the current benign corpus is
+  pending, and neither figure should be cited by anyone until it lands (#579).
+- **Corrected the fiscal sponsor's legal identity.** Nine files carried an EIN
+  that corresponds to no organization, and five of them additionally described
+  the sponsor as a 501(c)(3) when it is a 501(c)(6). The distinction is
+  substantive rather than cosmetic: funders that restrict grants to 501(c)(3)
+  recipients would have been misled (#578).
+
+## [4.1.0] - 2026-09-14
+
+> **Never published to npm.** The tag `v4.1.0` exists, but the publish failed on
+> an expired registry token and was not retried for 30 days. This version number
+> does not exist on the registry and never will; everything below shipped in
+> 4.1.1 instead.
+
+At release: 825 rule files, 818 effective.
+
+### Added
+
+- **A benign-twin corpus: 1,788 benign counterparts to attack payloads**, across
+  17 files, counted at the `v4.1.0` tag. Built so that a rule which fires on the
+  harmless sibling of the attack it targets can be caught before it ships. It
+  demoted one production rule on arrival.
+- **Forty rules from the full proposal re-sweep**, landed as four batches of
+  ten, plus fifteen from the CVE proposal backlog (#503, #504).
+- **A precompiled rule digest for consumers that cannot take an engine**
+  (#510), with a Python-verified variant, and a PyRIT digest that carries
+  every field and names the scope it is safe to use (#511).
+- `pyatr` 0.3.0: bundle refreshed, and the behaviour that had blocked the
+  refresh unpinned (#507).
+
+### Fixed — catastrophic backtracking
+
+- **Eight rules could be made to backtrack catastrophically**; the patterns are
+  rewritten and a gate now blocks the class from returning (#531).
+  `ATR-2026-02610` condition 0 was fixed separately for the same defect.
+- **`ATR-2026-01005`, the many-shot rule, is now linear** without giving up RE2
+  portability — the obvious fix would have traded one for the other (#546).
+
+### Fixed
+
+- **Ten rules from the re-sweep were withheld rather than shipped**: each fired
+  on its own benign twin from the same run, so the twin corpus caught them
+  before release (#565). `ATR-2026-02604` was withheld earlier for the same
+  reason.
+- **`\u{...}` is a JavaScript-only escape, so ten rules never compiled outside
+  the TypeScript engine** — they were silently absent for every other consumer
+  (#509).
+- The Sigma exporter did not preserve ATR's regex case semantics (#520).
+- The AVID importer stopped at the API's page limit instead of enumerating all
+  reports (#534).
+- The quality gate now checks peer true negatives within the same PR (#529),
+  and the website shows the effective rule count rather than the raw file count.
+
+### Removed
+
+- The one-shot bootstrap publish workflow, once it had served its purpose
+  (#541).
+
+## [4.0.0] - 2026-08-22
+
+> Releases 3.5.1 through 3.5.12 were automated rule-publish releases cut from
+> this same stretch of history and were never given their own entries. A few
+> items below — the benchmark-number corrections in particular — were first
+> published in one of them rather than in 4.0.0.
+
 ### Changed — blocking is now opt-in (BREAKING for anyone relying on the old default)
 
 - **`atr guard` no longer emits a `permissionDecision` unless blocking is
@@ -357,7 +1539,49 @@ All notable changes to ATR will be documented in this file.
 
 No rule content changed and no threshold was loosened in any of the above.
 
+### Added — beyond the hook and lane work above
+
+- **The Cisco Skill Scanner pack is now a build artifact** rather than a
+  hand-assembled export (#495).
+- **A rule the benign corpus cannot see has not been measured** — CI now says
+  so instead of counting it clean (#460). The benign gate was also given the
+  two corpora it had been missing (#468).
+- `DETECTION-BOUNDARY.md` — what this layer detects and what it cannot (#461) —
+  and `ENFORCEMENT-MODEL.md`, which also made three contradicted statements
+  elsewhere in the docs true (#470).
+- `ATR-2026-02502`: covert remote-script injection into generated artifacts
+  (#462). The four tool-poisoning rules are mapped to MITRE ATLAS
+  `AML.T0110.000` (#465), and the CSA MAESTRO mapping is refreshed against the
+  current corpus (#464).
+
+### Fixed — the guard was not reading real events
+
+- **`atr guard` never read a real Claude Code event.** The shape it parsed was
+  not the shape the host sends (#483). The event shape now follows
+  `hook_event_name` as well as the dispatch, rather than the dispatch alone
+  (#487).
+
+### Fixed — rules that matched the wrong thing
+
+- `ATR-2026-00086` was detecting Russian, not spoofing (#489).
+- `ATR-2026-01904` read method calls as domains (#474).
+- `ATR-2026-00443` read an ordinary sentence as fragment assembly (#473).
+- `ATR-2026-01750` fired on descriptions of loops rather than demands for
+  output (#472).
+- An unquoted ATLAS `T0110.000` title broke the site build (#477).
+
+### Measurement
+
+- The benign false-positive evidence was re-derived at 785 rules (#497).
+- ATR was measured against 36,394 published ClawHub skills across three event
+  shapes (#490), and rule drift was measured against the 2026-04 wild scan
+  (#491).
+- The rule count in the standardization document was 357 rules out of date
+  (#479), and five benchmark corpora were refreshed (#478).
+
 ## [3.5.0] - 2026-06-16
+
+> **The two lane false-positive rates quoted in this 3.5.0 entry were withdrawn on 2026-09-19 and must not be cited.** The entry is left as published, because a changelog is a record of what was said at the time. See the withdrawal under [Unreleased] for the three defects that disqualified them; re-measurement is pending.
 
 ### Added
 
@@ -457,6 +1681,14 @@ No rule content changed and no threshold was loosened in any of the above.
 ### Metrics
 
 - HackAPrompt (4,780 samples): recall 28.6% → 66.2% (+37.6pp), 100% precision maintained.
+  - Erratum (2026-10-19): re-run on the same 4,780 samples at the sprint commits,
+    recall was 28.6% (1,368, at `3a6145b7`) → 65.0% (3,108, at `e9efefdd`) and
+    66.0% (3,154, at `92c0d0fe`); 66.2% could not be reproduced at either. The
+    28.6% starting point was itself in-sample (ATR-2026-00442..00447 were mined
+    from this subset). "100% precision" was not a measurement: the corpus has
+    no benign samples, so precision is undefined on it. Procedure and figures:
+    `data/hackaprompt/METHOD.md`; current measurement, with the ablation
+    reference: `data/measurements/hackaprompt/`.
 - garak (3,475 prompts): ATR-core families ~80%+; per-family breakdown: latentinjection 34.4%, sysprompt_extraction 67.9%, dan 90.2%.
 - PINT (850 samples): 0.25% FP maintained, 0 FP regression.
 - SKILL.md (341 samples): 100% precision, 0% FP, 0 FP regression.
@@ -525,6 +1757,13 @@ No rule content changed and no threshold was loosened in any of the above.
 
 ## [2.1.0] - 2026-05-09
 
+> **Historical entry — the AI RMF line below overstated coverage.**
+> "100% coverage of all 4 AI RMF functions" described the community OSCAL
+> catalog, which encodes all 72 AI RMF subcategories as controls. ATR's
+> rules map to a subset of those subcategories. The catalog is a community
+> contribution and is not endorsed by NIST. Do not quote the line as a
+> coverage claim. (Note added 2026-10-16.)
+
 ### Added
 
 - **NIST AI RMF mapping v0.2** — 100% coverage of all 4 AI RMF functions (Govern / Map / Measure / Manage), 72 controls + 31 cross-reference links + worked example profile. Schema-valid OSCAL catalog published under `Agent-Threat-Rule/ai-rmf-oscal-catalog` (PR #46).
@@ -535,6 +1774,14 @@ No rule content changed and no threshold was loosened in any of the above.
 - **OWASP/Agent-Security-Regression-Harness#74** merged 2026-05-11 by mertsatilmaz (OWASP Project Lead): "Welcome to the team."
 
 ## [2.0.11] - 2026-04-21
+
+> **Historical entry — do not quote the garak or SKILL.md figures below.**
+> The 97.1% in-the-wild recall was measured on a garak corpus that many of
+> this release's new rules were written from, so it is not an out-of-sample
+> result. The SKILL.md precision and FP figures are in-sample: the benign
+> set is the one the rules were tuned against. Current figures, reported
+> per lane and with their closed-book share, are in README §8 Evaluation.
+> (Note added 2026-10-16.)
 
 ### Added
 
@@ -575,6 +1822,14 @@ No rule content changed and no threshold was loosened in any of the above.
 - garak DanInTheWild coverage batch 8-9: jailbreak templates, emoji-flag, prompt-browser (ATR-00377~00392)
 
 ## [2.0.0] - 2026-04-15
+
+> **Historical entry — do not quote these figures as current.** The scan counts,
+> malware counts, benchmark rates and rule totals below are as published on
+> 2026-04-15 at 113 rules. The wild-scan figures in particular are under
+> reconciliation and are not a citable measurement; current corpus numbers live
+> in `data/stats.json` and in README §8 Evaluation. The "Cisco AI Defense" line
+> describes rules merged into the open-source `cisco-ai-defense/skill-scanner`
+> repository — it is not a statement about any vendor product.
 
 ### BREAKING
 
@@ -627,7 +1882,7 @@ No rule content changed and no threshold was loosened in any of the above.
 - Wild scan (96K): 1.35% flag rate, 751 confirmed malware
 - OWASP Agentic Top 10: 10/10 coverage
 - MITRE ATLAS: 100/113 rules mapped
-- SAFE-MCP: 91.8% technique coverage
+- SAFE-MCP: technique coverage figure (withdrawn 2026-10: it was not backed by rule-level data; see docs/SAFE-MCP-MAPPING.md)
 - Avg scan latency: 14ms per file
 
 ### Ecosystem

@@ -14,13 +14,14 @@ severity: high
 references:
   owasp_llm:
   - LLM01:2025
-  - LLM09:2025
+  - LLM07:2025
   owasp_agentic:
+  - ASI01:2026
   - ASI03:2026
-  - ASI09:2026
   mitre_atlas:
-  - AML.T0051 - LLM Prompt Injection
+  - AML.T0084.001 - Tool Definitions
   - AML.T0069 - Discover LLM System Information
+  - AML.T0051 - LLM Prompt Injection
 compliance:
   nist_ai_rmf:
   - subcategory: MS.2.7
@@ -57,7 +58,7 @@ detection:
   conditions:
   - field: content
     operator: regex
-    value: (?i)(?:list|show|give|tell\s+me|enumerate)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?(?:internal|hidden|admin(?:-only)?|privileged?|every)?\s*(?:functions?\s+or\s+tools?|tools?\s+(?:you\s+can\s+call|or\s+functions?)|internal\s+(?:functions?|tools?|api\s+endpoints?))[^.]{0,80}(?:you\s+can\s+call|admin-only|including\s+(?:any\s+)?admin|with\s+their\s+parameters|access\s+to)
+    value: (?i)(?:list|show|give|tell\s+me|enumerate)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?(?:(?:internal|hidden|admin(?:-only)?|privileged?|every)\s*)?(?:functions?\s+or\s+tools?|tools?\s+(?:you\s+can\s+call|or\s+functions?)|internal\s+(?:functions?|tools?|api\s+endpoints?))[^.]{0,80}(?:you\s+can\s+call|admin-only|including\s+(?:any\s+)?admin|with\s+their\s+parameters|access\s+to)
     description: Request to enumerate the agent's own internal/admin tools or functions
   - field: content
     operator: regex

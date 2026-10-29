@@ -24,7 +24,12 @@ interface ClawHubStats {
   flaggedCount: number;
 }
 
-// --- Mega Scan (96K ecosystem scan across 6 registries) ---
+// --- Mega Scan (per-registry crawl counts for the wild scan) ---
+// NOTE: this report's `totals` and `malware_campaign` are NOT citable. Its
+// totals describe the analysed subset of the wild scan, and its
+// confirmed_malware count is publisher-level attribution applied account-wide,
+// not per-file adjudication. Only the per-registry crawl counts are read from
+// here; the citable headline figures come from WildScanReport below.
 interface MegaScanReport {
   scan_date: string;
   engine_version?: string;
@@ -32,39 +37,21 @@ interface MegaScanReport {
   sources: Record<string, number>;
   totals: { scanned: number; flagged: number; flagged_rate?: string };
   severity: { critical: number; high: number; medium: number };
-  malware_campaign?: {
-    confirmed_malware: number;
-    threat_actors: Array<{
-      name: string;
-      skills: number;
-      malicious_rate: number;
-    }>;
-  };
 }
 
-// --- PINT Benchmark ---
-interface PintReport {
-  report: {
-    corpusSize: number;
-    overall: {
-      precision: number;
-      recall: number;
-      f1: number;
-      confusion: { tp: number; fp: number; tn: number; fn: number };
-    };
-  };
-}
-
-// --- Self-Test Eval ---
-interface EvalReport {
-  report: {
-    corpusSize: number;
-    overall: {
-      precision: number;
-      recall: number;
-      f1: number;
-    };
-  };
+// --- Wild Scan (the citable artifact) ---
+// data/full-scan-v2-2026-04-14.json is the only wild-scan artifact this repo
+// owns that preserved paths and rule ids. Per the standing freeze on wild-scan
+// figures, ONLY `total_scanned` / `total_flagged` / `engine.version` from this
+// file are citable externally. Confirmed-malware counts derived from it are
+// publisher attribution, not per-file analysis, and are not published here.
+// See docs/research/wild-scan-drift.md.
+interface WildScanReport {
+  timestamp: string;
+  engine: { version: string; rules: number };
+  total_scanned: number;
+  total_flagged: number;
+  severity: { critical: number; high: number; medium: number };
 }
 
 // --- Skill Scan ---
@@ -79,18 +66,6 @@ interface SkillScanReport {
     flagged_rate: string;
     severity_breakdown: { critical: number; high: number; medium: number };
   };
-}
-
-// --- Skill Benchmark ---
-interface SkillBenchmarkReport {
-  corpus_size: number;
-  malicious_count: number;
-  benign_count: number;
-  overall_recall: number;
-  overall_precision: number;
-  overall_f1: number;
-  fp_rate: number;
-  avg_latency_ms: number;
 }
 
 export interface SiteStats {
@@ -118,30 +93,11 @@ export interface SiteStats {
   megaScanSources: { openclaw: number; skillsSh: number };
   megaScanDate: string;
 
-  // PINT benchmark
-  pintSamples: number;
-  pintPrecision: number;
-  pintRecall: number;
-  pintF1: number;
-
-  // Self-test
-  selfTestSamples: number;
-  selfTestPrecision: number;
-  selfTestRecall: number;
-
   // Skill scan
   skillsScanned: number;
   skillPublishers: number;
   skillFlagged: number;
   skillAvgLatency: number;
-
-  // Skill benchmark
-  skillBenchSamples: number;
-  skillBenchRecall: number;
-  skillBenchPrecision: number;
-  skillBenchF1: number;
-  skillBenchFpRate: number;
-  skillBenchLatency: number;
 
   // CVEs
   cveCount: number;
@@ -154,9 +110,10 @@ export interface SiteStats {
   safeMcp: string;
   owaspAst10: string;
 
-  // Version-pinned benchmark measurements (canonical source for any
-  // public-facing recall claim). Reads from data/measurements/<source>/latest.json.
-  // Empty array if no measurements present yet.
+  // Version-pinned benchmark measurements: the only source for a recall,
+  // precision or false-positive figure on this site. Read from the file each
+  // data/measurements/<source>/latest.json points at; lib/recall.ts formats
+  // them with their lane. Empty array if no measurements present yet.
   benchmarks: BenchmarkMeasurement[];
 }
 
@@ -171,9 +128,40 @@ export interface EcosystemIntegration {
 }
 
 /**
- * One benchmark measurement, version-pinned and reproducible.
- * Loaded from data/measurements/<source>/latest.json. The full historical
- * series lives alongside as data/measurements/<source>/<date>_*.json.
+ * `breakdown.enforce_lane` of a measurement: the same attack samples through the
+ * same detection loop, on an engine that loads only `maturity: stable` rules
+ * (the lane to run with blocking on). It counts detections, so it is an upper
+ * bound on what blocking stops.
+ */
+export interface EnforceLaneFigure {
+  recall: number;
+  detected: number;
+  attacks: number;
+  rulesInLane: number;
+}
+
+/**
+ * `breakdown.in_sample_ablation[reference]` of a measurement: the same samples
+ * with the rules written from that corpus removed. It is the ablation reference
+ * to quote beside a partly in-sample headline. It approximates an out-of-sample
+ * figure; it is not one, and the site never calls it one.
+ */
+export interface AblationFigure {
+  /** Key of the cited ablation inside breakdown.in_sample_ablation. */
+  key: string;
+  rulesRemoved: number;
+  hunt: { recall: number; detected: number; attacks: number };
+  enforce: { recall: number; detected: number; attacks: number };
+}
+
+/**
+ * One benchmark measurement, version-pinned and reproducible: the file
+ * data/measurements/<source>/latest.json points at. The full historical series
+ * lives alongside as data/measurements/<source>/<date>_*.json.
+ *
+ * `recall`, `precision`, `f1`, `fp_rate` and the counts are the hunt lane (the
+ * engine default, every rule maturity); `enforce` is the enforce lane. Never
+ * show `recall` without `enforce` where the measurement records it.
  */
 export interface BenchmarkMeasurement {
   /** Stable lowercase source identifier (e.g. "garak", "pint"). */
@@ -196,49 +184,146 @@ export interface BenchmarkMeasurement {
   f1: number;
   /** False-positive rate as a fraction in [0,1]. */
   fp_rate: number;
+  /** Attack samples detected (confusion.tp); null when the file records no confusion matrix. */
+  detected: number | null;
+  /** Attack samples evaluated (confusion.tp + confusion.fn). */
+  attacks: number | null;
+  /** Benign samples (confusion.tn + confusion.fp) and the false positives among them. */
+  benign: number | null;
+  falsePositives: number | null;
+  /** The enforce lane; null when the measurement predates that record. */
+  enforce: EnforceLaneFigure | null;
+  /** The ablation reference; null when the measurement records no in-sample ablation. */
+  ablation: AblationFigure | null;
+  /** breakdown.provenance.rows_total: rows of the dataset the samples were drawn from; null when not recorded. */
+  population: number | null;
+  /** breakdown.layers (the SKILL.md benchmark's attack layers), hunt lane. */
+  layers: Record<string, { total: number; detected: number }> | null;
   /** Repo-relative path of the immutable measurement file. */
   measurement_file: string;
 }
 
+/** The slice of a measurement file the site reads (src/measurement/schema.ts). */
+interface MeasurementFile {
+  source: string;
+  source_version: string;
+  atr_version: string;
+  measured_at: string;
+  samples: number;
+  metrics: { recall: number; precision: number; f1: number; fp_rate: number };
+  confusion?: { tp: number; fp: number; tn: number; fn: number };
+  breakdown?: { enforce_lane?: unknown; layers?: unknown; in_sample_ablation?: unknown; provenance?: unknown };
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+const isCount = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0;
+
 /**
- * Load every latest measurement from data/measurements/<source>/latest.json.
- * Returns an empty array if the directory is absent. Skips sources whose
- * latest.json fails to parse (logs to console — not thrown — so a bad source
- * does not break site rendering).
+ * `breakdown.enforce_lane`, or null when the measurement predates it. A record
+ * that is present but malformed throws: showing the hunt figure alone would
+ * drop exactly the number the record exists to put beside it.
+ */
+function enforceLaneOf(raw: unknown): EnforceLaneFigure | null {
+  if (raw === undefined) return null;
+  if (!isRecord(raw) || raw.lane !== "enforce" || !isCount(raw.detected) || !isCount(raw.attacks)
+    || raw.attacks === 0 || !isCount(raw.rules_in_lane) || typeof raw.recall !== "number") {
+    throw new Error("breakdown.enforce_lane is malformed");
+  }
+  return { recall: raw.recall, detected: raw.detected, attacks: raw.attacks, rulesInLane: raw.rules_in_lane };
+}
+
+function ablationLane(raw: unknown): AblationFigure["hunt"] {
+  if (!isRecord(raw) || !isCount(raw.detected) || !isCount(raw.attacks) || raw.attacks === 0
+    || typeof raw.recall !== "number") {
+    throw new Error("breakdown.in_sample_ablation lane is malformed");
+  }
+  return { recall: raw.recall, detected: raw.detected, attacks: raw.attacks };
+}
+
+/**
+ * The cited ablation, or null when the measurement records none. Present but
+ * malformed throws, as for the enforce lane: the headline must not lose the
+ * figure it is meant to travel with.
+ */
+export function ablationOf(raw: unknown): AblationFigure | null {
+  if (raw === undefined) return null;
+  if (!isRecord(raw) || typeof raw.reference !== "string") throw new Error("breakdown.in_sample_ablation has no reference");
+  const rec = raw[raw.reference];
+  if (!isRecord(rec) || !Array.isArray(rec.removed_rule_ids) || !isRecord(rec.lanes)) {
+    throw new Error(`breakdown.in_sample_ablation.${raw.reference} is malformed`);
+  }
+  return {
+    key: raw.reference,
+    rulesRemoved: rec.removed_rule_ids.length,
+    hunt: ablationLane(rec.lanes.hunt),
+    enforce: ablationLane(rec.lanes.enforce),
+  };
+}
+
+/** breakdown.provenance.rows_total, or null. */
+export function populationOf(raw: unknown): number | null {
+  return isRecord(raw) && isCount(raw.rows_total) ? raw.rows_total : null;
+}
+
+function layersOf(raw: unknown): BenchmarkMeasurement["layers"] {
+  if (!isRecord(raw)) return null;
+  const entries = Object.entries(raw).flatMap(([k, v]) =>
+    isRecord(v) && isCount(v.total) && isCount(v.detected) ? [[k, { total: v.total, detected: v.detected }] as const] : [],
+  );
+  return Object.fromEntries(entries);
+}
+
+/**
+ * Read the measurement file `latest.json` names. Every figure comes from that
+ * file, the same one README's table and the citation checks read.
+ */
+function readMeasurement(entry: string, dir: string): BenchmarkMeasurement {
+  const pointer = JSON.parse(readFileSync(join(dir, "latest.json"), "utf-8")) as { file?: unknown };
+  if (typeof pointer.file !== "string" || pointer.file.includes("/") || pointer.file.includes("\\")) {
+    throw new Error("latest.json does not name a file in its own directory");
+  }
+  const m = JSON.parse(readFileSync(join(dir, pointer.file), "utf-8")) as MeasurementFile;
+  const c = m.confusion;
+  return {
+    source: m.source,
+    source_version: m.source_version,
+    atr_version: m.atr_version,
+    measured_at: m.measured_at,
+    measured_date: m.measured_at.slice(0, 10),
+    samples: m.samples,
+    recall: m.metrics.recall,
+    precision: m.metrics.precision,
+    f1: m.metrics.f1,
+    fp_rate: m.metrics.fp_rate,
+    detected: c ? c.tp : null,
+    attacks: c ? c.tp + c.fn : null,
+    benign: c ? c.tn + c.fp : null,
+    falsePositives: c ? c.fp : null,
+    enforce: enforceLaneOf(m.breakdown?.enforce_lane),
+    ablation: ablationOf(m.breakdown?.in_sample_ablation),
+    population: populationOf(m.breakdown?.provenance),
+    layers: layersOf(m.breakdown?.layers),
+    measurement_file: `data/measurements/${entry}/${pointer.file}`,
+  };
+}
+
+/**
+ * Load every source's current measurement. Returns an empty array if the
+ * directory is absent. A source whose files fail to read is skipped with a
+ * warning (not thrown, so one bad source does not break the build), and every
+ * page that cites it then shows no figure for it rather than a stale one.
  */
 function loadBenchmarkMeasurements(): BenchmarkMeasurement[] {
   if (!existsSync(MEASUREMENTS_DIR)) return [];
   const out: BenchmarkMeasurement[] = [];
   for (const entry of readdirSync(MEASUREMENTS_DIR)) {
     const dir = join(MEASUREMENTS_DIR, entry);
-    if (!statSync(dir).isDirectory()) continue;
-    const latest = join(dir, "latest.json");
-    if (!existsSync(latest)) continue;
+    if (!statSync(dir).isDirectory() || !existsSync(join(dir, "latest.json"))) continue;
     try {
-      const raw = JSON.parse(readFileSync(latest, "utf-8")) as {
-        source: string;
-        source_version: string;
-        atr_version: string;
-        measured_at: string;
-        samples: number;
-        file: string;
-        metrics: { recall: number; precision: number; f1: number; fp_rate: number };
-      };
-      out.push({
-        source: raw.source,
-        source_version: raw.source_version,
-        atr_version: raw.atr_version,
-        measured_at: raw.measured_at,
-        measured_date: raw.measured_at.slice(0, 10),
-        samples: raw.samples,
-        recall: raw.metrics.recall,
-        precision: raw.metrics.precision,
-        f1: raw.metrics.f1,
-        fp_rate: raw.metrics.fp_rate,
-        measurement_file: `data/measurements/${entry}/${raw.file}`,
-      });
+      out.push(readMeasurement(entry, dir));
     } catch (err) {
-      console.warn(`benchmark measurement ${entry}/latest.json failed to parse:`, err);
+      console.warn(`benchmark measurement ${entry} could not be read:`, err);
     }
   }
   return out.sort((a, b) => a.source.localeCompare(b.source));
@@ -288,15 +373,11 @@ export function loadSiteStats(): SiteStats {
   const mega = readJson<MegaScanReport>(
     join(DATA_DIR, "mega-scan-report.json"),
   );
-  const pint = readJson<PintReport>(
-    join(DATA_DIR, "pint-benchmark", "pint-eval-report.json"),
+  const wild = readJson<WildScanReport>(
+    join(DATA_DIR, "full-scan-v2-2026-04-14.json"),
   );
-  const eval_ = readJson<EvalReport>(join(DATA_DIR, "eval-report.json"));
   const skillScan = readJson<SkillScanReport>(
     join(DATA_DIR, "skill-scan-report-full.json"),
-  );
-  const skillBench = readJson<SkillBenchmarkReport>(
-    join(DATA_DIR, "skill-benchmark", "benchmark-report.json"),
   );
   const statsJson = readJson<{ generatedAt?: string }>(
     join(DATA_DIR, "stats.json"),
@@ -344,50 +425,35 @@ export function loadSiteStats(): SiteStats {
     clawHubHigh: clawhub?.summary?.HIGH ?? 1124,
     clawHubScanDate: clawhub?.scanDate ?? "2026-03-26",
 
-    megaScanTotal: mega?.totals?.scanned ?? 96096,
-    megaScanFlagged: mega?.totals?.flagged ?? 1302,
-    megaScanCritical: mega?.severity?.critical ?? 989,
-    megaScanHigh: mega?.severity?.high ?? 353,
+    // Frozen artifact — these four come from full-scan-v2-2026-04-14.json,
+    // the only wild-scan figures cleared for external citation
+    // (101,280 scanned / 1,434 flagged, engine v2.0.0, as of 2026-04-13).
+    megaScanTotal: wild?.total_scanned ?? 101280,
+    megaScanFlagged: wild?.total_flagged ?? 1434,
+    megaScanCritical: wild?.severity?.critical ?? 1210,
+    megaScanHigh: wild?.severity?.high ?? 282,
     megaScanSources: {
       openclaw: mega?.sources?.openclaw ?? 56480,
       skillsSh: mega?.sources?.skills_sh ?? 3115,
     },
-    megaScanDate: mega?.scan_date ?? "2026-04-14",
+    megaScanDate: wild?.timestamp?.slice(0, 10) ?? "2026-04-13",
 
-    pintSamples: pint?.report?.corpusSize ?? 850,
-    pintPrecision:
-      Math.round((pint?.report?.overall?.precision ?? 0.9965) * 1000) / 10, // 99.7%
-    pintRecall:
-      Math.round((pint?.report?.overall?.recall ?? 0.6319) * 1000) / 10, // 63.2%
-    pintF1: Math.round((pint?.report?.overall?.f1 ?? 0.7599) * 1000) / 10, // 76.0%
-
-    selfTestSamples: eval_?.report?.corpusSize ?? 341,
-    selfTestPrecision:
-      Math.round((eval_?.report?.overall?.precision ?? 0.997) * 1000) / 10,
-    selfTestRecall:
-      Math.round((eval_?.report?.overall?.recall ?? 0.994) * 1000) / 10,
+    // PINT-format, self-test and SKILL.md figures used to be read here from
+    // the eval report files, with hand-written fallbacks (among them a
+    // self-test recall of 99.4% that no measurement file records) and no lane.
+    // They now come only from `benchmarks`, with the lane; see lib/recall.ts.
 
     skillsScanned: skillScan?.scan_metadata?.total_skills_scanned ?? 3115,
     skillPublishers: skillScan?.scan_metadata?.total_publishers ?? 104,
     skillFlagged: skillScan?.summary?.flagged ?? 26,
     skillAvgLatency: skillScan?.scan_metadata?.avg_latency_ms ?? 5.39,
 
-    skillBenchSamples: skillBench?.corpus_size ?? 498,
-    skillBenchRecall:
-      Math.round((skillBench?.overall_recall ?? 1.0) * 1000) / 10,
-    skillBenchPrecision:
-      Math.round((skillBench?.overall_precision ?? 0.97) * 1000) / 10,
-    skillBenchF1: Math.round((skillBench?.overall_f1 ?? 0.984) * 1000) / 10,
-    skillBenchFpRate: Math.round((skillBench?.fp_rate ?? 0) * 1000) / 10,
-    skillBenchLatency:
-      Math.round((skillBench?.avg_latency_ms ?? 3.52) * 10) / 10,
-
     cveCount: cves.size || 16,
 
     ecosystemIntegrations: ecosystemFromAdopters(),
 
     owaspAgentic: "10/10",
-    safeMcp: "78/85 (91.8%)",
+    safeMcp: "55/78",
     owaspAst10: "7/10",
 
     benchmarks: loadBenchmarkMeasurements(),

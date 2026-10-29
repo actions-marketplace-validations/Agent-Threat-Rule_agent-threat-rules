@@ -24,7 +24,7 @@ references:
     - "LLM04:2025"
     - "LLM01:2025"
   owasp_agentic:
-    - "ASI03:2026"
+    - "ASI04:2026"
   mitre_atlas:
     - "AML.T0018.000 - Poison AI Model"
     - "AML.T0051 - LLM Prompt Injection"
@@ -72,7 +72,7 @@ detection:
       description: "ASB canonical @_@ trigger — rare in organic text, specific POT artifact"
     - field: user_input
       operator: regex
-      value: "(?i)^.{15,}[.!?]?\\s+:(?:[)DoP])\\s*\\.?\\s*$"
+      value: "(?i)^.{15}(?:.*\\S)?[.!?]?\\s+:(?:[)DoP])\\s*(?:\\.\\s*)?$"
       description: "Emoticon :) appended as terminal suffix to a task request (≥15 char task prefix)"
   condition: any
   semantic:

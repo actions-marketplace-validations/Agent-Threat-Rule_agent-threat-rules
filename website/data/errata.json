@@ -1,4 +1,95 @@
 {
-  "lastUpdated": "2026-05-26",
-  "entries": []
+  "lastUpdated": "2026-10-19",
+  "entries": [
+    {
+      "id": "e-2026-10-19-red-team-sprint",
+      "version": "2.2.0–4.1.5",
+      "section": "/red-team: 2026-05-12 sprint and 2026-06 mega-scan sections; CHANGELOG 2.2.0",
+      "summary_en": "The /red-team page and the 2.2.0 CHANGELOG entry said HackAPrompt recall rose from 28.6% to 66.2%, with 100% precision, and that the sprint's 75 rules and the mega-scan's 29 rules all passed the quality gate with 0 benign false positives. Re-run on 2026-10-19: on the same 4,780 HackAPrompt prompts, 66.2% could not be reproduced at the sprint commits e9efefdd and 92c0d0fe (65.0% and 66.0%); the 28.6% was itself in-sample, and the corpus has no benign samples, so no precision was measured. The sprint commits added 71 rule files (the 75 also counted four CVE rules added earlier the same day, in commit 80dbd0ab, before the sprint commits). No record of the gate's runs was committed; re-running it, 10 of the 71 failed at 92c0d0fe (own true positives) with none flagging a benign SKILL.md file, and at main b9d16840 on 2026-10-22 (the same as the 2026-10-19 run at 9d74fc50) 33 of 71 and 4 of 29 fail, 26 and 3 flagging at least one benign sample, none of them in the enforce lane. The page now quotes these measurements (data/gate-reruns/2026-10-19_red-team-rule-batches.json, data/hackaprompt/METHOD.md) and, beside each corpus's recall, its ablation reference from the measurement file.",
+      "summary_zh": "/red-team 頁面與 2.2.0 版 CHANGELOG 原本寫 HackAPrompt 召回率從 28.6% 升到 66.2%、precision 100%，並說該次 sprint 的 75 條規則與 2026-06 巨量掃描的 29 條規則都通過品質門檻、良性樣本 0 誤報。2026-10-19 重跑結果：在同一份 4,780 筆 HackAPrompt prompt 上，66.2% 在 sprint 的兩個 commit（e9efefdd、92c0d0fe）都無法重現（分別為 65.0% 與 66.0%）；28.6% 本身也屬樣本內；這份語料沒有良性樣本，所以根本沒有量過 precision。sprint 的兩個 commit 新增的是 71 個規則檔（75 另外算進了同一天稍早、在 sprint 之前由 commit 80dbd0ab 加入的 4 條 CVE 規則）。門檻當時的執行紀錄沒有 commit；重跑後，在 92c0d0fe 時 71 條中有 10 條未通過（true positive 沒命中），沒有一條在良性 SKILL.md 上誤報；在 2026-10-22 的 main（b9d16840）上，71 條中 33 條、29 條中 4 條未通過（與 2026-10-19 在 9d74fc50 的結果相同），其中 26 條與 3 條至少誤報 1 筆良性樣本，都不在 enforce lane。頁面現在引用這些實測（data/gate-reruns/2026-10-19_red-team-rule-batches.json、data/hackaprompt/METHOD.md），並在每個語料庫的召回率旁附上量測檔中的消融參考值。",
+      "date": "2026-10-19",
+      "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/pull/691"
+    },
+    {
+      "id": "e-2026-10-19-regex-dialect",
+      "version": "3.5.12–4.1.5",
+      "section": "SPEC.md §6.4 Regular-Expression Dialect (ATR Core 1.0.0)",
+      "summary_en": "SPEC.md 1.0.0 §6.4, as revised on 2026-07-19, said: \"A conforming Engine MUST strip that leading group from the pattern and apply the corresponding RegExp flags (i, m, s).\" Read that way, a pattern without (?i) is case-sensitive, and (?s) and (?m) switch on dotAll and multiline mode. The reference engine and pyATR do neither: they remove the group, match every regex condition case-insensitively, and ignore m, s and x. Seven true-positive fixtures of the conformance suite, unchanged since 2026-05-16, need case-insensitive matching, so an engine built to that sentence could not pass Section 12. SPEC.md 1.0.1 states the reference engine's behavior; no rule, no fixture and no reference-engine match changed. The Sigma exporter no longer copies m and s into the patterns it writes; other exports that still follow the 1.0.0 wording are listed in issue #698.",
+      "summary_zh": "SPEC.md 1.0.0 第 6.4 節（2026-07-19 修訂）原文：「A conforming Engine MUST strip that leading group from the pattern and apply the corresponding RegExp flags (i, m, s).」照這句話，沒有 (?i) 的 pattern 會區分大小寫，(?s) 與 (?m) 會開啟 dotAll 與 multiline 模式。參考引擎與 pyATR 都不是這樣運作：它們移除該群組後，所有 regex 條件一律不分大小寫比對，m、s、x 不起作用。conformance 測試套件中有七個自 2026-05-16 起未變動的 true-positive fixture 需要不分大小寫比對，照這句話實作的引擎無法通過第 12 節。SPEC.md 1.0.1 改為描述參考引擎的實際行為；沒有任何規則、fixture 或參考引擎的比對結果因此改變。Sigma 匯出工具已不再把 m 與 s 複製進輸出的 pattern；其他仍照 1.0.0 文字的匯出工具列在 issue #698。",
+      "date": "2026-10-19",
+      "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/issues/698"
+    },
+    {
+      "id": "e-2026-10-16-integration-status",
+      "version": "4.1.5",
+      "section": "Site-wide — integration and proposal status",
+      "summary_en": "The red-team page listed seven proposals as under review. No maintainer had replied to six of them (HarmBench #93, AgentDojo #160, JailbreakBench #48, Counterfit #96, PromptInject #9, Damn Vulnerable MCP Server #29), and the seventh, NVIDIA garak PR #1676, had sat in changes-requested since April. None was merged: their ATR author withdrew garak #1676 on 2026-08-04 and the other six on 2026-10-14 and 2026-10-15. They are removed, and the garak, sovereign-AI and responsible-use pages no longer describe the garak integration as open; the sovereign-AI page also drops a garak \"32/32\" mapping figure that had no source. The integrate page said OWASP PRs were under review; none is open. The red-team page's \"On deck\" schedule listed filing dates in May and June that had passed, most of them without a filing, and is removed. The garak page said rule PRs are auto-merged; the repository has auto-merge turned off and a maintainer merges each one. It also linked a bridge script that had been moved out of the public repository, and now says so.",
+      "summary_zh": "red-team 頁把七個提案列為「審查中」。其中六個（HarmBench #93、AgentDojo #160、JailbreakBench #48、Counterfit #96、PromptInject #9、Damn Vulnerable MCP Server #29）從來沒有維護者回覆，第七個 NVIDIA garak PR #1676 從四月起停在 changes-requested。七個都沒有合併：ATR 作者在 2026-08-04 撤回 garak #1676，其餘六個在 2026-10-14 與 2026-10-15 撤回。這些已從頁面移除；garak、主權 AI 與負責任使用三頁也不再把 garak 整合寫成進行中，主權 AI 頁並拿掉沒有出處的 garak「32/32」對應數字。integrate 頁說 OWASP PR 審查中，其實沒有任何一個還開著。red-team 頁的「下一波」排程列的是五、六月的送出日期，日期已過、多數沒有送出，整段移除。garak 頁說規則 PR 會自動合併；repo 已關閉 auto-merge，每個 PR 都由維護者合併。這一頁原本連到一支已移出公開 repo 的橋接腳本，現在照實說明。",
+      "date": "2026-10-16"
+    },
+    {
+      "id": "e-2026-10-16-evasion",
+      "version": "4.1.5",
+      "section": "Site-wide — detection method and evasion",
+      "summary_en": "The sovereign-AI page said ATR detects behavioral intent rather than string signatures and that attackers cannot evade it. Almost every ATR rule is a set of regular expressions (a few also define an optional model judge, which the engine calls only when an operator configures one), and paraphrased, translated or encoded payloads can slip past them. The responsible-use and integrate pages said ATR documents 64 evasion techniques in per-rule evasion_tests fields, and the research page linked to \"64 evasion tests\"; fewer than half of the rules carry evasion tests, and 64 was the count from March 2026.",
+      "summary_zh": "主權 AI 頁說 ATR 偵測的是行為意圖而不是字串特徵，攻擊者無法繞過。ATR 的規則幾乎都是 regex（少數規則另外定義了選用的模型判斷，只有使用者自行設定時引擎才會呼叫），改寫、翻譯或編碼過的 payload 都可能繞過。負責任使用頁與 integrate 頁說 ATR 在各規則的 evasion_tests 欄位記錄了 64 種繞過手法，research 頁的連結也寫「64 個 evasion test」；其實不到一半的規則附有 evasion tests，64 是 2026 年 3 月時的數字。",
+      "date": "2026-10-16"
+    },
+    {
+      "id": "e-2026-10-16-latency",
+      "version": "4.1.5",
+      "section": "Site-wide — latency and dependencies",
+      "summary_en": "The site gave ATR's latency as sub-millisecond, under 5 ms, a 5 ms pattern match, or a 47 ms scan. The cost of one evaluation grows with the length of the input and with the number of rules in the lane: with every rule loaded, the median call takes about a millisecond for a short prompt and tens of milliseconds for a multi-kilobyte SKILL.md file, and a one-shot run first spends hundreds of milliseconds to about a second starting Node and loading the rules. scripts/bench-evaluate-latency.ts measures it on your hardware. The site also called the package dependency-free; it has two runtime dependencies.",
+      "summary_zh": "網站把 ATR 的延遲寫成不到一毫秒、低於 5ms、5ms 的 pattern match，或 47ms 完成一次掃描。每次評估的耗時會隨輸入長度和該 lane 的規則數增加：載入全部規則時，短 prompt 的中位數約一毫秒，數 KB 的 SKILL.md 檔要數十毫秒；單次執行還要先花數百毫秒到約一秒啟動 Node、載入規則。scripts/bench-evaluate-latency.ts 可以在你的硬體上實測。網站也說這個套件沒有任何相依套件；它有兩個執行期相依套件。",
+      "date": "2026-10-16"
+    },
+    {
+      "id": "e-2026-10-16-provenance",
+      "version": "4.1.5",
+      "section": "Site-wide — rule provenance and growth",
+      "summary_en": "The red-team and governance pages said every rule records its discoverer in metadata_provenance.discovered_by; no rule has that field. Every rule has an author line and a stable ID, and 378 of 836 record their source in metadata_provenance. The home, red-team, about and quality-standard pages said the standard grows from 462 rules through daily auto-crystallization. None of the 374 rules added since v3.1.0 (2026-06-04) came from crystallization; they came from CVE and advisory sweeps, benchmark-miss mining and contributors, and each reached main through a pull request a maintainer merged. The about page also said v2.0.11's rules covered the full NVIDIA garak probe corpus; many were written from it.",
+      "summary_zh": "red-team 頁與治理頁說每條規則都在 metadata_provenance.discovered_by 記錄發現者；其實沒有任何一條規則有這個欄位。每條規則都有 author 欄位和固定的 ID，836 條中有 378 條在 metadata_provenance 記錄來源。首頁、red-team、關於與品質標準四頁說標準靠每日自動結晶從 462 條長大；v3.1.0（2026-06-04）之後新增的 374 條規則沒有一條來自結晶，而是來自 CVE 與安全公告掃描、benchmark 漏報挖掘與貢獻者，每一條都經由維護者合併的 pull request 進入 main。關於頁也說 v2.0.11 的規則涵蓋完整的 NVIDIA garak probe corpus；其實是其中不少條從它寫出來。",
+      "date": "2026-10-16"
+    },
+    {
+      "id": "e-2026-10-16-recall-lanes",
+      "version": "4.1.5",
+      "section": "§8 Evaluation — recall lanes",
+      "summary_en": "Recall figures on this site, in LIMITATIONS.md and in CITATION.cff were quoted as one number: the hunt lane, the engine default that loads every rule maturity, without the enforce lane, the one to run with blocking on, which loads only stable rules and detects far fewer of the same attacks. Most were also typed by hand at ATR 3.5.12. Every recall read from the measurement files now names its lane, gives the enforce figure where the measurement records one, and is read at build time from the file each latest.json points at. The garak, PINT-format and HackAPrompt figures are now marked partly closed-book: rules were written from those corpora, so their hunt figures are not out-of-sample results.",
+      "summary_zh": "本站、LIMITATIONS.md 與 CITATION.cff 上的召回率過去都只列一個數字：hunt 車道（引擎預設，載入所有成熟度的規則），沒有列 enforce 車道（開啟封鎖時要用、只載入 stable 規則，在同一批攻擊上偵測到的少得多）。其中多數還是在 ATR 3.5.12 時手寫的。現在凡是從量測檔讀出的召回率都標明車道，量測有記錄的就並列 enforce 數字，並在建置時從各 latest.json 指向的量測檔讀取。garak、PINT 格式與 HackAPrompt 的數字現在都標為部分 closed-book：有規則正是從這些語料寫出來的，所以它們的 hunt 數字不是樣本外成績。",
+      "date": "2026-10-16"
+    },
+    {
+      "id": "e-2026-09-22-lane-fp",
+      "version": "3.5.0",
+      "section": "§8 Evaluation — detection lanes",
+      "summary_en": "The per-lane false-positive rates published for the enforce and hunt lanes are withdrawn. The benign corpus they were measured against was found to contain real jailbreak samples, so the measurement basis did not hold. No per-lane figure should be cited until a re-measurement is published. Lane definitions themselves are unchanged.",
+      "summary_zh": "enforce 與 hunt 兩條車道所公布的誤報率數字已撤回。量測所用的良性語料被發現混入真實越獄樣本，量測基準站不住。在重測結果發布前，任何人都不應引用這些數字。車道定義本身不變。",
+      "date": "2026-09-22"
+    },
+    {
+      "id": "e-2026-09-22-wild-scan",
+      "version": "2.0.0",
+      "section": "§8 Evaluation — wild scan",
+      "summary_en": "Wild-scan headline figures are frozen. Only the totals from data/full-scan-v2-2026-04-14.json are citable: 101,280 items scanned, 1,434 flagged, engine v2.0.0, as of 2026-04-13. The analysed-subset totals and the confirmed-malware count previously quoted on this site are withdrawn — the confirmed set was adjudicated account-wide (publisher attribution), not per file, and no precision figure is derivable from it.",
+      "summary_zh": "野外掃描的頭條數字已凍結。僅 data/full-scan-v2-2026-04-14.json 的總數可對外引用：101,280 個掃描項目、1,434 個標記項目，engine v2.0.0，資料日期 2026-04-13。本站過去引用的分析子集總數與「已確認惡意」數量已撤回 —— 該集合是以整個帳號為單位裁定的發布者層級歸因，不是逐檔判讀，也推導不出 precision。",
+      "date": "2026-09-22"
+    },
+    {
+      "id": "e-2026-09-22-pint",
+      "version": "3.5.12",
+      "section": "§8 Evaluation — PINT-format corpus",
+      "summary_en": "The single-figure precision previously published for the PINT-format corpus is withdrawn and replaced by the version-pinned measurement in data/measurements/pint/latest.json: 65.4% recall with zero false positives on the corpus's 399 benign samples, at ATR 3.5.12, measured 2026-08-15. This corpus is self-built in PINT's format from deepset/prompt-injections and Lakera/gandalf_ignore_instructions; it is not a run of Lakera's official PINT benchmark, and only a small subset of rules fire on it.",
+      "summary_zh": "過去為 PINT 格式語料公布的單一 precision 數字已撤回，改以 data/measurements/pint/latest.json 的版本綁定量測為準：recall 65.4%，在該語料 399 個良性樣本上 0 誤報（ATR 3.5.12，量測於 2026-08-15）。該語料是以 deepset/prompt-injections 與 Lakera/gandalf_ignore_instructions 自建的 PINT 格式語料，不是 Lakera 官方 PINT benchmark 的跑分，且只有一小部分規則會在上面開火。",
+      "date": "2026-09-22"
+    },
+    {
+      "id": "e-2026-09-22-adoption-wording",
+      "version": "3.5.12",
+      "section": "§7 Conformance — implementer report",
+      "summary_en": "Adoption wording corrected. Merged pull requests in vendors' open-source repositories were described on this site as vendor production deployments. They are merged pull requests in public repositories — notably cisco-ai-defense/skill-scanner — and are not statements about any vendor's commercial product. Every implementer entry now states its evidence as the merged pull request it is.",
+      "summary_zh": "採用說法已修正。本站過去把廠商開源 repo 裡已合併的 PR 寫成「廠商生產環境部署」。實際上那是公開 repo（尤其是 cisco-ai-defense/skill-scanner）裡已合併的 pull request，不是對任何廠商商業產品的陳述。現在每一筆採用紀錄都直接以已合併的 PR 作為佐證。",
+      "date": "2026-09-22"
+    }
+  ]
 }

@@ -30,6 +30,22 @@ export interface MeasurementsAggregate {
   sources_pending: string[];
   /** Sources where `latest.json` exists but failed schema validation. */
   sources_broken: { source: string; reason: string }[];
+  /**
+   * Sources whose measurement file declares `breakdown.precision_not_citable`:
+   * too few benign samples for a precision or FP-rate claim. Their precision,
+   * F1 and FP rate are projected as null, not as the bare ratio.
+   */
+  precision_not_citable: string[];
+}
+
+/** The breakdown key a measurement uses to say its precision / FP rate must not be cited. */
+export const PRECISION_NOT_CITABLE_KEY = "precision_not_citable";
+
+function declaresPrecisionNotCitable(sourceDir: string, file: string): boolean {
+  const path = join(sourceDir, file);
+  if (!existsSync(path)) return false;
+  const m = JSON.parse(readFileSync(path, "utf-8")) as { breakdown?: Record<string, unknown> };
+  return m.breakdown?.[PRECISION_NOT_CITABLE_KEY] !== undefined;
 }
 
 /**
@@ -38,19 +54,23 @@ export interface MeasurementsAggregate {
  * Throws on filesystem I/O errors. Schema-violating pointers are reported in
  * `sources_broken` rather than throwing; this lets callers proceed with
  * partial data and surface broken sources for human triage.
+ *
+ * `measurementsDir` defaults to this repo's `data/measurements/`; tests point
+ * it at a fixture tree.
  */
-export function aggregateMeasurements(): MeasurementsAggregate {
+export function aggregateMeasurements(measurementsDir: string = MEASUREMENTS_DIR): MeasurementsAggregate {
   const out: MeasurementsAggregate = {
     generated_at: new Date().toISOString(),
     sources: {},
     sources_pending: [],
     sources_broken: [],
+    precision_not_citable: [],
   };
 
-  if (!existsSync(MEASUREMENTS_DIR)) return out;
+  if (!existsSync(measurementsDir)) return out;
 
-  for (const entry of readdirSync(MEASUREMENTS_DIR)) {
-    const sourceDir = join(MEASUREMENTS_DIR, entry);
+  for (const entry of readdirSync(measurementsDir)) {
+    const sourceDir = join(measurementsDir, entry);
     if (!statSync(sourceDir).isDirectory()) continue;
     const latest = join(sourceDir, "latest.json");
     if (!existsSync(latest)) {
@@ -61,6 +81,7 @@ export function aggregateMeasurements(): MeasurementsAggregate {
       const raw = JSON.parse(readFileSync(latest, "utf-8")) as unknown;
       const pointer = parseLatestPointer(raw);
       out.sources[entry] = pointer;
+      if (declaresPrecisionNotCitable(sourceDir, pointer.file)) out.precision_not_citable.push(entry);
     } catch (err) {
       out.sources_broken.push({
         source: entry,
@@ -128,9 +149,10 @@ export interface StatsBenchmarkEntry {
   measured_at: string;
   samples: number;
   recall: number;
-  precision: number;
-  f1: number;
-  fp_rate: number;
+  /** null when the measurement declares breakdown.precision_not_citable. */
+  precision: number | null;
+  f1: number | null;
+  fp_rate: number | null;
   measurement_file: string;
 }
 
@@ -142,17 +164,20 @@ export interface StatsBenchmarksProjection {
 export function projectForStats(agg: MeasurementsAggregate): StatsBenchmarksProjection {
   const benchmarks: StatsBenchmarkEntry[] = Object.entries(agg.sources)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([_name, p]) => ({
-      source: p.source,
-      source_version: p.source_version,
-      atr_version: p.atr_version,
-      measured_at: p.measured_at.slice(0, 10),
-      samples: p.samples,
-      recall: p.metrics.recall,
-      precision: p.metrics.precision,
-      f1: p.metrics.f1,
-      fp_rate: p.metrics.fp_rate,
-      measurement_file: `data/measurements/${p.source}/${p.file}`,
-    }));
+    .map(([name, p]) => {
+      const citable = !(agg.precision_not_citable ?? []).includes(name);
+      return {
+        source: p.source,
+        source_version: p.source_version,
+        atr_version: p.atr_version,
+        measured_at: p.measured_at.slice(0, 10),
+        samples: p.samples,
+        recall: p.metrics.recall,
+        precision: citable ? p.metrics.precision : null,
+        f1: citable ? p.metrics.f1 : null,
+        fp_rate: citable ? p.metrics.fp_rate : null,
+        measurement_file: `data/measurements/${p.source}/${p.file}`,
+      };
+    });
   return { generated_at: agg.generated_at, benchmarks };
 }

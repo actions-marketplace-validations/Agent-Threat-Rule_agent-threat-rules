@@ -134,11 +134,15 @@
  * WHAT IT STILL CANNOT SEE
  *   The same regex declared under a source type the eval corpus never emits.
  *   Measured: moved from llm_io to agent_trace it drops from 1st of 671 to
- *   670th, because the engine skips it on every sample. Six evaluable rules live
- *   there today (memory_access 2, context_window 2, skill_lifecycle 2). They are
- *   excluded from the metric rather than scored at a fictitious 0.1x, and any
- *   NEW arrival is printed as a warning on every run, so the hole is visible
- *   instead of merely documented. Closing it means widening src/eval/corpus.ts.
+ *   670th, because the engine skips it on every sample. The trace rules live
+ *   there today, and the memory_access rules, a type the engine withholds from
+ *   typed events (WITHHELD_SOURCE_TYPES in src/engine.ts). They are excluded
+ *   from the metric rather than scored at a fictitious 0.1x, and any NEW arrival
+ *   is printed as a warning on every run, so the hole is visible instead of
+ *   merely documented. Closing it means widening src/eval/corpus.ts. (The
+ *   context_window and skill_* rules used to be there too: the engine skipped
+ *   those types on every typed event until it admitted them where their data
+ *   arrives, RUNTIME_SOURCE_TYPE.)
  *
  * WHERE THE MEASUREMENT LIVES
  *   scripts/lib/rule-latency-profile.ts. It produces a Profile and knows nothing
@@ -386,13 +390,15 @@ export type Blame = ReadonlySet<string> | null;
 
 /**
  * Files that change what EVERY rule costs, so touching one puts the whole
- * corpus back in scope. The engine is the thing being timed; the eval corpus is
- * what it is timed over; the lane contract decides which rules are timed at all;
+ * corpus back in scope. The engine is the thing being timed, and the regex
+ * dialect is how it compiles every condition; the eval corpus is what it is
+ * timed over; the lane contract decides which rules are timed at all;
  * the profiler is the clock and the thresholds file is the verdict; the lockfile
  * carries the regex engine underneath.
  */
 const MEASUREMENT_PATHS: readonly string[] = [
   "src/engine.ts",
+  "src/regex-dialect.ts",
   "src/eval/",
   "src/quality/rule-contract.ts",
   "scripts/lib/rule-latency-",

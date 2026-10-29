@@ -12,8 +12,8 @@ What it checks (the load-bearing conversion guarantees):
   3. The ATT&CK join key round-trips: every enterprise ATT&CK id in the source
      ATR rule's references.mitre_attack appears as `attack.txxxx` in Sigma tags,
      and no bogus attack.* tag is minted from an ATLAS id.
-  4. The near-universal leading `(?i)` in ATR regexes is turned into the Sigma
-     `re|i` modifier, not left inline.
+  4. ATR's default case-insensitive regex semantics become Sigma's `re|i`, while
+     the explicit `case_sensitive: true` opt-out remains case-sensitive.
   5. The detection field names survive verbatim (no data loss on the surface).
 """
 from __future__ import annotations
@@ -173,6 +173,62 @@ def test_case_insensitive_flag_becomes_re_i_modifier():
                     f"{rel} sel_{idx}: regex condition not emitted with re modifier: '{key}'"
                 )
     assert saw_re_i, "sample did not exercise the (?i) -> re|i path; sample is unrepresentative"
+
+
+def test_implicit_case_insensitivity_becomes_re_i_modifier():
+    """A real rule without (?i) must retain ATR's default case semantics."""
+    rel = "rules/prompt-injection/ATR-2026-02005-actor-never-breaks-character-roleplay-dan-style-.yaml"
+    atr, _, s, _, _ = _convert(rel)
+    source = atr["detection"]["conditions"][0]["value"]
+    assert not source.startswith("(?i)"), "regression fixture unexpectedly gained inline (?i)"
+    assert list(s["detection"]["sel_1"]) == ["content|re|i"]
+
+
+def test_case_sensitive_opt_out_stays_case_sensitive():
+    detection = {
+        "conditions": [
+            {"field": "content", "operator": "regex", "value": "Secret", "case_sensitive": True}
+        ]
+    }
+    selections, _, warnings = CONV.convert_conditions(detection)
+    assert selections["sel_1"] == {"content|re": "Secret"}
+    assert not warnings
+
+
+def test_case_sensitive_opt_out_overrides_inline_i_with_warning():
+    detection = {
+        "conditions": [
+            {"field": "content", "operator": "regex", "value": "(?is)Secret", "case_sensitive": True}
+        ]
+    }
+    selections, _, warnings = CONV.convert_conditions(detection)
+    assert selections["sel_1"] == {"content|re": "Secret"}
+    assert any("case_sensitive: true" in warning for warning in warnings)
+
+
+def test_leading_m_s_x_letters_are_dropped_per_spec_6_4():
+    """SPEC §6.4 gives m, s and x no effect in ATR. A Sigma backend would honour
+    (?m) or (?s) and match lines or newlines the ATR engine does not, so the
+    export drops them along with the i."""
+    detection = {
+        "conditions": [
+            {"field": "content", "operator": "regex", "value": "(?im)^SYSTEM:"},
+            {"field": "content", "operator": "regex", "value": "(?s)a.b"},
+            {"field": "content", "operator": "regex", "value": "(?x)a b"},
+        ]
+    }
+    selections, _, warnings = CONV.convert_conditions(detection)
+    assert selections["sel_1"] == {"content|re|i": "^SYSTEM:"}
+    assert selections["sel_2"] == {"content|re|i": "a.b"}
+    assert selections["sel_3"] == {"content|re|i": "a b"}
+    assert not warnings
+
+
+def test_flag_group_outside_spec_keeps_all_but_i():
+    """A group with a letter SPEC §6.4 does not define is not ours to drop."""
+    detection = {"conditions": [{"field": "content", "operator": "regex", "value": "(?iu)x"}]}
+    selections, _, _ = CONV.convert_conditions(detection)
+    assert selections["sel_1"] == {"content|re|i": "(?u)x"}
 
 
 def test_detection_field_names_survive():

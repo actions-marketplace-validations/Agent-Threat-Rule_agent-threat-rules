@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, mkdirSy
 import { resolve, dirname, join, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { ATREngine } from './engine.js';
+import { ATREngine, WITHHELD_SOURCE_TYPES } from './engine.js';
 import { loadRuleFile, loadRulesFromDirectory, validateRule } from './loader.js';
 import type { AgentEvent, ATRMatch, ATRRule, ATRTrace } from './types.js';
 import { generateBadgeSvg, generateBadgeEndpoint, lookupPackageScan, generateBadgeMarkdown } from './badge.js';
@@ -21,10 +21,13 @@ import { cmdScanUnified } from './cli/scan-handler.js';
 import {
   BLOCKING_ENV_VAR,
   LANE_ENV_VAR,
+  MODEL_DECISIONS_ENV_VAR,
   parseLane,
+  parseModelDecisions,
   resolveEnforcementPolicy,
   type EnforcementPolicy,
 } from './enforcement.js';
+import type { ModelDecisions } from './verdict.js';
 import { LANES, type Lane } from './quality/rule-contract.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,12 +89,20 @@ ${BOLD}Options:${RESET}
   --semantic-model <model>       Judge model (or ATR_SEMANTIC_MODEL / LLM_MODEL)
   --semantic-timeout <ms>        Judge request timeout (or ATR_SEMANTIC_TIMEOUT_MS)
   --semantic-no-json-mode        Do not send OpenAI JSON-mode response_format
-  --no-report        Disable anonymous Threat Cloud reporting (enabled by default)
+  --report-to-cloud  Send anonymous detection reports to a Threat Cloud endpoint.
+                     OFF BY DEFAULT: nothing leaves your machine without it.
+                     (--no-report is accepted and is a no-op, kept for compatibility.)
   --fail-on <sev>    Exit non-zero if matches at/above this severity are found (for CI / pre-commit gates)
-  --tc-url <url>     Threat Cloud endpoint (default: https://tc.panguard.ai)
+  --tc-url <url>     Threat Cloud endpoint base URL. Also read from ATR_TC_URL.
+                     REQUIRED with --report-to-cloud: ATR ships no default
+                     endpoint, so you choose who receives your detections.
   --lane <lane>    Detection lane: enforce (stable rules only) | alert
                    (stable+test) | hunt (all maturities). Overrides ATR_LANE.
                    Default: hunt.
+  --model-decisions <mode>
+                   advisory (default) | enforce. What a match a model decided
+                   (a semantic rule's judge) may do: advisory lists it but does
+                   not count it toward --fail-on. Overrides ATR_MODEL_DECISIONS.
   --blocking       Allow ATR to block. OFF BY DEFAULT: without it the guard
                    reports detections but emits no permissionDecision and runs
                    no response action above the observe tier. Overrides
@@ -176,6 +187,36 @@ function parseArgs(argv: string[]): { command: string; target: string; options: 
  * typed at a prompt by someone who will see the exit code — unlike an inherited
  * environment variable, which degrades instead. See resolvePolicyAndReport.
  */
+/**
+ * What a model-decided match may do, for the commands that can wire a model
+ * (scan, mcp): --model-decisions, else ATR_MODEL_DECISIONS, else advisory. A
+ * mistyped flag exits, as --lane does. A bad environment value falls back to
+ * advisory, the setting that enforces less, and says so.
+ */
+function readModelDecisionsOption(options: Record<string, string>): ModelDecisions {
+  const raw = options['model-decisions'];
+  if (raw !== undefined && raw.trim() !== '') {
+    const parsed = parseModelDecisions(raw);
+    if (parsed === null) {
+      console.error(`${RED}Error: Invalid --model-decisions "${raw}". Expected one of: advisory, enforce.${RESET}`);
+      process.exit(1);
+    }
+    return parsed;
+  }
+  const fromEnv = process.env[MODEL_DECISIONS_ENV_VAR];
+  if (fromEnv !== undefined && fromEnv.trim() !== '') {
+    const parsed = parseModelDecisions(fromEnv);
+    if (parsed === null) {
+      console.error(
+        `${YELLOW}Warning: Invalid ${MODEL_DECISIONS_ENV_VAR}="${fromEnv}"; using advisory.${RESET}`,
+      );
+      return 'advisory';
+    }
+    return parsed;
+  }
+  return 'advisory';
+}
+
 function readLaneOption(options: Record<string, string>): Lane | undefined {
   const raw = options['lane'];
   if (raw === undefined || raw.trim() === '') return undefined;
@@ -348,17 +389,25 @@ async function cmdTest(target: string, options: Record<string, string>): Promise
   let skipped = 0;
   const failures: Array<{ ruleId: string; testType: string; input: string; expected: string; got: string }> = [];
   const skippedRules: Array<{ ruleId: string; cases: number; reason: string }> = [];
-
-  // Map extended agent_source types to basic event-compatible source types
-  // so the engine's source type filter doesn't skip rules during testing.
-  // The engine only recognizes: llm_io, tool_call, mcp_exchange, agent_behavior, multi_agent_comm
-  const EXTENDED_SOURCE_TO_BASE: Record<string, string> = {
-    context_window: 'llm_io',
-    memory_access: 'llm_io',
-    skill_lifecycle: 'tool_call',
-    skill_permission: 'tool_call',
-    skill_chain: 'tool_call',
+  const markUnevaluable = (rule: ATRRule, reason: string): void => {
+    const cases =
+      (rule.test_cases?.true_positives?.length ?? 0) + (rule.test_cases?.true_negatives?.length ?? 0);
+    totalTests += cases;
+    skipped += cases;
+    skippedRules.push({ ruleId: rule.id, cases, reason });
   };
+  // True positives that match on the wide test event and on no runtime event the
+  // rule runs on (caseMatchesAtRuntime in src/testcase-event.ts): they pass only
+  // through a value the harness copies into a field. Reported, not failed.
+  const harnessOnly: Array<{ ruleId: string; testType: string; input: string }> = [];
+
+  // A rule is tested with the agent_source.type it declares. This harness used
+  // to map the extended types to a base type so the engine's source filter
+  // would admit them, which the engine itself did not do: those rules passed
+  // here and never ran on the events src/hook-handler.ts builds. The engine now
+  // admits them itself (RUNTIME_SOURCE_TYPE in src/engine.ts), so what passes
+  // here is what it runs. A type it withholds (WITHHELD_SOURCE_TYPES) is
+  // reported as unevaluable below.
 
   for (const rule of rules) {
     if (!rule.test_cases) continue;
@@ -373,26 +422,26 @@ async function cmdTest(target: string, options: Record<string, string>): Promise
     // silently. (method=trace is different: it has a real evaluation path
     // below, so its cases still run.)
     if (rule.detection?.method === 'behavioral') {
-      const cases =
-        (rule.test_cases.true_positives?.length ?? 0) + (rule.test_cases.true_negatives?.length ?? 0);
-      totalTests += cases;
-      skipped += cases;
-      skippedRules.push({ ruleId: rule.id, cases, reason: 'method=behavioral requires a streaming evaluator' });
+      markUnevaluable(rule, 'method=behavioral requires a streaming evaluator');
       continue;
     }
 
-    // For testing, normalize extended source types so the engine doesn't filter them out
-    const originalSourceType = rule.agent_source?.type;
-    const baseSourceType = EXTENDED_SOURCE_TO_BASE[originalSourceType ?? ''];
+    // A rule whose agent_source.type the engine withholds from typed events runs
+    // only on an event with no source type and in a SKILL.md scan, not on the
+    // events its cases describe. Passing its cases on a mapped event would say
+    // it runs where it does not; failing them would blame the rule for the
+    // engine's choice. Count them as unevaluable, with the engine's reason.
+    const sourceType = rule.agent_source?.type;
+    if (typeof sourceType === 'string' && Object.hasOwn(WITHHELD_SOURCE_TYPES, sourceType)) {
+      markUnevaluable(
+        rule,
+        `agent_source.type ${sourceType} does not run on typed events yet: ${WITHHELD_SOURCE_TYPES[sourceType]}`,
+      );
+      continue;
+    }
 
     // Override status so draft/deprecated rules are not skipped during testing
-    const testRule = {
-      ...rule,
-      status: 'experimental' as const,
-      ...(baseSourceType
-        ? { agent_source: { ...rule.agent_source, type: baseSourceType as ATRRule['agent_source']['type'] } }
-        : {}),
-    };
+    const testRule = asTestedRule(rule);
 
     const engine = new ATREngine({ rules: [testRule] });
     await engine.loadRules();
@@ -401,23 +450,17 @@ async function cmdTest(target: string, options: Record<string, string>): Promise
     const tn = rule.test_cases.true_negatives ?? [];
 
     // Test via both evaluate() and scanSkill() — pass if either detects
-    const runTest = (tcObj: Record<string, unknown>): boolean => {
-      const event = buildEventFromTestCase(tcObj, rule);
-      const mcpHit = engine.evaluate(event).some(m => m.rule.id === rule.id);
-      if (mcpHit) return true;
-      const input = String(tcObj['input'] ?? tcObj['tool_response'] ?? tcObj['agent_output'] ?? '');
-      if (input) {
-        const skillHit = engine.scanSkill(input).some(m => m.rule.id === rule.id);
-        if (skillHit) return true;
-      }
-      return false;
-    };
+    const runTest = (tcObj: Record<string, unknown>): boolean => caseMatches(engine, rule, tcObj);
 
     for (const tc of tp) {
       totalTests++;
-      const triggered = runTest(tc as unknown as Record<string, unknown>);
+      const tcObj = tc as unknown as Record<string, unknown>;
+      const triggered = runTest(tcObj);
       if (triggered) {
         passed++;
+        if (!caseMatchesAtRuntime(engine, rule, tcObj)) {
+          harnessOnly.push({ ruleId: rule.id, testType: 'true_positive', input: caseLabel(tcObj).slice(0, 100) });
+        }
       } else {
         failed++;
         failures.push({
@@ -451,7 +494,7 @@ async function cmdTest(target: string, options: Record<string, string>): Promise
   if (jsonOutput) {
     console.log(
       JSON.stringify(
-        { totalRules: rules.length, totalTests, passed, failed, skipped, failures, skippedRules },
+        { totalRules: rules.length, totalTests, passed, failed, skipped, failures, skippedRules, harnessOnly },
         null,
         2,
       ),
@@ -473,7 +516,24 @@ async function cmdTest(target: string, options: Record<string, string>): Promise
       console.log(`    ${DIM}${s.ruleId}: ${s.cases} case(s) — ${s.reason}${RESET}`);
     }
   }
+  if (harnessOnly.length > 0) {
+    console.log(`  ${YELLOW}Harness-only:${RESET}    ${harnessOnly.length}`);
+    for (const h of harnessOnly) {
+      console.log(`    ${DIM}${h.ruleId}: "${h.input}" matches the test event and no runtime-shaped event${RESET}`);
+    }
+  }
   console.log(`${DIM}${'─'.repeat(60)}${RESET}`);
+
+  // No case ran: rules from the npm package carry no test samples (they are
+  // removed at publish; see DISCLOSURE). Printing "All tests passed" here would
+  // be a green result for a test that tested nothing.
+  if (totalTests === 0) {
+    console.log(
+      `\n${YELLOW}No test cases to run.${RESET} ${DIM}The rules have no test_cases; the npm package ` +
+        `ships rules without them. Run atr test on the rules in the source repository.${RESET}\n`,
+    );
+    process.exit(1);
+  }
 
   if (failures.length > 0) {
     console.log(`\n${RED}Failures:${RESET}\n`);
@@ -494,170 +554,8 @@ async function cmdTest(target: string, options: Record<string, string>): Promise
   }
 }
 
-function buildEventFromTestCase(
-  tc: Record<string, unknown>,
-  rule: ATRRule,
-): AgentEvent {
-  // Stringify any object values
-  const str = (v: unknown): string => {
-    if (v === undefined || v === null) return '';
-    if (typeof v === 'string') return v;
-    return JSON.stringify(v);
-  };
-
-  // Extract fields, handling multiple test case formats:
-  // Object-style: input: { tool_name: "...", tool_args: "...", response: "..." }
-  // Flat-style: input: "...", tool_response: "...", tool_name: "..."
-  // Tool-call-style: tool_call: { name: "...", args: "..." }
-  // Accept `user_input:` as a top-level alias for `input:` — several tool_call
-  // rules write their natural-language TPs as `- user_input: "..."`, which the
-  // harness previously ignored (it only read `input`), building an EMPTY event so
-  // the rule's own documented attack tested as not_triggered (a false failure that
-  // left the rule looking broken while it detects fine in production).
-  const rawInput = tc['input'] ?? tc['user_input'];
-  let input = '';
-  let toolName = str(tc['tool_name']);
-  let toolArgs = str(tc['tool_args']);
-  let toolResponse = str(tc['tool_response']);
-  const agentOutput = str(tc['agent_output']);
-  const toolDescription = str(tc['tool_description']);
-  const rawContent = str(tc['content']);
-
-  // Handle tool_call: { name, args } format (used by tool_call rules like ATR-2026-00098)
-  const rawToolCall = tc['tool_call'];
-  if (rawToolCall !== null && rawToolCall !== undefined && typeof rawToolCall === 'object' && !Array.isArray(rawToolCall)) {
-    const tcObj = rawToolCall as Record<string, unknown>;
-    if (tcObj['name'] && !toolName) toolName = str(tcObj['name']);
-    if (tcObj['args'] && !toolArgs) toolArgs = str(tcObj['args']);
-  }
-
-  if (rawInput !== null && rawInput !== undefined && typeof rawInput === 'object' && !Array.isArray(rawInput)) {
-    const inputObj = rawInput as Record<string, unknown>;
-    if (inputObj['tool_name'] && !toolName) toolName = str(inputObj['tool_name']);
-    if (inputObj['tool_args'] && !toolArgs) toolArgs = str(inputObj['tool_args']);
-    // Handle 'response' as alias for 'tool_response' (used in ATR-065 etc.)
-    if (inputObj['response'] && !toolResponse) toolResponse = str(inputObj['response']);
-    if (inputObj['tool_response'] && !toolResponse) toolResponse = str(inputObj['tool_response']);
-    // For object inputs, use tool_args as the primary string input.
-    // If no tool_args, only use JSON-stringified input as fallback when there's
-    // no other meaningful field (tool_response/response) extracted.
-    if (toolArgs) {
-      input = toolArgs;
-    } else if (!toolResponse) {
-      input = str(rawInput);
-    }
-  } else {
-    input = str(rawInput);
-  }
-
-  // Infer event type from rule's agent_source and test case structure
-  const sourceType = rule.agent_source?.type ?? 'llm_io';
-
-  const SOURCE_TO_EVENT: Record<string, AgentEvent['type']> = {
-    llm_io: 'llm_input',
-    tool_call: 'tool_call',
-    mcp_exchange: 'tool_response',
-    agent_behavior: 'agent_behavior',
-    multi_agent_comm: 'multi_agent_message',
-    context_window: 'llm_input',
-    memory_access: 'llm_input',
-    skill_lifecycle: 'tool_call',
-    skill_permission: 'tool_call',
-    skill_chain: 'tool_call',
-  };
-
-  let type: AgentEvent['type'] = SOURCE_TO_EVENT[sourceType] ?? 'llm_input';
-
-  // NOTE: previously, a tool_call rule with a plain-string TP was downgraded to
-  // an llm_input event. That mis-tested tool_call-native rules: a shell command or
-  // SQL string IS a tool invocation, and evaluating it as llm_input made the engine
-  // apply its cross-context confidence penalty, dropping the match below threshold
-  // so the rule's own documented attack tested as not_triggered (false failure that
-  // silently left broken rules in the enforce lane). We now keep the native
-  // tool_call type — the string flows in via `content` (below), and tool_name is
-  // pinned to "" (below) so the engine's tool_name fallback never treats the
-  // content as a tool name. Plain-string TPs of tool_call rules therefore test in
-  // their real (native) context.
-
-  // Determine the primary content based on what the rule conditions check
-  // Problem 2 & 3: For rules that check tool_response, the tool_response
-  // should be the primary content when the event type resolves tool_response from content
-  let content: string;
-  if (toolResponse && type === 'tool_response') {
-    // If event type is tool_response, engine resolves field:tool_response from event.content
-    content = toolResponse;
-  } else {
-    content = input || toolDescription || rawContent || toolResponse || agentOutput || '';
-  }
-
-  const fields: Record<string, string> = {};
-
-  // Populate ALL known field aliases so the engine can resolve any field name
-  if (input) fields['user_input'] = input;
-  if (toolResponse) fields['tool_response'] = toolResponse;
-  if (agentOutput) fields['agent_output'] = agentOutput;
-  if (toolDescription) fields['tool_description'] = toolDescription;
-  // Always set tool_name (even empty) to prevent engine fallback
-  // from using event.content as tool_name for tool_call events
-  fields['tool_name'] = toolName;
-  // Production ALWAYS populates tool_args: src/hook-handler.ts builds
-  // `tool_args: JSON.stringify(toolInput)` for BOTH the PreToolUse (tool_call)
-  // and the PostToolUse (tool_response) event. The engine resolves this field as
-  // `event.fields.tool_args ?? (event.type === 'tool_call' ? event.content :
-  // undefined)` (src/engine.ts resolveField), so a test case that supplies only
-  // a plain `input:` string leaves tool_args unresolvable on every non-tool_call
-  // event and EVERY `field: tool_args` condition silently evaluates to false.
-  // The rule then reports not_triggered on its own documented attack while
-  // detecting it correctly in production — a harness defect that reads exactly
-  // like a broken rule and invites weakening a rule that is right. 40 rules
-  // declare `field: tool_args`.
-  // This is the test-case-runner twin of the measurement-shape defect that
-  // scripts/lib/corpus-event.ts fixed for the FP gate: a true positive must be
-  // exercised on the same shape the benign corpus is charged against.
-  // Deliberately narrower than that harness's wide shape: only the INPUT string
-  // is offered as tool_args. A `tool_response:` test case asserts what a tool
-  // RETURNED, which is not an argument, so pouring it into tool_args would let a
-  // tool_args layer pass a TP for the wrong reason.
-  const toolArgsValue = toolArgs || input;
-  if (toolArgsValue) fields['tool_args'] = toolArgsValue;
-
-  // For content-based rules, set content and agent_message fields
-  fields['content'] = content;
-  fields['agent_message'] = content;
-
-  // v1.1 trace-method rules evaluate over a span DAG (OpenInference), not text.
-  // When the rule declares method: trace and the test input is a JSON trace
-  // ({"spans":[...]}), parse it into event.trace so the engine's trace
-  // evaluator can run. Without this, trace rules can never satisfy their own
-  // declared true_positives: the harness would otherwise feed the raw JSON as
-  // text to the pattern fallback, whose regex expects a pre-computed synthetic
-  // verdict field that is absent from a raw trace.
-  let trace: ATRTrace | undefined;
-  if (rule.detection?.method === 'trace') {
-    let parsed: unknown =
-      rawInput && typeof rawInput === 'object' && !Array.isArray(rawInput) ? rawInput : undefined;
-    if (parsed === undefined) {
-      try {
-        parsed = JSON.parse(input);
-      } catch {
-        parsed = undefined; // input is not a JSON trace; leave trace unset
-      }
-    }
-    if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { spans?: unknown }).spans)) {
-      trace = parsed as ATRTrace;
-    }
-  }
-
-  return {
-    type,
-    timestamp: new Date().toISOString(),
-    content,
-    fields,
-    sessionId: 'test-session',
-    agentId: 'test-agent',
-    ...(trace ? { trace } : {}),
-  };
-}
+import { asTestedRule, buildEventFromTestCase, caseLabel, caseMatches, caseMatchesAtRuntime } from "./testcase-event.js";
+export { buildEventFromTestCase };
 
 // --- STATS command ---
 
@@ -795,8 +693,9 @@ async function cmdGuard(options: Record<string, string>): Promise<void> {
 
 async function cmdMcp(): Promise<void> {
   const { startMCPServer } = await import('./mcp-server.js');
-  // The MCP server never blocks, so only the lane half of the policy applies.
-  await startMCPServer({ lane: resolvePolicyAndReport({}).lane });
+  // The MCP server never blocks, so only the lane half of the policy applies,
+  // plus what its scan tool reports as a model's decision.
+  await startMCPServer({ lane: resolvePolicyAndReport({}).lane, modelDecisions: readModelDecisionsOption({}) });
 }
 
 // --- SCAFFOLD command ---
@@ -1362,7 +1261,7 @@ async function main(): Promise<void> {
         sarif: options['sarif'] === 'true',
         severity: options['severity'],
         failOn: options['fail-on'],
-        reportToCloud: options['no-report'] !== 'true',
+        reportToCloud: options['report-to-cloud'] === 'true',
         tcUrl: options['tc-url'],
         semantic: options['semantic'] === 'true',
         semanticApiKey: options['semantic-api-key'],
@@ -1371,6 +1270,7 @@ async function main(): Promise<void> {
         semanticTimeout: options['semantic-timeout'],
         semanticNoJsonMode: options['semantic-no-json-mode'] === 'true',
         lane: scanLane(),
+        modelDecisions: readModelDecisionsOption(options),
       });
       break;
     case 'scan-skill':
@@ -1380,7 +1280,7 @@ async function main(): Promise<void> {
         severity: options['severity'],
         failOn: options['fail-on'],
         forceType: 'skill',
-        reportToCloud: options['no-report'] !== 'true',
+        reportToCloud: options['report-to-cloud'] === 'true',
         tcUrl: options['tc-url'],
         semantic: options['semantic'] === 'true',
         semanticApiKey: options['semantic-api-key'],
@@ -1389,6 +1289,7 @@ async function main(): Promise<void> {
         semanticTimeout: options['semantic-timeout'],
         semanticNoJsonMode: options['semantic-no-json-mode'] === 'true',
         lane: scanLane(),
+        modelDecisions: readModelDecisionsOption(options),
       });
       break;
     case 'validate':

@@ -4,13 +4,24 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 import pytest
+import yaml
 
-from pyatr.engine import ATREngine
+import pyatr.engine as engine_module
+from pyatr.engine import ATREngine, _parse_rule
 from pyatr.types import AgentEvent
 
 RULES_DIR = Path(__file__).resolve().parent.parent.parent / "rules"
+
+
+def _load_rule_data(rule_id: str) -> dict[str, Any]:
+    paths = list(RULES_DIR.rglob(f"{rule_id}-*.yaml"))
+    assert len(paths) == 1, f"Expected one file for {rule_id}, found {paths}"
+    data = yaml.safe_load(paths[0].read_text(encoding="utf-8"))
+    assert data["id"] == rule_id, paths[0]
+    return data
 
 
 @pytest.fixture(scope="module")
@@ -35,6 +46,46 @@ class TestRuleLoading:
                 f"Rule {rule.id} has unexpected severity: {rule.severity}"
             )
             assert len(rule.conditions) > 0, f"Rule {rule.id} has no conditions"
+
+
+@pytest.mark.parametrize(
+    "rule_id", ("ATR-2026-00442", "ATR-2026-02100", "ATR-2026-02300", "ATR-2026-02304"),
+)
+def test_variable_lookbehind_rule_vectors(rule_id: str) -> None:
+    data = _load_rule_data(rule_id)
+    engine = ATREngine()
+    engine.load_rule(_parse_rule(data))
+    for label, expected in (("true_positives", True), ("true_negatives", False)):
+        for case in data["test_cases"][label]:
+            assert bool(engine.evaluate(AgentEvent(case["input"]))) is expected, case["input"]
+
+
+def test_invalid_regex_warns_once_and_is_not_retried(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    rule = _parse_rule({
+        "id": "ATR-TEST-INVALID-REGEX", "title": "Invalid regex test fixture", "status": "test",
+        "detection": {"conditions": [{"field": "content", "operator": "regex", "value": "(?P<"}]},
+    })
+    engine = ATREngine()
+    compile_calls = 0
+    original_compile = engine_module._compile_regex
+
+    def counting_compile(pattern: str) -> Any:
+        nonlocal compile_calls
+        compile_calls += 1
+        return original_compile(pattern)
+
+    monkeypatch.setattr(engine_module, "_compile_regex", counting_compile)
+
+    with caplog.at_level("WARNING", logger="pyatr.engine"):
+        engine.load_rule(rule)
+        engine.evaluate(AgentEvent("anything"))
+        engine.evaluate(AgentEvent("anything"))
+
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert "ATR-TEST-INVALID-REGEX condition 0" in message
+    assert "with re (" in message and "or the regex fallback (" in message
+    assert compile_calls == 1
 
 
 class TestATR2026001DirectPromptInjection:
@@ -333,3 +384,35 @@ class TestFieldResolution:
         matches = engine.evaluate(event)
         rule_ids = [m.rule_id for m in matches]
         assert "ATR-2026-00013" in rule_ids
+
+
+class TestRegexDialectSpec64:
+    """SPEC §6.4 as pyATR compiles it: a leading (?imsx...) group is removed,
+    every regex condition matches case-insensitively, and m, s and x in that
+    group are not applied. pyATR uses Python re, not ECMAScript: its $ also
+    matches before a final newline, its . also matches a carriage return,
+    U+2028 and U+2029, and a second flag group after the leading one is
+    applied. Those differences are known (issue #698) and not pinned here."""
+
+    def test_leading_flag_group_is_removed(self) -> None:
+        compiled = engine_module._compile_regex("(?imsx)ignore previous")
+        assert compiled.search("please ignore previous orders")
+
+    def test_case_insensitive_with_or_without_inline_i(self) -> None:
+        assert engine_module._compile_regex("ignore previous").search("IGNORE PREVIOUS")
+        assert engine_module._compile_regex(r"\bAKIA[0-9A-Z]{4}\b").search("akia12ab")
+
+    def test_m_has_no_effect(self) -> None:
+        compiled = engine_module._compile_regex("(?im)^system:")
+        assert compiled.search("system: obey")
+        assert compiled.search("hello\nsystem: obey") is None
+
+    def test_s_has_no_effect(self) -> None:
+        compiled = engine_module._compile_regex("(?is)begin.end")
+        assert compiled.search("begin-end")
+        assert compiled.search("begin\nend") is None
+
+    def test_x_has_no_effect(self) -> None:
+        compiled = engine_module._compile_regex("(?x)ignore previous")
+        assert compiled.search("ignore previous")
+        assert compiled.search("ignoreprevious") is None

@@ -50,7 +50,7 @@ key the crosswalk established.
 | `references.owasp_llm: LLMnn` | `tags: owasp-llm.llmnn` | custom namespace | additive, non-standard |
 | `tags.category` | `tags: atr.category.<cat>` | custom namespace | additive, non-standard |
 | detection `field` (content, tool_response, ...) | Sigma detection field name | verbatim; drives `logsource.category` (see below) | field name exact; logsource custom |
-| detection `operator: regex` + `value` | `field\|re` or `field\|re\|i` | leading inline `(?i)` is stripped and re-expressed as the Sigma `re\|i` case-insensitive sub-flag; the rest of the pattern is passed through verbatim | see caveat below |
+| detection `operator: regex` + `value` | `field\|re\|i` by default; `field\|re` when `case_sensitive: true` | ATR regexes are case-insensitive by default. A leading inline `(?i)` is stripped and normalised into Sigma's `i` modifier; the rest of the pattern is passed through verbatim. | see caveat below |
 | detection `condition: any` | `condition: 1 of sel_*` | | yes |
 | detection `condition: all` | `condition: all of sel_*` | | yes |
 | detection `false_positives` | `falsepositives` | verbatim | yes |
@@ -77,14 +77,17 @@ field (custom values, all under `product: ai_agent`):
    will not know these field names until you map them to your agent telemetry.
    This is the single biggest caveat.
 
-2. **Case-insensitivity relies on `re|i` backend support.** ATR regexes almost
-   universally open with inline `(?i)`. The converter strips that and emits the
-   Sigma `re|i` sub-flag, which is the portable way. A handful of patterns with
-   other combined inline flags (`(?is)` etc.) keep the remaining flag inline;
-   inline-flag support varies by backend. Patterns with no leading `(?i)` are
-   emitted as case-sensitive `re` exactly as ATR wrote them.
+2. **Case-insensitivity relies on `re|i` backend support.** ATR regex matching is
+   case-insensitive whether or not a source pattern carries inline `(?i)`
+   (SPEC §6.4). The converter therefore emits Sigma's `re|i` sub-flag. A
+   condition that sets `case_sensitive: true` is emitted as a case-sensitive
+   `re`; that is an option of this converter, and the ATR engine ignores the
+   key on these conditions. A leading inline flag group made only of `i`, `m`,
+   `s` and `x` is dropped whole, because SPEC §6.4 gives `m`, `s` and `x` no
+   effect; a group with any other letter keeps everything but its `i`,
+   verbatim, subject to backend support.
 
-3. **Regex flavor.** ATR patterns are Python `re`. Sigma `re` is documented as
+3. **Regex flavor.** ATR patterns are ECMAScript (SPEC §6.4). Sigma `re` is documented as
    PCRE-ish but the effective flavor is the *target backend's* regex engine
    after pySigma translation. Exotic constructs (lookbehind, named groups,
    backreferences) may not survive every backend. The converter does not

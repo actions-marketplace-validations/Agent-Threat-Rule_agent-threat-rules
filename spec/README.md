@@ -56,7 +56,10 @@ spec/
 │   └── atr-to-nist-csf-2.0.md         ← NIST CSF 2.0 (NIST IR 8596 Informative Reference draft)
 │
 ├── category-registry/
-│   └── v1.0.yaml                      ← (new) versioned top-level category list
+│   ├── v1.0.yaml                      ← (new) versioned top-level category list
+│   └── gemara/                        ← (new) the registry as Gemara catalogs, generated
+│                                         from v1.0.yaml; published as an OCI bundle
+│                                         by publish-gemara.yml
 │
 ├── schema/                            ← (new) JSON Schemas
 │   ├── rule.schema.json               ← rule format JSON Schema
@@ -266,8 +269,8 @@ The spec is being prepared for:
 
 1. **OASIS Open Project (primary)** as adjacent to CoSAI.
    Target: Q3 2026 acceptance, Q1 2027 first Committee Specification.
-2. **NIST CAISI (citation target)**.
-   No formal submission window currently open; awaiting next RFI.
+2. **NIST CAISI**, as a possible future citation venue only.
+   ATR has no engagement with CAISI.
 3. **IETF (informational draft, transport / OTEL emission only)**
    when reference implementations are stable.
 
@@ -282,6 +285,6 @@ OASIS Open Project."
 - Spec issues: GitHub Issues with label `spec-bug` or `spec-question`
 - Spec proposals: GitHub Pull Requests with AEP template
 - Maintainer: Adam Lin <adam@agentthreatrule.org>
-- Fiscal sponsor: Open Source Collective Inc. (501(c)(3),
-  EIN 81-1567737)
+- Fiscal sponsor: Open Source Collective Inc. (501(c)(6),
+  EIN 82-2037583)
 - TSC (post-ratification): tsc@agentthreatrule.org (mailing list, public)

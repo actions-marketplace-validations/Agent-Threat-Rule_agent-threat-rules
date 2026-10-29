@@ -43,17 +43,17 @@ export const messages: Record<Locale, Record<string, string>> = {
     "numbers.rules.desc":
       "Across {categories} threat categories. Each mapped to real CVEs and OWASP standards.",
     "numbers.precision.desc":
-      "Precision on {samples} adversarial samples. External PINT benchmark.",
+      "Precision on {samples} adversarial samples from a self-built corpus in PINT's format \u2014 not Lakera's official PINT benchmark.",
     "numbers.latency.desc": "99% of events resolve at Tier 0-2. Zero API cost.",
     "numbers.scan.desc":
       "Scanned across OpenClaw + Skills.sh. {critical} CRITICAL. {high} HIGH.",
     "numbers.owasp.desc": "OWASP Agentic Top 10 categories fully covered.",
-    "numbers.safemcp.desc": "SAFE-MCP technique coverage. 78 of 85.",
+    "numbers.safemcp.desc": "SAF-MCP techniques with at least one reviewed ATR rule (candidate mappings).",
 
     // Proof
-    "proof.label": "Already in production",
+    "proof.label": "Merged upstream",
     "proof.heading.pre": "Cisco AI Defense",
-    "proof.heading.post": " ships\n34 ATR rules as upstream.",
+    "proof.heading.post": " merged\n34 ATR rules into its open-source skill-scanner.",
     "proof.body":
       "Their engineer submitted a PR. We reviewed it. It merged in 3 days. 1,272 additions. Then they built a --rule-packs CLI specifically to consume ATR.",
     "proof.link": "View PR #79 on GitHub",
@@ -182,7 +182,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "research.recall": "Recall",
     "research.samples": "Samples",
     "research.gap_note":
-      "The gap between {precision}% precision and {recall}% recall is expected. Regex catches known patterns but misses paraphrases and multilingual attacks.",
+      "In the hunt lane, the gap between {precision} precision and {recall} recall is expected: regex catches known patterns but misses paraphrases and multilingual attacks. In the enforce lane, which loads only stable rules and is the one to run with blocking on, recall is {enforce}.",
+    "research.gap_note_hunt_only":
+      "In the hunt lane, the gap between {precision} precision and {recall} recall is expected: regex catches known patterns but misses paraphrases and multilingual attacks. This measurement records no enforce-lane figure.",
     "research.scan": "Ecosystem Scan Data",
     "research.scan.sub": "Real scans of real MCP skill registries.",
     "research.scan.mega": "Mega Scan (OpenClaw + Skills.sh)",
@@ -195,7 +197,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "research.limits": "What ATR Cannot Detect",
     "research.limits.sub":
       "We publish this section because honest limitations build more trust than false confidence.",
-    "research.limits.full": "Full limitations document with 64 evasion tests",
+    "research.limits.full": "Full limitations document, with the evasion tests rules carry",
     "research.limit.paraphrase": "Paraphrase Attacks",
     "research.limit.paraphrase.desc":
       'Any regex rule can be bypassed by semantically equivalent rephrasing. "Ignore previous instructions" is detected; "please set aside the guidance you were given earlier" is not.',
@@ -274,7 +276,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "home.section.adoption": "Adoption in Production",
     "home.section.get": "Get the specification",
     "home.adoption.intro":
-      "ATR is in production at the organizations listed below. Each row links to the merged pull request or integration commit that constitutes the public adoption record.",
+      "ATR has been merged into the public repositories of the organizations listed below. Each row links to the merged pull request or integration commit that constitutes the public adoption record; a merged pull request is not a statement about any vendor's commercial product.",
     "home.get.intro":
       "The specification is published in three forms. The Markdown rendering is canonical; the JSON Schema and citation block are derived artifacts.",
     "home.get.markdown": "Markdown — canonical",
@@ -415,20 +417,20 @@ export const messages: Record<Locale, Record<string, string>> = {
     "numbers.rules.desc":
       "\u6A6B\u8DE8 {categories} \u500B\u5A01\u8105\u985E\u5225\u3002\u6BCF\u689D\u898F\u5247\u90FD\u5C0D\u61C9\u771F\u5BE6 CVE \u548C OWASP \u6A19\u6E96\u3002",
     "numbers.precision.desc":
-      "\u5728 {samples} \u500B\u5C0D\u6297\u6A23\u672C\u4E0A\u7684 Precision\u3002\u5916\u90E8 PINT benchmark\u3002",
+      "\u5728 {samples} \u500B\u5C0D\u6297\u6A23\u672C\u4E0A\u7684 Precision\u3002\u8A9E\u6599\u662F PINT \u683C\u5F0F\u7684\u81EA\u5EFA\u8A9E\u6599,\u4E0D\u662F Lakera \u5B98\u65B9 PINT benchmark\u3002",
     "numbers.latency.desc":
       "99% \u7684\u4E8B\u4EF6\u5728 Tier 0-2 \u89E3\u6C7A\u3002\u96F6 API \u6210\u672C\u3002",
     "numbers.scan.desc":
       "\u6383\u63CF OpenClaw + Skills.sh\u3002{critical} CRITICAL\u3001{high} HIGH\u3002",
     "numbers.owasp.desc": "OWASP Agentic Top 10 \u5168\u90E8\u8986\u84CB\u3002",
     "numbers.safemcp.desc":
-      "SAFE-MCP \u6280\u8853\u8986\u84CB\u7387\u300278/85\u3002",
+      "\u81f3\u5c11\u6709\u4e00\u689d\u7d93\u5be9\u67e5 ATR \u898f\u5247\u5c0d\u61c9\u7684 SAF-MCP \u6280\u8853(\u5019\u9078\u5c0d\u7167)\u3002",
 
     // Proof
-    "proof.label": "\u5DF2\u5728\u751F\u7522\u74B0\u5883\u904B\u884C",
+    "proof.label": "\u5DF2\u5408\u4F75\u81F3\u4E0A\u6E38",
     "proof.heading.pre": "Cisco AI Defense",
     "proof.heading.post":
-      " \u5C07\n34 \u689D ATR \u898F\u5247\u4F5C\u70BA\u4E0A\u6E38\u4F9D\u8CF4\u3002",
+      " \u628A 34 \u689D ATR \u898F\u5247\u5408\u4F75\u9032\u5B83\u7684\u958B\u6E90 skill-scanner\u3002",
     "proof.body":
       "\u4ED6\u5011\u7684\u5DE5\u7A0B\u5E2B\u63D0\u4E86 PR\u3002\u6211\u5011 review \u5B8C\u30023 \u5929\u5408\u4F75\u30021,272 \u884C\u65B0\u589E\u3002\u7136\u5F8C\u4ED6\u5011\u5EFA\u4E86 --rule-packs CLI \u5C08\u9580\u6D88\u8CBB ATR\u3002",
     "proof.link": "\u5728 GitHub \u67E5\u770B PR #79",
@@ -567,7 +569,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "research.recall": "Recall",
     "research.samples": "\u6A23\u672C\u6578",
     "research.gap_note":
-      "{precision}% precision \u548C {recall}% recall \u4E4B\u9593\u7684\u5DEE\u8DDD\u662F\u9810\u671F\u7684\u3002Regex \u80FD\u6293\u5230\u5DF2\u77E5\u6A21\u5F0F\uff0C\u4F46\u6703\u6F0F\u6389\u91CD\u8FF0\u548C\u591A\u8A9E\u8A00\u653B\u64CA\u3002",
+      "\u5728 hunt lane\uFF0C{precision} precision \u548C {recall} recall \u4E4B\u9593\u7684\u5DEE\u8DDD\u662F\u9810\u671F\u7684\uFF1ARegex \u80FD\u6293\u5230\u5DF2\u77E5\u6A21\u5F0F\uFF0C\u4F46\u6703\u6F0F\u6389\u91CD\u8FF0\u548C\u591A\u8A9E\u8A00\u653B\u64CA\u3002enforce lane \u53EA\u8F09\u5165 stable \u898F\u5247\uFF0C\u662F\u958B\u555F\u5C01\u9396\u6642\u8981\u7528\u7684 lane\uFF0C\u5B83\u7684 recall \u662F {enforce}\u3002",
+    "research.gap_note_hunt_only":
+      "\u5728 hunt lane\uFF0C{precision} precision \u548C {recall} recall \u4E4B\u9593\u7684\u5DEE\u8DDD\u662F\u9810\u671F\u7684\uFF1ARegex \u80FD\u6293\u5230\u5DF2\u77E5\u6A21\u5F0F\uFF0C\u4F46\u6703\u6F0F\u6389\u91CD\u8FF0\u548C\u591A\u8A9E\u8A00\u653B\u64CA\u3002\u9019\u6B21\u91CF\u6E2C\u6C92\u6709\u8A18\u9304 enforce lane \u7684\u6578\u5B57\u3002",
     "research.scan": "\u751F\u614B\u7CFB\u6383\u63CF\u6578\u64DA",
     "research.scan.sub":
       "\u771F\u5BE6\u6383\u63CF\u771F\u5BE6\u7684 MCP skill \u8A3B\u518A\u8868\u3002",
@@ -582,7 +586,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "research.limits.sub":
       "\u6211\u5011\u767C\u5E03\u9019\u500B\u7AE0\u7BC0\uff0C\u56E0\u70BA\u8AA0\u5BE6\u7684\u9650\u5236\u6BD4\u865B\u5047\u7684\u81EA\u4FE1\u66F4\u80FD\u5EFA\u7ACB\u4FE1\u4EFB\u3002",
     "research.limits.full":
-      "\u5B8C\u6574\u9650\u5236\u6587\u4EF6\uff0C\u5305\u542B 64 \u500B evasion test",
+      "\u5B8C\u6574\u9650\u5236\u6587\u4EF6\uff0C\u4EE5\u53CA\u898F\u5247\u9644\u5E36\u7684 evasion test",
     "research.limit.paraphrase": "\u91CD\u8FF0\u653B\u64CA",
     "research.limit.paraphrase.desc":
       "\u4EFB\u4F55 regex \u898F\u5247\u90FD\u53EF\u4EE5\u88AB\u8A9E\u7FA9\u7B49\u50F9\u7684\u91CD\u8FF0\u7E5E\u904E\u3002\u300CIgnore previous instructions\u300D\u6703\u88AB\u5075\u6E2C\uff1B\u300Cplease set aside the guidance you were given earlier\u300D\u4E0D\u6703\u3002",
@@ -661,7 +665,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "home.section.adoption": "Production \u63A1\u7528",
     "home.section.get": "\u53D6\u5F97\u898F\u683C",
     "home.adoption.intro":
-      "ATR \u5728\u4E0B\u8868\u5217\u51FA\u7684\u7D44\u7E54\u4E2D\u5DF2\u90E8\u7F72\u65BC\u751F\u7522\u74B0\u5883\u3002\u6BCF\u4E00\u5217\u9023\u7D50\u5230\u69CB\u6210\u516C\u958B\u63A1\u7528\u7D00\u9304\u7684\u5408\u4F75 pull request \u6216\u6574\u5408 commit\u3002",
+      "ATR \u5DF2\u5408\u4F75\u9032\u4E0B\u8868\u5217\u51FA\u7684\u7D44\u7E54\u81EA\u5BB6\u7684\u516C\u958B repository\u3002\u6BCF\u4E00\u5217\u9023\u7D50\u5230\u69CB\u6210\u516C\u958B\u63A1\u7528\u7D00\u9304\u7684\u5408\u4F75 pull request \u6216\u6574\u5408 commit;\u5DF2\u5408\u4F75\u7684 PR \u4E0D\u7B49\u65BC\u5C0D\u4EFB\u4F55\u5EE0\u5546\u5546\u696D\u7522\u54C1\u7684\u9673\u8FF0\u3002",
     "home.get.intro":
       "\u898F\u683C\u4EE5\u4E09\u7A2E\u5F62\u5F0F\u767C\u5E03\u3002Markdown \u6E32\u67D3\u70BA\u6B63\u672C (canonical);JSON Schema \u8207\u5F15\u7528 (citation) \u70BA\u884D\u751F\u7522\u7269 (derived artifact)\u3002",
     "home.get.markdown": "Markdown \u2014 \u6B63\u672C",

@@ -12,6 +12,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 
+import { syncGarakSentence } from './lib/citation-garak.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 
@@ -21,17 +23,17 @@ interface Stats {
   ruleCount: { total: number; effective?: number; stable: number; experimental: number; draft: number };
   spec: { version: string; status: string; doi: string };
   benchmarks: {
-    garak: { recall: number; samples: number; atr_version?: string };
+    garak: { recall: number; enforceLaneRecall?: number; samples: number; atr_version?: string };
     skill: { recall: number; precision: number; samples: number };
     pint: { recall: number; precision: number; samples: number };
-    hackaprompt: { recall: number; baselineRecall: number; samples: number };
+    hackaprompt: { recall: number; enforceLaneRecall: number; precision: null; samples: number };
     benign: { fpRate: number; samples: number };
   };
   ecosystem: { skillsScanned: number; confirmedMalware: number };
-  distribution: { npm: { downloads30d: number }; githubStars: number };
+  distribution: { npm: { downloads30d: number | null }; githubStars: number | null };
   coverage: {
     owaspAgentic: { display: string };
-    safeMcp: { display: string; percentage: number };
+    safeMcp: { covered: number; total: number; display: string; basis: string };
   };
   adoption: {
     externalOrgsMerged: number;
@@ -88,6 +90,13 @@ function syncReadme(s: Stats): SyncResult {
       /(\[!\[npm\]\(https:\/\/img\.shields\.io\/npm\/v\/agent-threat-rules[^\)]*\)\]\([^)]+\))/,
       `$1`,
     );
+    // "Status of This Document" names the version the site's Working Draft
+    // banner also shows (website/lib/spec-meta.ts reads package.json). Unsynced,
+    // it sat at 3.0.0-alpha.1 through the whole 4.x line.
+    out = out.replace(
+      /(published as a \*\*Working Draft\*\* at version `)[^`]+(`)/,
+      `$1${s.version}$2`,
+    );
     return out;
   });
 }
@@ -100,16 +109,19 @@ function syncCitation(s: Stats): SyncResult {
     // effective, not total: `total` counts rule FILES, and src/engine.ts skips
     // status: draft | deprecated before the lane gate, so those rules fire in no
     // lane at all. Citing the file count overstates what the engine runs.
-    out = out.replace(/\b\d{2,4} rules across \d+ threat\b/, `${s.ruleCount.effective ?? s.ruleCount.total} rules across 10 threat`);
-    out = out.replace(/\(\d+\.\d+% recall on the\b/, `(${s.benchmarks.garak.recall}% recall on the`);
-    // The ATR version in this sentence was NOT synced, so the abstract cited
-    // "91.5% ... ATR 3.5.0" — a recall from one version attributed to another.
-    // The recall and the version it was measured on have to move together.
-    out = out.replace(
-      /garak in-the-wild jailbreak benchmark, \d+ prompts, ATR [\w.-]+\)/,
-      `garak in-the-wild jailbreak benchmark, ${s.benchmarks.garak.samples} prompts, ATR ${s.benchmarks.garak.atr_version ?? s.version})`,
-    );
-    out = out.replace(/garak in-the-wild jailbreak benchmark, \d+ prompts\)/, `garak in-the-wild jailbreak benchmark, ${s.benchmarks.garak.samples} prompts)`);
+    // `\s+`, not a space: the abstract is a folded YAML block, and once the
+    // sentence wrapped between "10" and "threat" this stopped matching and the
+    // count froze (825 at v4.1.0 while the corpus moved on).
+    out = out.replace(/\b\d{2,4} rules across \d+(\s+)threat\b/, (_m, ws: string) => `${s.ruleCount.effective ?? s.ruleCount.total} rules across 10${ws}threat`);
+    // The abstract names the version its count belongs to. Left unsynced, it
+    // read "At v4.1.0 it provides 825 rules" with the package at 4.1.4.
+    out = out.replace(/\bAt v\d+\.\d+\.\d+[\w.-]* it provides\b/, `At v${s.version} it provides`);
+    // The garak sentence is generated whole: the hunt and enforce lanes, the
+    // version they were measured on, and the closed-book caveat. Patching the
+    // numbers inside wrapped prose is how it froze before: the version regex
+    // stopped matching, and the abstract cited ATR 3.5.12 (and once "91.5% ...
+    // ATR 3.5.0") long after the measurement moved. A missing sentence throws.
+    out = syncGarakSentence(out, s.benchmarks.garak, s.version);
     out = out.replace(/on a \d+-sample benign corpus/, `on a ${s.benchmarks.benign.samples}-sample benign corpus`);
     return out;
   });
@@ -141,7 +153,9 @@ function syncPackageJson(_s: Stats): SyncResult {
 
 function syncQuickStart(s: Stats): SyncResult {
   return syncFile('docs/quick-start.md', (text) => {
-    return text.replace(/Rules loaded: \d+/, `Rules loaded: ${s.ruleCount.total}`);
+    // `\s+`: the sample output is column-aligned ("Rules loaded:    71"), so a
+    // single-space pattern never matched and the number froze at 71.
+    return text.replace(/Rules loaded:(\s+)\d+/, (_m, ws: string) => `Rules loaded:${ws}${s.ruleCount.total}`);
   });
 }
 
